@@ -1,0 +1,82 @@
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+    }
+    google-beta = {
+      source = "hashicorp/google-beta"
+    }
+  }
+}
+
+locals {
+  keyring_name = "${var.project_id}-${var.keyring_name}"
+  # Lane 14 PR-0b: the key's Cloud KMS resource name, built from the same inputs the key ring and key below are
+  # created with (the provider's `google_kms_crypto_key.id` has exactly this form). It is known at plan time, so
+  # the compliance plan gate can verify every CMEK attribute that uses it before the first apply.
+  crypto_key_name = "projects/${var.project_id}/locations/${var.location}/keyRings/${local.keyring_name}/cryptoKeys/${var.key_name}"
+}
+
+# Lane 14 PR-0b: with enable_apis, the module enables Cloud KMS and the services whose agents use the key, so the
+# key ring and the service identities never race API enablement (disable_on_destroy = false: never turns an API off).
+resource "google_project_service" "required" {
+  for_each           = var.enable_apis ? toset(concat(["cloudkms.googleapis.com"], var.service_agent_services)) : toset([])
+  project            = var.project_id
+  service            = each.key
+  disable_on_destroy = false
+}
+
+resource "google_kms_key_ring" "keyring" {
+  project  = var.project_id
+  name     = local.keyring_name
+  location = var.location
+
+  depends_on = [google_project_service.required]
+}
+
+resource "google_kms_crypto_key" "key" {
+  name            = var.key_name
+  key_ring        = google_kms_key_ring.keyring.id
+  rotation_period = var.rotation_period
+
+  # Lane 14 PR-0b (owner option Q3): HSM-protected versions; no block = SOFTWARE (Cloud KMS default). The protection
+  # level is create-only: changing it later replaces the key (blocked by prevent_destroy).
+  dynamic "version_template" {
+    for_each = var.protection_level != "SOFTWARE" ? [1] : []
+    content {
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = var.protection_level
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_kms_crypto_key_iam_member" "encrypter_decrypter" {
+  count          = var.workload_sa_email != "" ? 1 : 0
+  crypto_key_id  = google_kms_crypto_key.key.id
+  role           = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member         = "serviceAccount:${var.workload_sa_email}"
+}
+
+# Lane 14 PR-0b: the Google service agent of each service that encrypts with this key (Artifact Registry,
+# Firestore, Cloud Run, ...). The agent is created (or read) through the Service Usage API and granted with the
+# provider's own typed `member` value ("serviceAccount:<agent email>"); no email is assembled here.
+resource "google_project_service_identity" "agents" {
+  provider = google-beta
+  for_each = toset(var.service_agent_services)
+  project  = var.project_id
+  service  = each.key
+
+  depends_on = [google_project_service.required]
+}
+
+resource "google_kms_crypto_key_iam_member" "service_agents" {
+  for_each      = toset(var.service_agent_services)
+  crypto_key_id = google_kms_crypto_key.key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = google_project_service_identity.agents[each.key].member
+}

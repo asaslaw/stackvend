@@ -1,0 +1,59 @@
+{
+ "_comment": "GENERATED from validators/syntax_fixtures.py with a real engine; produced and checked by tests/test_step1_s1b_loop.py::syntax_code_column (test_syntax_code_table_is_generated_data_and_matches_the_engine, test_syntax_code_1_9_0_column_regenerates_with_the_production_binary). Never edit by hand. Column pending: terraform 1.5.7. A workload engine without a column falls back to the engine-independent V1a / compile() visibility flips.",
+ "engines": {
+  "opentofu 1.13.1": {
+   "argument_or_block_required": [
+    "TF.ARGUMENT_OR_BLOCK_DEFINITION_REQUIRED"
+   ],
+   "block_brace_on_next_line": [
+    "TF.INVALID_BLOCK_DEFINITION"
+   ],
+   "extra_closing_brace": [
+    "TF.ARGUMENT_OR_BLOCK_DEFINITION_REQUIRED"
+   ],
+   "invalid_expression": [
+    "TF.INVALID_EXPRESSION"
+   ],
+   "missing_newline": [
+    "TF.MISSING_NEWLINE_AFTER_ARGUMENT"
+   ],
+   "stray_bracket": [
+    "TF.MISSING_NEWLINE_AFTER_ARGUMENT"
+   ],
+   "unclosed_block": [
+    "TF.UNCLOSED_CONFIGURATION_BLOCK"
+   ],
+   "unterminated_string": [
+    "TF.INVALID_MULTI_LINE_STRING",
+    "TF.UNTERMINATED_TEMPLATE_STRING"
+   ]
+  },
+  "opentofu 1.9.0": {
+   "argument_or_block_required": [
+    "TF.ARGUMENT_OR_BLOCK_DEFINITION_REQUIRED"
+   ],
+   "block_brace_on_next_line": [
+    "TF.INVALID_BLOCK_DEFINITION"
+   ],
+   "extra_closing_brace": [
+    "TF.ARGUMENT_OR_BLOCK_DEFINITION_REQUIRED"
+   ],
+   "invalid_expression": [
+    "TF.INVALID_EXPRESSION"
+   ],
+   "missing_newline": [
+    "TF.MISSING_NEWLINE_AFTER_ARGUMENT"
+   ],
+   "stray_bracket": [
+    "TF.MISSING_NEWLINE_AFTER_ARGUMENT"
+   ],
+   "unclosed_block": [
+    "TF.UNCLOSED_CONFIGURATION_BLOCK"
+   ],
+   "unterminated_string": [
+    "TF.INVALID_MULTI_LINE_STRING",
+    "TF.UNTERMINATED_TEMPLATE_STRING"
+   ]
+  }
+ }
+}

@@ -1,0 +1,213 @@
+{
+  "title": "Relaunch after a merged build plus a later unmerged rewrite: a stale platform-written test file fails QA",
+  "source": "example 01 live run 11-13 (internal QA diagnosis): 4 QA runs, 3 rounds, REGENERATE FINDING_NOT_ON_A_DRAFT_FILE alternating with QA_REPAIR",
+  "mechanism": "M6 state keyed to the last write (provenance) + M1 developer by default (futile regeneration)",
+  "product_id": "relaunch-demo",
+  "trace": "trace-today",
+  "access": {
+    "mode": "PRIVATE_IAP",
+    "invoker_principals": [
+      "group:staff@example.com"
+    ]
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "relaunch-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "relaunch-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "IAP-protected API",
+      "target_files": [
+        "apps/relaunch-demo/main.py"
+      ]
+    },
+    {
+      "task_id": "TEST-01",
+      "title": "tests",
+      "target_files": [
+        "tests/test_main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI, Request\n\nfrom auth import require_iap\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.get('/api/me')\ndef me(request: Request):\n    return {'email': require_iap(request)}\n",
+    "auth_v1": "def require_iap(request):\n    token = request.headers.get('X-Goog-IAP-JWT-Assertion')\n    if not token:\n        raise PermissionError('Unauthorized')\n    return token\n",
+    "auth_today": "time_module = __import__(\"time\")\n\n\ndef require_iap(request):\n    token = request.headers.get('X-Goog-IAP-JWT-Assertion')\n    if not token:\n        raise PermissionError('Missing X-Goog-IAP-JWT-Assertion header')\n    if time_module.time() < 0:\n        raise PermissionError('clock')\n    return token\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "conftest_merged": "import pytest\n\n\n@pytest.fixture\ndef es256_keyring():\n    return {'kid': 'k1'}\n\n\n@pytest.fixture\ndef isolate_runtime_and_iap():\n    yield\n",
+    "conftest_unmerged": "import pytest\n\n\n@pytest.fixture\ndef es256_key_bundle():\n    return {'kid': 'k2'}\n",
+    "conftest_today": "import pytest\n\nALT_KID = 'k3'\n\n\n@pytest.fixture\ndef iap_keypair():\n    return {'kid': ALT_KID}\n\n\n@pytest.fixture\ndef sandbox_isolation():\n    yield\n",
+    "iap_test_merged": "def test_missing_iap_assertion_header_returns_401(es256_keyring, isolate_runtime_and_iap):\n    assert es256_keyring['kid'] == 'k1'\n",
+    "iap_test_unmerged": "def test_missing_iap_assertion_header_returns_401(es256_key_bundle):\n    assert es256_key_bundle['kid'] == 'k2'\n",
+    "auth_test_bad": "from conftest import ALT_KID\n\n\ndef test_kid(iap_keypair):\n    assert iap_keypair['kid'] == ALT_KID\n",
+    "auth_test_fixed": "ALT_KID = 'k3'\n\n\ndef test_kid(iap_keypair):\n    assert iap_keypair['kid'] == ALT_KID\n",
+    "main_test": "def test_health():\n    assert True\n"
+  },
+  "drafts": {
+    "merged_build": {
+      "apps/relaunch-demo/main.py": "@main",
+      "apps/relaunch-demo/auth.py": "@auth_v1",
+      "apps/relaunch-demo/requirements.txt": "@requirements",
+      "apps/relaunch-demo/Procfile": "@procfile",
+      "tests/__init__.py": "",
+      "tests/conftest.py": "@conftest_merged",
+      "tests/test_iap_auth.py": "@iap_test_merged",
+      "tests/test_main.py": "@main_test"
+    },
+    "unmerged_rewrite": {
+      "apps/relaunch-demo/main.py": "@main",
+      "apps/relaunch-demo/auth.py": "@auth_v1",
+      "apps/relaunch-demo/requirements.txt": "@requirements",
+      "apps/relaunch-demo/Procfile": "@procfile",
+      "tests/__init__.py": "",
+      "tests/conftest.py": "@conftest_unmerged",
+      "tests/test_iap_auth.py": "@iap_test_unmerged",
+      "tests/test_main.py": "@main_test"
+    },
+    "today": {
+      "apps/relaunch-demo/main.py": "@main",
+      "apps/relaunch-demo/auth.py": "@auth_today",
+      "apps/relaunch-demo/requirements.txt": "@requirements",
+      "apps/relaunch-demo/Procfile": "@procfile",
+      "tests/__init__.py": "",
+      "tests/conftest.py": "@conftest_today",
+      "tests/test_auth.py": "@auth_test_bad",
+      "tests/test_main.py": "@main_test"
+    }
+  },
+  "prehistory": [
+    {
+      "trace": "trace-yesterday",
+      "draft": "merged_build",
+      "merge": true
+    },
+    {
+      "trace": "trace-yesterday",
+      "draft": "unmerged_rewrite",
+      "tf_retry": 1,
+      "merge": false,
+      "deploy_result": {
+        "status": "FAILED",
+        "error_class": "IAC_DEFECT",
+        "error": "Terraform validation failed: (recorded deploy error of the earlier trace)"
+      }
+    }
+  ],
+  "generations": [
+    "today",
+    "today",
+    "today"
+  ],
+  "repairs": [
+    {
+      "tests/test_auth.py": "@auth_test_fixed"
+    },
+    {
+      "tests/test_auth.py": "@auth_test_fixed"
+    },
+    {
+      "tests/test_auth.py": "@auth_test_fixed"
+    }
+  ],
+  "sandbox": {
+    "tests_total": 44,
+    "rules": [
+      {
+        "when": {
+          "file": "tests/test_auth.py",
+          "blob": "auth_test_bad"
+        },
+        "diagnostics": [
+          {
+            "code": "PY.TEST_SETUP_ERROR",
+            "file": "tests/test_auth.py",
+            "line": 1,
+            "missing_module": "conftest",
+            "message": "collection failure: ModuleNotFoundError: No module named 'conftest'"
+          }
+        ]
+      },
+      {
+        "when": {
+          "all": [
+            {
+              "file": "tests/test_iap_auth.py",
+              "blob": "iap_test_merged"
+            },
+            {
+              "file": "tests/conftest.py",
+              "lacks": "def es256_keyring"
+            },
+            {
+              "file": "tests/test_auth.py",
+              "lacks": "from conftest import"
+            }
+          ]
+        },
+        "diagnostics": [
+          {
+            "code": "PY.TEST_SETUP_ERROR",
+            "file": "tests/test_iap_auth.py",
+            "line": 1,
+            "message": "fixture 'es256_keyring' not found"
+          },
+          {
+            "code": "PY.TEST_SETUP_ERROR",
+            "file": "tests/test_iap_auth.py",
+            "line": 1,
+            "message": "fixture 'isolate_runtime_and_iap' not found"
+          },
+          {
+            "code": "PY.TEST_FAILED",
+            "file": "tests/test_iap_auth.py",
+            "line": 2,
+            "message": "test_missing_iap_assertion_header_returns_401: stale assertion"
+          }
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "expect": {
+    "any_of": [
+      {
+        "status": "SUCCESS",
+        "main_lacks": [
+          "tests/test_iap_auth.py"
+        ],
+        "max_qa_attempts": 2
+      },
+      {
+        "status": "STOPPED",
+        "reason": "QA_FINDING_ON_UNOWNED_FILE",
+        "max_generations": 1
+      }
+    ],
+    "never_plan_reasons": [
+      "FINDING_NOT_ON_A_DRAFT_FILE"
+    ]
+  }
+}

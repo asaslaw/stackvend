@@ -1,0 +1,108 @@
+{
+  "title": "Plan error in the developer's own custom.tf: one developer remediation, then the deploy succeeds",
+  "source": "red-team R4 of SCENARIO-REPLAY-CORPUS (11-14): positive control for the deploy owner router",
+  "mechanism": "control for G1: an over-blocking allow-list (lost route, digest mismatch) must not stay green",
+  "product_id": "custom-plan-demo",
+  "trace": "trace-custom-plan",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "custom-plan-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "custom-plan-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "HTTP service",
+      "target_files": [
+        "apps/custom-plan-demo/main.py"
+      ]
+    },
+    {
+      "task_id": "IAC-01",
+      "title": "uploads bucket",
+      "target_files": [
+        "infra/workload/custom.tf"
+      ]
+    }
+  ],
+  "drafts": {
+    "build": {
+      "apps/custom-plan-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/custom-plan-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/custom-plan-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n",
+      "infra/workload/custom.tf": "resource \"google_storage_bucket\" \"uploads\" {\n  name                        = \"${var.product_id}-uploads\"\n  location                    = var.region\n  uniform_bucket_level_access = true\n}\n\nresource \"google_storage_bucket_object\" \"seed\" {\n  for_each = toset([google_storage_bucket.uploads.url])\n  name     = \"seed.txt\"\n  bucket   = google_storage_bucket.uploads.name\n  content  = \"seed\"\n}\n"
+    },
+    "fixed": {
+      "apps/custom-plan-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/custom-plan-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/custom-plan-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n",
+      "infra/workload/custom.tf": "resource \"google_storage_bucket\" \"uploads\" {\n  name                        = \"${var.product_id}-uploads\"\n  location                    = var.region\n  uniform_bucket_level_access = true\n}\n\nresource \"google_storage_bucket_object\" \"seed\" {\n  name    = \"seed.txt\"\n  bucket  = google_storage_bucket.uploads.name\n  content = \"seed\"\n}\n"
+    }
+  },
+  "generations": [
+    "build",
+    "fixed",
+    "fixed"
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "deploy": {
+    "note": "attempts[n].result = the failed result before routing (what a server without the owner router sends: status FAILED, the engine's text, no class); engine_plan_stream = the read-only re-plan's `plan -json` stream of the same error. The terraform server's own routing code runs on them (tests/scenario_tf_route_child.py).",
+    "attempts": [
+      {
+        "result": {
+          "status": "FAILED",
+          "compliance_gate_phase": "plan",
+          "error": "Terraform apply failed: Error: Invalid for_each argument\n\n  on custom.tf line 8, in resource \"google_storage_bucket_object\" \"seed\"",
+          "lock_info": null,
+          "stdout": "",
+          "stderr": "Error: Invalid for_each argument"
+        },
+        "engine_plan_stream": "{\"type\": \"version\", \"terraform\": \"1.10.0\"}\n{\"type\": \"diagnostic\", \"diagnostic\": {\"severity\": \"error\", \"summary\": \"Invalid for_each argument\", \"address\": \"google_storage_bucket_object.seed\", \"range\": {\"filename\": \"custom.tf\", \"start\": {\"line\": 8, \"column\": 14}}}}"
+      },
+      {
+        "result": {
+          "status": "SUCCESS"
+        }
+      }
+    ]
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "stage": "deploy",
+      "developer_dispatches": 2,
+      "max_generations": 2
+    }
+  }
+}

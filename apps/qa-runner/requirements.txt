@@ -1,0 +1,5 @@
+# QA sandbox job (apps/qa-runner/sandbox_job.py) only: register row L3-PRB-d trimmed the old FastAPI runner's deps.
+# Everything else the job needs is the stdlib; pytest / pytest-timeout are installed per service into a fresh venv
+# from the package index (qa_toolchain_constraints.txt), never into this image.
+bandit>=1.7.8  # static phase security scan (`python -m bandit`, runner-owned qa_bandit.ini)
+packaging>=24.0  # sandbox_job.py: PEP 508 parsing of workload requirements (red-team F1)

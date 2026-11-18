@@ -1,0 +1,11 @@
+# Harness dependencies (FD-30). Since Step 1 every pin below is also in apps/orchestrator-gateway/requirements.txt,
+# so a venv with the AGENTS.md Setup requirements already has them (the `python -I` children import them from
+# the interpreter's site-packages). Optional override, next to the harness instead of the venv:
+#   pip install --target eval/.deps -r eval/requirements.txt      (eval/.deps is gitignored)
+# or point STACKVEND_EVAL_DEPS at another --target directory.
+# Every line is an exact pin, transitive dependencies included (RT finding 6). If a pin ever conflicts with
+# python-hcl2's own range, pip's resolver refuses the install (fail closed) instead of picking a version.
+python-hcl2==7.3.1   # structure only (module sources, providers, invariants); validity always comes from tofu
+lark==1.2.2          # python-hcl2's parser (range lark>=1,<2)
+regex==2026.9.29     # python-hcl2's other runtime dependency (regex>=2024.4.16; S1-0 pin, as eval/.deps holds)
+pyflakes==3.4.0      # undefined-name oracle for generated Python

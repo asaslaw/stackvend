@@ -1,0 +1,8 @@
+# CI gates and the hermetic test guard: changes need the repository owner's review (red-team F10). Effective once
+# branch protection "Require review from Code Owners" is enabled on main (owner setting).
+/.github/                         @asaslaw
+/conftest.py                      @asaslaw
+/pytest.ini                       @asaslaw
+/tests/conftest.py                @asaslaw
+/tests/hermetic_guard.py          @asaslaw
+/tests/hermetic_known_leaks.py    @asaslaw

@@ -1,0 +1,393 @@
+{
+ "id": "ex01-gatea-rerec-r1-control",
+ "summary": "Newest recorded set, example 01 run 1: valid control (cloudbuild named in prose only). Must pass unchanged.",
+ "source": {
+  "kind": "cassette",
+  "set": "20261111-GATEA-REREC-38609a1d",
+  "example": "01",
+  "run": 1,
+  "answer_index": 0,
+  "answer": "first ArchitectAgent._single_turn_decompose answer",
+  "model": "gemini-3.8-flash"
+ },
+ "anonymized": "recorded eval cassette (public example spec); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block nulled.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": []
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "test-01-event-router",
+  "project_tier": 1,
+  "summary": "Deploy a lightweight, serverless webhook ingestion and asynchronous event router on Cloud Run with Pub/Sub, Cloud Storage, and Firestore.",
+  "architecture_overview": "A single Cloud Run v2 service serves public webhook ingestion via POST /api/v1/events and internal async task execution via POST /api/v1/tasks/process. Ingested events are validated and published to Pub/Sub topic 'test-events-inbound'. A Pub/Sub push subscription delivers messages to the task processing endpoint, which archives raw event JSON to a regional GCS bucket with a 7-day lifecycle deletion rule and writes audit records to Firestore collection 'event_audit_records'. Scaling is configured for 0 to 3 instances for optimal cost-efficiency.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable Required Google Cloud APIs",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Declare google_project_service resources for Cloud Run, Pub/Sub, Cloud Storage, Firestore, Cloud Build, Artifact Registry, and IAM APIs with disable_on_destroy set to false.",
+    "acceptance_criteria": [
+     "APIs declared in main.tf",
+     "disable_on_destroy set to false"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Pub/Sub Topic, Storage Bucket, and Firestore Database",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Provision Pub/Sub topic 'test-events-inbound', regional GCS bucket with a 7-day auto-deletion lifecycle rule, and Firestore Native default database.",
+    "acceptance_criteria": [
+     "Pub/Sub topic configured",
+     "GCS bucket has lifecycle rule with age 7 days",
+     "Firestore native database declared"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Configure Service Account and IAM Bindings",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Create dedicated workload service account with roles/pubsub.publisher, roles/storage.objectAdmin, and roles/datastore.user.",
+    "acceptance_criteria": [
+     "Service account declared with least-privilege IAM roles"
+    ],
+    "depends_on": [
+     "INFRA-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Provision Cloud Run v2 Service and Pub/Sub Push Subscription",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Provision Cloud Run v2 service with min_instances=0, max_instances=3, 256MiB memory, and 0.5 vCPU. Configure Pub/Sub push subscription targeting /api/v1/tasks/process with service account authentication.",
+    "acceptance_criteria": [
+     "Cloud Run service declared with min=0, max=3 instances",
+     "Push subscription configured targeting /api/v1/tasks/process"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement Webhook Ingestion, Task Processing, and Health Endpoints",
+    "category": "CODE",
+    "target_files": [
+     "apps/test-01-event-router/main.py",
+     "apps/test-01-event-router/requirements.txt",
+     "apps/test-01-event-router/Procfile",
+     "apps/test-01-event-router/.python-version"
+    ],
+    "description": "Build FastAPI service with GET /health returning status, service name, and engine. Implement POST /api/v1/events with Pydantic validation for event_type, source_system, payload, and timestamp, publishing to Pub/Sub. Implement POST /api/v1/tasks/process to decode Pub/Sub envelope, archive raw payload to GCS bucket at events/{year}/{month}/{event_id}.json, and write metadata to Firestore collection 'event_audit_records'.",
+    "acceptance_criteria": [
+     "GET /health returns 200 with expected JSON payload",
+     "POST /api/v1/events validates payload and publishes to Pub/Sub returning 202",
+     "POST /api/v1/tasks/process writes to GCS and Firestore",
+     "Procfile configured for Google Cloud Native Buildpacks"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Configure GitHub Actions CI/CD Pipeline",
+    "category": "CODE",
+    "target_files": [
+     ".github/workflows/deploy-test-01-event-router.yml"
+    ],
+    "description": "Create deployment workflow triggering on changes to apps/test-01-event-router/**, building via Cloud Native Buildpacks and deploying to Cloud Run via Workload Identity Federation.",
+    "acceptance_criteria": [
+     "Workflow YAML valid with push path filters and WIF auth"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "MEDIUM"
+   },
+   {
+    "task_id": "CODE-03",
+    "title": "Implement Unit Test Suite",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_main.py",
+     "README.md"
+    ],
+    "description": "Develop 100% test coverage suite using pytest and FastAPI TestClient with mocked Google Cloud Pub/Sub, Storage, and Firestore clients.",
+    "acceptance_criteria": [
+     "Pytest suite passes with all routes covered and external GCP calls mocked"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   }
+  ],
+  "target_compute_services": [
+   "test-01-event-router"
+  ],
+  "compute_archetype": "cloudrun",
+  "service_topology": {
+   "services": [
+    {
+     "name": "test-01-event-router",
+     "kind": "cloudrun",
+     "purpose": "Lightweight serverless webhook ingestion and asynchronous event routing service handling event publishing and push-based processing.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 3,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    }
+   ],
+   "primary_service": "test-01-event-router",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_pubsub_topic",
+     "logical_name": "test_events_inbound",
+     "purpose": "Inbound topic for ingested webhook events",
+     "consumers": [
+      {
+       "service": "test-01-event-router",
+       "env_key": "PUBSUB_TOPIC_ID",
+       "attribute": null
+      }
+     ]
+    },
+    {
+     "type": "google_storage_bucket",
+     "logical_name": "event_payloads",
+     "purpose": "Regional GCS bucket with 7-day auto-deletion lifecycle rule for raw event JSON payloads",
+     "consumers": [
+      {
+       "service": "test-01-event-router",
+       "env_key": "EVENT_BUCKET_NAME",
+       "attribute": null
+      }
+     ]
+    },
+    {
+     "type": "google_firestore_database",
+     "logical_name": "default",
+     "purpose": "Firestore Native database for audit logging in event_audit_records collection",
+     "consumers": [
+      {
+       "service": "test-01-event-router",
+       "env_key": "FIRESTORE_DATABASE_ID",
+       "attribute": null
+      }
+     ]
+    }
+   ],
+   "pushes": [
+    {
+     "topic": "test_events_inbound",
+     "service": "test-01-event-router",
+     "path": "/api/v1/tasks/process"
+    }
+   ]
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "test-01-event-router",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "Initial Build Plan for Ephemeral Webhook & Async Pub/Sub Event Router",
+   "summary": "Provisions foundational APIs, Pub/Sub topic, regional GCS bucket, Firestore Native database, IAM bindings, Cloud Run service, and CI/CD pipelines.",
+   "created_at": null,
+   "total_steps": 7,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "run.googleapis.com",
+    "pubsub.googleapis.com",
+    "storage.googleapis.com",
+    "firestore.googleapis.com",
+    "iam.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-APIS",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Google Cloud Service APIs",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Enable all required GCP APIs via google_project_service.",
+     "acceptance_criteria": [
+      "All service APIs declared with disable_on_destroy = false"
+     ],
+     "depends_on": []
+    },
+    {
+     "step_id": "STEP-02-STORAGE-DATA",
+     "step_index": 2,
+     "category": "DATABASE",
+     "title": "Provision Storage, Pub/Sub, and Firestore Resources",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create Pub/Sub topic 'test-events-inbound', regional GCS bucket with 7-day auto-deletion lifecycle, and Firestore Native database.",
+     "acceptance_criteria": [
+      "Pub/Sub topic declared",
+      "GCS bucket configured with lifecycle age rule of 7 days",
+      "Firestore database created"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ]
+    },
+    {
+     "step_id": "STEP-03-IAM",
+     "step_index": 3,
+     "category": "IAM",
+     "title": "Provision Workload Service Account and IAM Roles",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create runtime service account with Pub/Sub publisher, GCS object admin, and Datastore user permissions.",
+     "acceptance_criteria": [
+      "Service account created and bound to pubsub.publisher, storage.objectAdmin, and datastore.user"
+     ],
+     "depends_on": [
+      "STEP-02-STORAGE-DATA"
+     ]
+    },
+    {
+     "step_id": "STEP-04-APP-CODE",
+     "step_index": 4,
+     "category": "APP_CODE",
+     "title": "Implement Microservice Application and Buildpack Config",
+     "target_files": [
+      "apps/test-01-event-router/main.py",
+      "apps/test-01-event-router/requirements.txt",
+      "apps/test-01-event-router/Procfile",
+      "apps/test-01-event-router/.python-version"
+     ],
+     "description": "Develop FastAPI routes for /health, POST /api/v1/events, and POST /api/v1/tasks/process along with Procfile for Google Cloud Native Buildpacks.",
+     "acceptance_criteria": [
+      "FastAPI application implemented under apps/test-01-event-router/",
+      "Procfile web process declared"
+     ],
+     "depends_on": [
+      "STEP-03-IAM"
+     ]
+    },
+    {
+     "step_id": "STEP-05-CICD",
+     "step_index": 5,
+     "category": "CICD",
+     "title": "Configure GitHub Actions CI/CD Pipeline",
+     "target_files": [
+      ".github/workflows/deploy-test-01-event-router.yml"
+     ],
+     "description": "Create GitHub Actions workflow authenticating via WIF and deploying to Cloud Run with path filtering.",
+     "acceptance_criteria": [
+      "GitHub Actions workflow configured with on.push.paths matching apps/test-01-event-router/**"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ]
+    },
+    {
+     "step_id": "STEP-06-COMPUTE",
+     "step_index": 6,
+     "category": "COMPUTE",
+     "title": "Provision Cloud Run v2 Service and Push Subscription",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Provision Cloud Run v2 service with min_instances=0 and max_instances=3, and wire the Pub/Sub push subscription to /api/v1/tasks/process.",
+     "acceptance_criteria": [
+      "Cloud Run v2 service declared with public invoker",
+      "Push subscription configured targeting /api/v1/tasks/process"
+     ],
+     "depends_on": [
+      "STEP-03-IAM",
+      "STEP-05-CICD"
+     ]
+    },
+    {
+     "step_id": "STEP-07-TESTS",
+     "step_index": 7,
+     "category": "TEST",
+     "title": "Implement Automated Unit Test Suite",
+     "target_files": [
+      "tests/test_main.py",
+      "README.md"
+     ],
+     "description": "Implement pytest test cases covering all endpoints with mock fixtures for Pub/Sub, Storage, and Firestore.",
+     "acceptance_criteria": [
+      "All unit tests pass with 100% branch and endpoint coverage"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ]
+    }
+   ]
+  },
+  "estimated_complexity": "LOW",
+  "requires_human_approval": false,
+  "risk_assessment": "Low risk tier-1 serverless workload utilizing scale-to-zero compute and free tier services. No destructive changes or heavy stateful databases involved.",
+  "requires_vpc": false,
+  "network_purpose": null,
+  "assigned_cidr_block": null,
+  "bundle_id": "event-driven-microservice",
+  "iac_engine": "tofu"
+ }
+}

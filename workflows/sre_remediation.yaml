@@ -1,0 +1,276 @@
+# ==============================================================================
+# STACKVEND: SRE INCIDENT REMEDIATION WORKFLOW (castor-sre-remediation)
+# ==============================================================================
+# Started by log-sre-sentinel-service for an incident it has RECORDED and allowed to dispatch:
+#   triage (sentinel /triage) -> incident spec Doc (workspace /create-incident-spec, optional)
+#   -> publish a remediation request to spec-intake-events (source_channel "sre_sentinel")
+#   -> the gateway's /events/pubsub-intake starts the main orchestrator with every service URL injected.
+#
+# Wave 2 lane 14 PR-2 (owner register row 24, plan docs/planning/wave2-lane14-core-services-plan.md section 2.5
+# item 8):
+# - every argument is read with map.get in init_incident (no KeyError is possible) and validate_args raises a typed
+#   StackVendPipelineError (error_class SRE_ARGS_MISSING) for the first missing one. The argument keys are pinned
+#   against apps/log-sre-sentinel/sentinel.py REMEDIATION_ARG_KEYS by tests/test_lane14_sre_workflow_args.py;
+# - no other step reads `args` (validate_args_object only checks that it is a map);
+# - the only execution mode accepted today is FULL_BUILD (tenant incidents). PLATFORM_REMEDIATION is added here only
+#   when lane 17 ships that mode in the main orchestrator (contract R17-3);
+# - failures inside the remediation are caught, reported to the sentinel (REMEDIATION_FAILED) and logged at WARNING,
+#   so they never re-enter the SRE error sink as ERROR entries (self-loop guard; the sentinel also records this
+#   workflow's own ERROR entries as record-only).
+# ==============================================================================
+
+main:
+  params: [args]
+  steps:
+    # A start without a JSON object argument (e.g. a manual `workflows run` with none: args is null) fails here with
+    # the typed SRE_ARGS_MISSING error instead of an untyped map.get TypeError (RT F5). The sentinel always sends
+    # all six keys.
+    - validate_args_object:
+        switch:
+          - condition: ${get_type(args) != "map"}
+            steps:
+              - raise_args_not_a_map:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "args"
+
+    - init_incident:
+        assign:
+          - trace_id: ${map.get(args, "trace_id")}
+          - incident_id: ${map.get(args, "incident_id")}
+          - sre_sentinel_url: ${map.get(args, "sre_sentinel_url")}
+          - workspace_mcp_url: ${map.get(args, "workspace_mcp_url")}
+          - spec_intake_topic: ${map.get(args, "spec_intake_topic")}
+          - execution_mode: ${map.get(args, "execution_mode")}
+
+    - validate_args:
+        switch:
+          - condition: ${default(trace_id, "") == ""}
+            steps:
+              - raise_missing_trace_id:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "trace_id"
+          - condition: ${default(incident_id, "") == ""}
+            steps:
+              - raise_missing_incident_id:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "incident_id"
+          - condition: ${default(sre_sentinel_url, "") == ""}
+            steps:
+              - raise_missing_sre_sentinel_url:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "sre_sentinel_url"
+          - condition: ${default(workspace_mcp_url, "") == ""}
+            steps:
+              - raise_missing_workspace_mcp_url:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "workspace_mcp_url"
+          - condition: ${default(spec_intake_topic, "") == ""}
+            steps:
+              - raise_missing_spec_intake_topic:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "spec_intake_topic"
+          - condition: ${default(execution_mode, "") == ""}
+            steps:
+              - raise_missing_execution_mode:
+                  raise:
+                    tag: "StackVendPipelineError"
+                    error_class: "SRE_ARGS_MISSING"
+                    key: "execution_mode"
+
+    - init_remediation_state:
+        assign:
+          - product_id: ""
+          - spec_text: ""
+          - spec_doc_id: ""
+          - publish_output: null
+
+    - remediate:
+        try:
+          steps:
+            # Only FULL_BUILD is accepted until lane 17 ships PLATFORM_REMEDIATION (contract R17-3).
+            - validate_execution_mode:
+                switch:
+                  - condition: ${execution_mode != "FULL_BUILD"}
+                    steps:
+                      - raise_mode_unsupported:
+                          raise:
+                            tag: "StackVendPipelineError"
+                            error_class: "SRE_MODE_UNSUPPORTED"
+                            execution_mode: ${execution_mode}
+
+            # Step 1: deterministic RCA + product id + spec text for the recorded incident
+            - execute_rca:
+                call: http.post
+                args:
+                  url: ${sre_sentinel_url + "/triage"}
+                  auth:
+                    type: OIDC
+                  body:
+                    trace_id: ${trace_id}
+                    incident_id: ${incident_id}
+                result: rca_output
+
+            - read_rca:
+                assign:
+                  - product_id: ${default(map.get(rca_output.body, "product_id"), "")}
+                  - spec_text: ${default(map.get(rca_output.body, "spec_text"), "")}
+
+            # product_id is the sentinel-resolved product, never a service name
+            - require_product:
+                switch:
+                  - condition: ${product_id == ""}
+                    steps:
+                      - raise_product_unresolved:
+                          raise:
+                            tag: "StackVendPipelineError"
+                            error_class: "SRE_PRODUCT_UNRESOLVED"
+                            incident_id: ${incident_id}
+
+            # Step 2: incident remediation Doc. 503 INCIDENT_TEMPLATE_NOT_CONFIGURED -> continue with spec_text only;
+            # any other failure goes to the except below.
+            - create_incident_ticket:
+                try:
+                  steps:
+                    - call_create_incident_spec:
+                        call: http.post
+                        args:
+                          url: ${workspace_mcp_url + "/create-incident-spec"}
+                          auth:
+                            type: OIDC
+                          body:
+                            trace_id: ${trace_id}
+                            incident_id: ${incident_id}
+                            product_id: ${product_id}
+                            severity: ${rca_output.body.severity}
+                            service_name: ${rca_output.body.service_name}
+                            stack_trace: ${rca_output.body.stack_trace}
+                            root_cause_summary: ${rca_output.body.root_cause_summary}
+                            affected_repository: ${rca_output.body.affected_repository}
+                        result: ticket_output
+                    - read_ticket:
+                        assign:
+                          - spec_doc_id: ${default(map.get(ticket_output.body, "document_id"), "")}
+                except:
+                  as: ticket_error
+                  steps:
+                    - check_ticket_status:
+                        switch:
+                          - condition: ${default(map.get(ticket_error, "code"), 0) != 503 or get_type(map.get(ticket_error, "body")) != "map"}
+                            steps:
+                              - reraise_ticket_error:
+                                  raise: ${ticket_error}
+                    - check_ticket_error_class:
+                        switch:
+                          - condition: ${default(map.get(ticket_error.body, "error_class"), "") != "INCIDENT_TEMPLATE_NOT_CONFIGURED"}
+                            steps:
+                              - reraise_ticket_error_class:
+                                  raise: ${ticket_error}
+                    - continue_without_doc:
+                        assign:
+                          - spec_doc_id: ""
+
+            # Step 3: publish the remediation request to the intake topic (same path a spec change takes).
+            - build_intake_message:
+                assign:
+                  - intake_message:
+                      product_id: ${product_id}
+                      trace_id: ${trace_id}
+                      incident_id: ${incident_id}
+                      source_channel: "sre_sentinel"
+                      execution_mode: ${execution_mode}
+                      require_plan_approval: true
+                      spec_doc_id: ${spec_doc_id}
+                      spec_text: ${spec_text}
+
+            - publish_intake:
+                call: googleapis.pubsub.v1.projects.topics.publish
+                args:
+                  topic: ${spec_intake_topic}
+                  body:
+                    messages:
+                      - data: ${base64.encode(json.encode(intake_message))}
+                result: publish_output
+        except:
+          as: e
+          steps:
+            - log_remediation_failure:
+                call: sys.log
+                args:
+                  severity: "WARNING"
+                  json:
+                    message: "castor-sre-remediation failed"
+                    incident_id: ${incident_id}
+                    trace_id: ${trace_id}
+                    error: ${e}
+            - report_failure_outcome:
+                try:
+                  call: http.post
+                  args:
+                    url: ${sre_sentinel_url + "/incidents/" + incident_id + "/outcome"}
+                    auth:
+                      type: OIDC
+                    body:
+                      outcome: "REMEDIATION_FAILED"
+                      error_class: ${default(map.get(e, "error_class"), "UNHANDLED")}
+                      detail: ${json.encode_to_string(e)}
+                except:
+                  as: failure_report_error
+                  steps:
+                    - log_failure_report_error:
+                        call: sys.log
+                        args:
+                          severity: "WARNING"
+                          json:
+                            message: "castor-sre-remediation could not report REMEDIATION_FAILED to the sentinel"
+                            incident_id: ${incident_id}
+                            error: ${failure_report_error}
+            - finish_failed:
+                return:
+                  status: "REMEDIATION_FAILED"
+                  trace_id: ${trace_id}
+                  incident_id: ${incident_id}
+                  error_class: ${default(map.get(e, "error_class"), "UNHANDLED")}
+
+    - report_published_outcome:
+        try:
+          call: http.post
+          args:
+            url: ${sre_sentinel_url + "/incidents/" + incident_id + "/outcome"}
+            auth:
+              type: OIDC
+            body:
+              outcome: "INTAKE_PUBLISHED"
+              error_class: ""
+              detail: ${spec_doc_id}
+        except:
+          as: published_report_error
+          steps:
+            - log_published_report_error:
+                call: sys.log
+                args:
+                  severity: "WARNING"
+                  json:
+                    message: "castor-sre-remediation could not report INTAKE_PUBLISHED to the sentinel"
+                    incident_id: ${incident_id}
+                    error: ${published_report_error}
+
+    - finish_incident_handling:
+        return:
+          status: "INTAKE_PUBLISHED"
+          trace_id: ${trace_id}
+          incident_id: ${incident_id}
+          product_id: ${product_id}
+          spec_doc_id: ${spec_doc_id}
+          message_ids: ${publish_output.messageIds}

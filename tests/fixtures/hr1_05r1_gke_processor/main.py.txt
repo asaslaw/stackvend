@@ -1,0 +1,256 @@
+import json
+import logging
+import os
+import signal
+import sys
+import threading
+import time
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, List, Optional, Tuple
+
+from google.cloud import firestore
+from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1.subscriber.message import Message
+
+# Configure structured JSON logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "name": "%(name)s", "message": "%(message)s"}',
+)
+logger = logging.getLogger("gke_processor")
+
+PROJECT_ID = os.getenv("PROJECT_ID", os.getenv("GCP_PROJECT_ID", ""))
+PUBSUB_SUBSCRIPTION_ID = os.getenv("PUBSUB_SUBSCRIPTION_ID", "fleet-stream-sub")
+FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "fleet_analytics")
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50"))
+FLUSH_INTERVAL_SECONDS = float(os.getenv("FLUSH_INTERVAL_SECONDS", "5.0"))
+PORT = int(os.getenv("PORT", "8080"))
+
+
+class HealthHttpServer(BaseHTTPRequestHandler):
+    """HTTP Server providing liveness and readiness probes for GKE Autopilot."""
+
+    def do_GET(self) -> None:
+        if self.path in ["/healthz", "/health", "/"]:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            payload = json.dumps({
+                "status": "healthy",
+                "service": "gke-processor",
+                "subscription": PUBSUB_SUBSCRIPTION_ID,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            self.wfile.write(payload.encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format: str, *args: Any) -> None:
+        # Suppress standard logging to prevent noise in structured logs
+        pass
+
+
+class StreamProcessor:
+    """Pulls continuous streaming metrics from fleet-stream subscription and writes rolling aggregates to Firestore fleet_analytics."""
+
+    def __init__(self) -> None:
+        self.running = True
+        self.buffer_lock = threading.Lock()
+        self.pending_records: List[Tuple[Message, Dict[str, Any]]] = []
+        self.last_flush_time = time.time()
+
+        if PROJECT_ID:
+            self.db = firestore.Client(project=PROJECT_ID)
+            self.subscriber = pubsub_v1.SubscriberClient()
+            self.subscription_path = self.subscriber.subscription_path(
+                PROJECT_ID, PUBSUB_SUBSCRIPTION_ID
+            )
+        else:
+            self.db = firestore.Client()
+            self.subscriber = pubsub_v1.SubscriberClient()
+            self.subscription_path = PUBSUB_SUBSCRIPTION_ID
+
+        self.http_server: Optional[HTTPServer] = None
+        self.streaming_pull_future = None
+
+    def start_health_server(self) -> None:
+        def run_server() -> None:
+            self.http_server = HTTPServer(("0.0.0.0", PORT), HealthHttpServer)
+            logger.info(f"Health probe server running on port {PORT}")
+            try:
+                self.http_server.serve_forever()
+            except Exception as e:
+                logger.warning(f"Health probe server terminated: {e}")
+
+        thread = threading.Thread(target=run_server, daemon=True)
+        thread.start()
+
+    def _parse_message(self, message: Message) -> Optional[Dict[str, Any]]:
+        try:
+            raw_data = message.data.decode("utf-8")
+            data = json.loads(raw_data)
+            return data
+        except Exception as err:
+            logger.error(f"Failed to parse Pub/Sub message data: {err}")
+            message.ack()
+            return None
+
+    def message_callback(self, message: Message) -> None:
+        if not self.running:
+            message.nack()
+            return
+
+        data = self._parse_message(message)
+        if data is None:
+            return
+
+        with self.buffer_lock:
+            self.pending_records.append((message, data))
+            current_count = len(self.pending_records)
+
+        if current_count >= BATCH_SIZE:
+            self.flush_buffer()
+
+    def flush_buffer(self) -> None:
+        with self.buffer_lock:
+            if not self.pending_records:
+                self.last_flush_time = time.time()
+                return
+            batch_to_process = list(self.pending_records)
+            self.pending_records.clear()
+            self.last_flush_time = time.time()
+
+        logger.info(f"Flushing {len(batch_to_process)} records to Firestore")
+
+        # Compute rolling aggregates per key/bucket
+        aggregates: Dict[str, Dict[str, Any]] = {}
+        now_iso = datetime.now(timezone.utc).isoformat()
+        hour_bucket = datetime.now(timezone.utc).strftime("%Y%m%d%H")
+
+        for _, record in batch_to_process:
+            # Handle CloudEvents / BaseEventEnvelope payload extraction
+            payload = record.get("payload", record)
+            metric_type = payload.get("metric_type", record.get("event_type", "general"))
+            val = payload.get("value", 1.0)
+            try:
+                num_val = float(val)
+            except (TypeError, ValueError):
+                num_val = 1.0
+
+            doc_id = f"{metric_type}_{hour_bucket}"
+            if doc_id not in aggregates:
+                aggregates[doc_id] = {
+                    "metric_type": metric_type,
+                    "time_bucket": hour_bucket,
+                    "count": 0,
+                    "sum": 0.0,
+                    "min": num_val,
+                    "max": num_val,
+                    "last_updated": now_iso,
+                }
+
+            agg = aggregates[doc_id]
+            agg["count"] += 1
+            agg["sum"] += num_val
+            agg["min"] = min(agg["min"], num_val)
+            agg["max"] = max(agg["max"], num_val)
+            agg["last_updated"] = now_iso
+
+        # Perform Firestore batched write
+        try:
+            firestore_batch = self.db.batch()
+            collection_ref = self.db.collection(FIRESTORE_COLLECTION)
+
+            for doc_id, agg_data in aggregates.items():
+                doc_ref = collection_ref.document(doc_id)
+                # Atomically increment rolling metrics using Firestore transforms
+                firestore_batch.set(
+                    doc_ref,
+                    {
+                        "metric_type": agg_data["metric_type"],
+                        "time_bucket": agg_data["time_bucket"],
+                        "count": firestore.Increment(agg_data["count"]),
+                        "sum": firestore.Increment(agg_data["sum"]),
+                        "last_updated": agg_data["last_updated"],
+                        "last_processed_at": firestore.SERVER_TIMESTAMP,
+                    },
+                    merge=True,
+                )
+
+            firestore_batch.commit()
+
+            # Acknowledge messages after successful persistence
+            for msg, _ in batch_to_process:
+                msg.ack()
+
+            logger.info(f"Successfully committed {len(aggregates)} aggregate documents and acknowledged {len(batch_to_process)} messages")
+        except Exception as e:
+            logger.error(f"Error writing batch to Firestore: {e}", exc_info=True)
+            # Re-queue or nack messages so they can be re-delivered
+            for msg, _ in batch_to_process:
+                try:
+                    msg.nack()
+                except Exception:
+                    pass
+
+    def run(self) -> None:
+        self.start_health_server()
+        logger.info(f"Subscribing to {self.subscription_path}")
+
+        flow_control = pubsub_v1.types.FlowControlSettings(max_messages=1000)
+        self.streaming_pull_future = self.subscriber.subscribe(
+            self.subscription_path,
+            callback=self.message_callback,
+            flow_control=flow_control,
+        )
+
+        logger.info("Stream processor running; waiting for messages...")
+
+        while self.running:
+            time.sleep(1.0)
+            with self.buffer_lock:
+                has_pending = bool(self.pending_records)
+                elapsed = time.time() - self.last_flush_time
+
+            if has_pending and elapsed >= FLUSH_INTERVAL_SECONDS:
+                self.flush_buffer()
+
+    def shutdown(self, signum: int, frame: Any) -> None:
+        logger.info(f"Received signal {signum}. Initiating graceful termination...")
+        self.running = False
+
+        if self.streaming_pull_future:
+            try:
+                self.streaming_pull_future.cancel()
+                self.streaming_pull_future.result(timeout=5)
+            except Exception as e:
+                logger.warning(f"Subscription future cancellation notice: {e}")
+
+        # Flush any remaining messages before exiting
+        self.flush_buffer()
+
+        if self.http_server:
+            try:
+                self.http_server.shutdown()
+            except Exception as e:
+                logger.warning(f"HTTP Server shutdown notice: {e}")
+
+        logger.info("Stream processor graceful shutdown complete.")
+        sys.exit(0)
+
+
+def main() -> None:
+    processor = StreamProcessor()
+    signal.signal(signal.SIGINT, processor.shutdown)
+    signal.signal(signal.SIGTERM, processor.shutdown)
+    try:
+        processor.run()
+    except Exception as e:
+        logger.error(f"Fatal error in StreamProcessor: {e}", exc_info=True)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

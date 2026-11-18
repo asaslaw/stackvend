@@ -1,0 +1,15 @@
+{
+  "_comment": [
+    "Production gateway env profile for the generation child (red-team B7). Holds NO project, folder or secret values.",
+    "GEMINI_MODEL is deliberately absent: the model is a REQUIRED harness argument (--model) and is recorded in every",
+    "result, because the live install and the code/TF defaults disagree (FD-07 D1: live gemini-3.8-flash vs",
+    "infra/platform/main.tf gemini-3.7-flash) and the owner has not chosen.",
+    "Values must match the gateway Cloud Run service env in infra/platform/main.tf (tests/test_eval_prod_env.py).",
+    "Behavior flags the TF does not set (ENABLE_DEVELOPER_SWARM, ENABLE_DUAL_ARCHITECT_CONSENSUS, ARCHITECT_CRITIC_MODEL)",
+    "are left unset so the product's own defaults apply, exactly as in production."
+  ],
+  "env": {
+    "GEMINI_LOCATION": "global"
+  },
+  "unset_in_production": ["ENABLE_DEVELOPER_SWARM", "ENABLE_DUAL_ARCHITECT_CONSENSUS", "ARCHITECT_CRITIC_MODEL"]
+}

@@ -1,0 +1,104 @@
+{
+  "title": "Judge provider 504 on the primary model under the real Stage 2 time budget: the fallback model judges",
+  "source": "examples 08 / 09 live runs 11-13 (judge 504 / 429 on the primary model); review 11-13 section 2 QA-JUDGE-FALLBACK",
+  "mechanism": "M4 transient-dependency handling per call site (fixed by QA-JUDGE-FALLBACK, merged 11-13)",
+  "product_id": "judge-demo",
+  "trace": "trace-judge-fallback",
+  "models": {
+    "primary": "gemini-4-carbon",
+    "fallback": [
+      "gemini-4-argon"
+    ]
+  },
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "judge-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "judge-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "HTTP service",
+      "target_files": [
+        "apps/judge-demo/main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/judge-demo/main.py": "@main",
+      "apps/judge-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/judge-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": [
+    "build",
+    "build",
+    "build",
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "by_model": {
+          "gemini-4-carbon": [
+            {
+              "error": 504,
+              "latency_s": 120
+            }
+          ],
+          "*": [
+            {
+              "reply": {
+                "critical": []
+              }
+            }
+          ]
+        }
+      },
+      "adherence": {
+        "by_model": {
+          "gemini-4-carbon": [
+            {
+              "error": 504,
+              "latency_s": 120
+            }
+          ],
+          "*": [
+            {
+              "reply": {
+                "score": 1.0,
+                "missed": []
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1,
+      "judge_model_stamped": "gemini-4-argon"
+    }
+  }
+}

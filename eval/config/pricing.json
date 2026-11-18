@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "Per-model LLM price rows for the harness budget (red-team B6). Values are LIST USD per 1M tokens; the harness",
+    "charges ceiling = list x ceiling_multiplier. Output price applies to candidates + thinking tokens.",
+    "A call to a model with no row here is REFUSED (fail closed) and invalidates the run (unpriced_model).",
+    "verified=false: the row is from the harness author's knowledge, not checked against current Vertex pricing.",
+    "Live/record modes refuse to start while any row used by the configured cascade is unverified, unless",
+    "--accept-unverified-prices is passed. Owner: confirm against https://cloud.google.com/vertex-ai/generative-ai/pricing",
+    "and flip verified=true (or correct the numbers)."
+  ],
+  "ceiling_multiplier": 2.0,
+  "models": {
+    "gemini-3.8-flash": {"list_in_per_m": 0.50, "list_out_per_m": 4.00, "verified": false, "max_output_tokens": 65536,
+                         "note": "assumed (no published price known to author); conservative Flash-class guess"},
+    "gemini-3.7-flash": {"list_in_per_m": 0.50, "list_out_per_m": 4.00, "verified": false, "max_output_tokens": 65536,
+                         "note": "assumed (no published price known to author); conservative Flash-class guess"},
+    "gemini-2.5-flash": {"list_in_per_m": 0.30, "list_out_per_m": 2.50, "verified": false, "max_output_tokens": 65536},
+    "gemini-2.0-flash": {"list_in_per_m": 0.15, "list_out_per_m": 0.60, "verified": false, "max_output_tokens": 8192},
+    "gemini-4-argon": {"list_in_per_m": 4.00, "list_out_per_m": 20.00, "verified": false, "max_output_tokens": 32768,
+                       "note": "third-party source (owner 10-14 task): intro $2/$10 per M in/out to 2026-11-30, $4/$20 from 2026-12-01 (cached $0.10 -> $0.20). The harness has no dated rows, so the row carries the higher (2026-12-01) list price: the budget ceiling stays an upper bound on both sides of the switch. 32768 = non-streaming output cap (no long decode)."},
+    "gemini-4-carbon": {"list_in_per_m": 4.00, "list_out_per_m": 20.00, "verified": true, "max_output_tokens": 32768,
+                        "note": "Cloud Billing Catalog, Vertex AI, global online, effective 2026-11-10 (SKUs C47F-BE66-1A4E input, 1B77-85A0-B300 output; cached input $0.20). A launch discount, if any, is applied as credits and is not in the catalog. 32768 = the non-streaming output cap the platform uses for Carbon (Argon's; Carbon's own cap not measured)."}
+  }
+}

@@ -1,0 +1,40 @@
+# FD-4N (red-team H3, code RT F10): FLOOR, not an exact pin. Before this branch the CC declared fastapi>=0.110.0, so each
+# castor build resolved the newest release; an exact ==0.143.0 could silently DOWNGRADE the live image. The floor is the
+# version authz.iter_effective_routes and the startup self-check are verified on (FastAPI 0.13x+ wraps include_router in
+# _IncludedRouter). A newer FastAPI that changes route enumeration makes the boot self-check REFUSE to start (it requires
+# a non-empty APIRoute enumeration), so Cloud Run keeps the previous revision: fail closed, never open.
+fastapi>=0.143.0
+starlette>=1.7.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+jinja2>=3.1.3
+google-auth>=2.28.0
+requests>=2.31.0
+# shared/callbacks.py (lane 3 FD-4J validator) imports urllib3 directly; declared, not pinned (comes with requests).
+urllib3
+google-genai>=2.29.0,<3  # Argon compat 10-14: the assistant sends ThinkingConfig(thinking_level) to gemini-4-argon (2.29.0 has it)
+google-cloud-firestore>=2.15.0
+google-api-core>=2.15.0,<3  # L19-F4 RT R4: exceptions.FailedPrecondition on the access PATCH precondition write (already a firestore dependency)
+google-cloud-aiplatform>=1.44.0
+google-cloud-logging>=3.10.0
+google-cloud-storage>=2.16.0
+google-cloud-pubsub>=2.20.0
+httpx>=0.27.0
+google-api-python-client>=2.120.0
+PyGithub>=2.2.0
+cryptography>=42.0.0
+pyjwt>=2.8.0
+google-cloud-secret-manager>=2.18.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pypdf>=4.0.0
+python-multipart>=0.0.9
+dulwich>=0.21.7
+google-cloud-bigquery>=3.20.0
+# cc-module-inspector-parser: shared/module_inspector reads custom/golden module variables.tf / outputs.tf block
+# ranges with python-hcl2 (was a regex + brace counter). Exact pins = the gateway's and the terraform MCP's
+# (apps/orchestrator-gateway/requirements.txt); python-hcl2 and lark are pure Python, regex ships compiled wheels.
+python-hcl2==7.3.1
+lark==1.2.2          # python-hcl2's parser
+regex==2026.9.29     # python-hcl2 runtime dependency
+

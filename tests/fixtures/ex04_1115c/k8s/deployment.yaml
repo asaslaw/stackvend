@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ex04-1115
+  namespace: stream-apps
+  labels:
+    app: ex04-1115
+    app.kubernetes.io/name: ex04-1115
+    app.kubernetes.io/part-of: ex04-1115
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ex04-1115
+  template:
+    metadata:
+      labels:
+        app: ex04-1115
+        app.kubernetes.io/name: ex04-1115
+        app.kubernetes.io/part-of: ex04-1115
+    spec:
+      serviceAccountName: sa-stream-worker
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ex04-1115
+          image: us-central1-docker.pkg.dev/ex04-1115/ex04-1115/ex04-1115:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: PROJECT_ID
+              value: "ex04-1115"
+            - name: PUBSUB_SUBSCRIPTION
+              value: "stream-gke-sub"
+            - name: FIRESTORE_COLLECTION
+              value: "stream_metrics"
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

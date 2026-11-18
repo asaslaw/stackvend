@@ -1,0 +1,8 @@
+# Per-install init dirs created by scripts/apply.sh (TF_DATA_DIR=.terraform-<project_id>)
+.terraform-*/
+# FD-0A: provider versions are pinned exactly in providers.tf (works for OpenTofu and Terraform).
+# The dependency lock file is engine-specific (registry.opentofu.org vs registry.terraform.io),
+# so it is not committed; see docs/planning/wave1-lane5-safe-apply-plan.md (owner question).
+.terraform.lock.hcl
+# scripts/bootstrap.sh --overwrite-tfvars backups (same content class as <project_id>.tfvars)
+*.tfvars.bak-*

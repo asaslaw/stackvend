@@ -1,0 +1,258 @@
+{
+ "_source": "OpenTofu v1.9.0 darwin_arm64: tofu plan -refresh=false -out=tfplan && tofu show -json tfplan, over a hand-written local state (EXP-7 dry-run, no apply); resource_changes kept verbatim",
+ "format_version": "1.2",
+ "resource_changes": [
+  {
+   "action_reason": "replace_because_cannot_update",
+   "address": "terraform_data.cbd",
+   "change": {
+    "actions": [
+     "create",
+     "delete"
+    ],
+    "after": {
+     "input": "x",
+     "triggers_replace": "v2"
+    },
+    "after_sensitive": {},
+    "after_unknown": {
+     "id": true,
+     "output": true
+    },
+    "before": {
+     "id": "c1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": "v1"
+    },
+    "before_sensitive": {},
+    "replace_paths": [
+     [
+      "triggers_replace"
+     ]
+    ]
+   },
+   "mode": "managed",
+   "name": "cbd",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "address": "terraform_data.dep",
+   "change": {
+    "actions": [
+     "no-op"
+    ],
+    "after": {
+     "id": "d1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "after_sensitive": {},
+    "after_unknown": {},
+    "before": {
+     "id": "d1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "mode": "managed",
+   "name": "dep",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "address": "terraform_data.dep",
+   "change": {
+    "actions": [
+     "delete"
+    ],
+    "after": null,
+    "after_sensitive": false,
+    "after_unknown": {},
+    "before": {
+     "id": "d0",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "deposed": "00000001",
+   "mode": "managed",
+   "name": "dep",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "action_reason": "delete_because_no_resource_config",
+   "address": "terraform_data.gone",
+   "change": {
+    "actions": [
+     "delete"
+    ],
+    "after": null,
+    "after_sensitive": false,
+    "after_unknown": {},
+    "before": {
+     "id": "g1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "mode": "managed",
+   "name": "gone",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "address": "terraform_data.keep",
+   "change": {
+    "actions": [
+     "no-op"
+    ],
+    "after": {
+     "id": "k1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "after_sensitive": {},
+    "after_unknown": {},
+    "before": {
+     "id": "k1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "mode": "managed",
+   "name": "keep",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "address": "terraform_data.new",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "input": "x",
+     "triggers_replace": null
+    },
+    "after_sensitive": {},
+    "after_unknown": {
+     "id": true,
+     "output": true
+    },
+    "before": null,
+    "before_sensitive": false
+   },
+   "mode": "managed",
+   "name": "new",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "action_reason": "replace_because_cannot_update",
+   "address": "terraform_data.rep",
+   "change": {
+    "actions": [
+     "delete",
+     "create"
+    ],
+    "after": {
+     "input": "x",
+     "triggers_replace": "v2"
+    },
+    "after_sensitive": {},
+    "after_unknown": {
+     "id": true,
+     "output": true
+    },
+    "before": {
+     "id": "r1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": "v1"
+    },
+    "before_sensitive": {},
+    "replace_paths": [
+     [
+      "triggers_replace"
+     ]
+    ]
+   },
+   "mode": "managed",
+   "name": "rep",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "action_reason": "replace_because_tainted",
+   "address": "terraform_data.tainted",
+   "change": {
+    "actions": [
+     "delete",
+     "create"
+    ],
+    "after": {
+     "input": "x",
+     "triggers_replace": null
+    },
+    "after_sensitive": {},
+    "after_unknown": {
+     "id": true,
+     "output": true
+    },
+    "before": {
+     "id": "t1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "mode": "managed",
+   "name": "tainted",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  },
+  {
+   "address": "terraform_data.upd",
+   "change": {
+    "actions": [
+     "update"
+    ],
+    "after": {
+     "id": "u1",
+     "input": "changed",
+     "triggers_replace": null
+    },
+    "after_sensitive": {},
+    "after_unknown": {
+     "output": true
+    },
+    "before": {
+     "id": "u1",
+     "input": "x",
+     "output": "x",
+     "triggers_replace": null
+    },
+    "before_sensitive": {}
+   },
+   "mode": "managed",
+   "name": "upd",
+   "provider_name": "terraform.io/builtin/terraform",
+   "type": "terraform_data"
+  }
+ ],
+ "terraform_version": "1.9.0"
+}

@@ -1,0 +1,130 @@
+{
+  "title": "Public multi-service app: security findings on the platform-rendered services.tf and the generated deploy workflow",
+  "source": "example 02 live run 11-13 findings 2 and 3 (internal QA diagnosis)",
+  "mechanism": "M1 developer by default + M2 no single ownership model + M3 the security lens gets no platform facts (fixed by SECURITY-LENS-PLATFORM-FACTS, merged 11-13)",
+  "product_id": "mesh-demo",
+  "trace": "trace-mesh-security",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "service-a",
+        "kind": "cloudrun"
+      },
+      {
+        "name": "service-b",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "service-a",
+    "edges": [
+      {
+        "caller": "service-a",
+        "callee": "service-b",
+        "protocol": "http"
+      }
+    ],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "gateway service",
+      "target_files": [
+        "apps/service-a/main.py"
+      ]
+    },
+    {
+      "task_id": "CODE-02",
+      "title": "orders service",
+      "target_files": [
+        "apps/service-b/main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "a_main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\nSERVICE_B_URL = os.environ.get('SERVICE_B_URL', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "b_main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/service-a/main.py": "@a_main",
+      "apps/service-a/requirements.txt": "@requirements",
+      "apps/service-a/Procfile": "@procfile",
+      "apps/service-a/tests/__init__.py": "",
+      "apps/service-a/tests/test_service_a.py": "def test_a():\n    assert True\n",
+      "apps/service-b/main.py": "@b_main",
+      "apps/service-b/requirements.txt": "@requirements",
+      "apps/service-b/Procfile": "@procfile",
+      "apps/service-b/tests/__init__.py": "",
+      "apps/service-b/tests/test_service_b.py": "def test_b():\n    assert True\n",
+      "README.md": "# mesh-demo\n\nTwo services.\n"
+    }
+  },
+  "generations": [
+    "build",
+    "build",
+    "build",
+    "build"
+  ],
+  "platform_owned_paths": [
+    "infra/workload/services.tf",
+    ".github/workflows/deploy-service-b.yml"
+  ],
+  "sandbox": {
+    "tests_total": 49,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": [
+            {
+              "text": "module \"compute_service_b\" passes allow_unauthenticated = var.allow_unauthenticated (default true): the internal service-b is publicly invokable",
+              "file": "infra/workload/services.tf",
+              "schema_fields": {
+                "critical_vulnerability_facets": "PER_SERVICE_ACCESS"
+              }
+            },
+            {
+              "text": "deploy-service-b.yml runs gcloud run deploy service-b --allow-unauthenticated",
+              "file": ".github/workflows/deploy-service-b.yml",
+              "schema_fields": {
+                "critical_vulnerability_facets": "PER_SERVICE_ACCESS"
+              }
+            }
+          ]
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "expect": {
+    "any_of": [
+      {
+        "status": "SUCCESS",
+        "qa_attempts": 1,
+        "qa_record_mentions": "PER_SERVICE_ACCESS"
+      },
+      {
+        "status": "STOPPED",
+        "error_class": "PLATFORM_DEFECT",
+        "max_generations": 1
+      }
+    ],
+    "never_seed_files": [
+      "infra/workload/services.tf",
+      ".github/workflows/deploy-service-b.yml"
+    ]
+  }
+}

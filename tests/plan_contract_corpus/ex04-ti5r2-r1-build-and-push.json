@@ -1,0 +1,402 @@
+{
+ "id": "ex04-ti5r2-r1-build-and-push",
+ "summary": "Recorded set TI5R2-GATE-GEN, example 04 run 1, consensus re-plan answer: CODE-02 targets root cloudbuild.yaml and .github/workflows/build-and-push.yml (PLAN.PLATFORM_CI_FILE: a non-deploy workflow is flagged on every VCS kind); STEP-05-BUILD-IMAGE targets root cloudbuild.yaml and the platform deploy workflow (the deploy workflow passes).",
+ "source": {
+  "kind": "cassette",
+  "set": "20261026-TI5R2-GATE-GEN-1d224c72",
+  "example": "04",
+  "run": 1,
+  "answer_index": 1,
+  "answer": "second ArchitectAgent._single_turn_decompose answer (consensus remediation turn)",
+  "model": "gemini-3.8-flash"
+ },
+ "anonymized": "recorded eval cassette (public example spec); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block nulled.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": [
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": "cloudbuild.yaml",
+     "block_address": "code_tasks[CODE-02].target_files[0]"
+    },
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": ".github/workflows/build-and-push.yml",
+     "block_address": "code_tasks[CODE-02].target_files[1]"
+    },
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": "cloudbuild.yaml",
+     "block_address": "sequenced_build_plan.steps[STEP-05-BUILD-IMAGE].target_files[0]"
+    }
+   ]
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": [
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": ".github/workflows/build-and-push.yml",
+     "block_address": "code_tasks[CODE-02].target_files[1]"
+    }
+   ]
+  },
+  {
+   "vcs_kind": null,
+   "violations": [
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": ".github/workflows/build-and-push.yml",
+     "block_address": "code_tasks[CODE-02].target_files[1]"
+    }
+   ]
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "test-04-gke-stream-processor",
+  "project_tier": 2,
+  "summary": "Deploy a containerized Python asyncio stream processing workload on Google Kubernetes Engine (GKE) Autopilot in us-central1, integrating Cloud Pub/Sub, Workload Identity Federation, Artifact Registry, Cloud Buildpacks, and Firestore Native.",
+  "architecture_overview": "A GKE Autopilot cluster hosts the stream processing workload in namespace 'stream-apps'. Kubernetes Service Account 'sa-stream-worker' authenticates to Google Cloud APIs via Workload Identity Federation mapped to a least-privilege IAM service account (roles/pubsub.subscriber, roles/datastore.user). The Python asyncio worker pulls streaming events concurrently in batches of 50 from Pub/Sub subscription 'stream-gke-sub', aggregates metrics across 1-minute tumbling windows, and persists aggregate documents to Firestore collection 'stream_metrics'. Deployment manifests specify 1 replica (cpu: 250m, memory: 512Mi), liveness/readiness probes, and an HPA autoscaling to 2 pods at 80% CPU utilization. Application containers are built via Cloud Native Buildpacks and published to Artifact Registry before deployment to prevent ImagePullBackOff.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable Google Cloud Service APIs",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Enable required APIs including container.googleapis.com, artifactregistry.googleapis.com, pubsub.googleapis.com, firestore.googleapis.com, and cloudbuild.googleapis.com.",
+    "acceptance_criteria": [
+     "All service APIs declared with disable_on_destroy = false"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Artifact Registry, Pub/Sub, and Firestore Native",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Create Artifact Registry Docker repository 'stream-workloads', Pub/Sub topic 'stream-ingest-topic', pull subscription 'stream-gke-sub' (max 5 delivery attempts), and Firestore Native database.",
+    "acceptance_criteria": [
+     "Artifact Registry repo provisioned",
+     "Pub/Sub topic and subscription created",
+     "Firestore database initialized"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Configure Workload Identity IAM Service Account & Role Bindings",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Create dedicated Google Service Account with roles/pubsub.subscriber and roles/datastore.user, granting roles/iam.workloadIdentityUser to serviceAccount:PROJECT_ID.svc.id.goog[stream-apps/sa-stream-worker].",
+    "acceptance_criteria": [
+     "Workload Identity binding declared without static credentials",
+     "Least privilege roles bound"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Provision GKE Autopilot Cluster and Kubernetes Manifests",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Deploy GKE Autopilot cluster with Workload Identity enabled, synthesize and apply Kubernetes manifests for namespace 'stream-apps', KSA 'sa-stream-worker', Deployment 'stream-processor-deployment' referencing the built image from Artifact Registry, and HPA target of 80% CPU (max 2 replicas).",
+    "acceptance_criteria": [
+     "GKE Autopilot cluster deployed",
+     "Deployment image matches Artifact Registry build",
+     "Namespace, KSA, Deployment, and HPA synthesized"
+    ],
+    "depends_on": [
+     "INFRA-02",
+     "INFRA-03",
+     "CODE-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement Asyncio Pub/Sub Stream Worker & Firestore Aggregator",
+    "category": "CODE",
+    "target_files": [
+     "apps/test-04-gke-stream-processor/main.py",
+     "apps/test-04-gke-stream-processor/requirements.txt",
+     "apps/test-04-gke-stream-processor/Procfile",
+     "apps/test-04-gke-stream-processor/.python-version"
+    ],
+    "description": "Implement Python asyncio streaming worker using google-cloud-pubsub and google-cloud-firestore. Handle streaming batches of up to 50 events concurrently, aggregate throughput, latency, and error rate over 1-minute tumbling windows, persist summaries to 'stream_metrics', and provide HTTP liveness/readiness health probes on port 8080.",
+    "acceptance_criteria": [
+     "Asyncio worker consumes batches concurrently",
+     "1-minute tumbling window metrics persisted to Firestore",
+     "HTTP health probe endpoints return 200 OK"
+    ],
+    "depends_on": [],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Build & Publish Stream Worker Container Image via Cloud Buildpacks",
+    "category": "RELEASE",
+    "target_files": [
+     "cloudbuild.yaml",
+     ".github/workflows/build-and-push.yml"
+    ],
+    "description": "Package the Python stream processing worker via Cloud Native Buildpacks and publish the resulting container image to Artifact Registry repository 'stream-workloads' so it is available before Kubernetes manifests deploy.",
+    "acceptance_criteria": [
+     "Container image built successfully via Buildpacks",
+     "Image pushed to Artifact Registry repository"
+    ],
+    "depends_on": [
+     "CODE-01",
+     "INFRA-02"
+    ],
+    "assigned_agent": "release-engineer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-03",
+    "title": "Implement Unit & Integration Tests for Stream Processing Pipeline",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_stream_worker.py",
+     "README.md"
+    ],
+    "description": "Develop pytest test suite with mock fixtures for Pub/Sub async pull streaming, tumbling window aggregation logic, and Firestore client persistence with 100% passing rate.",
+    "acceptance_criteria": [
+     "All pytest unit tests pass with mocked GCP clients",
+     "Health probe responses validated"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "MEDIUM"
+   }
+  ],
+  "target_compute_services": [
+   "test-04-gke-stream-processor"
+  ],
+  "compute_archetype": "gke-autopilot",
+  "service_topology": {
+   "services": [
+    {
+     "name": "test-04-gke-stream-processor",
+     "kind": "gke-autopilot",
+     "purpose": "Asyncio stream processor running on GKE Autopilot consuming from Pub/Sub and writing metrics to Firestore."
+    }
+   ],
+   "primary_service": "test-04-gke-stream-processor",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_pubsub_subscription",
+     "logical_name": "stream_gke_sub",
+     "purpose": "Pub/Sub pull subscription for streaming event consumption",
+     "consumers": [
+      {
+       "service": "test-04-gke-stream-processor",
+       "env_key": "PUBSUB_SUBSCRIPTION_ID"
+      }
+     ]
+    },
+    {
+     "type": "google_firestore_database",
+     "logical_name": "stream_metrics_db",
+     "purpose": "Firestore Native database storing aggregated time-series stream metrics",
+     "consumers": [
+      {
+       "service": "test-04-gke-stream-processor",
+       "env_key": "FIRESTORE_DATABASE_ID"
+      }
+     ]
+    }
+   ]
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "test-04-gke-stream-processor",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "Provision GKE Autopilot Stream Processing Cluster with Workload Identity",
+   "summary": "Deploy Artifact Registry, Pub/Sub, Firestore, and GKE Autopilot cluster, package the stream worker with Cloud Native Buildpacks, and deploy Kubernetes Deployment with Workload Identity.",
+   "total_steps": 7,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "container.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "pubsub.googleapis.com",
+    "firestore.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "iam.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-APIS",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Google Cloud Service APIs",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Enable GKE, Artifact Registry, Pub/Sub, Firestore, Cloud Build, and IAM APIs.",
+     "acceptance_criteria": [
+      "All service APIs declared with disable_on_destroy = false"
+     ],
+     "depends_on": []
+    },
+    {
+     "step_id": "STEP-02-REGISTRY-DATA",
+     "step_index": 2,
+     "category": "REGISTRY",
+     "title": "Provision Artifact Registry, Pub/Sub, and Firestore Native",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create Artifact Registry Docker repository 'stream-workloads', Pub/Sub topic 'stream-ingest-topic', pull subscription 'stream-gke-sub', and Firestore Native database.",
+     "acceptance_criteria": [
+      "Artifact Registry repository created",
+      "Pub/Sub topic and pull subscription provisioned",
+      "Firestore initialized"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ]
+    },
+    {
+     "step_id": "STEP-03-IAM",
+     "step_index": 3,
+     "category": "IAM",
+     "title": "Provision Workload Identity IAM Service Account & Roles",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Provision dedicated GCP service account, bind roles/pubsub.subscriber and roles/datastore.user, and configure Workload Identity User binding to stream-apps/sa-stream-worker.",
+     "acceptance_criteria": [
+      "Service account created and bound to subscriber and datastore roles",
+      "Workload Identity user annotation binding declared"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ]
+    },
+    {
+     "step_id": "STEP-04-APP-CODE",
+     "step_index": 4,
+     "category": "APP_CODE",
+     "title": "Implement Asyncio Stream Worker & HTTP Probes",
+     "target_files": [
+      "apps/test-04-gke-stream-processor/main.py",
+      "apps/test-04-gke-stream-processor/requirements.txt",
+      "apps/test-04-gke-stream-processor/Procfile",
+      "apps/test-04-gke-stream-processor/.python-version"
+     ],
+     "description": "Develop Python asyncio streaming worker pulling from Pub/Sub, calculating tumbling window metrics, writing to Firestore, and exposing health probes on port 8080.",
+     "acceptance_criteria": [
+      "Application code implements concurrent batch processing",
+      "Firestore persistence logic completed",
+      "Procfile configured for Cloud Native Buildpacks"
+     ],
+     "depends_on": [
+      "STEP-03-IAM"
+     ]
+    },
+    {
+     "step_id": "STEP-05-BUILD-IMAGE",
+     "step_index": 5,
+     "category": "CICD",
+     "title": "Build and Publish Container Image to Artifact Registry",
+     "target_files": [
+      "cloudbuild.yaml",
+      ".github/workflows/deploy-test-04-gke-stream-processor.yml"
+     ],
+     "description": "Invoke Cloud Native Buildpacks via Cloud Build to build the container image from apps/test-04-gke-stream-processor and push to Artifact Registry prior to Kubernetes deployment.",
+     "acceptance_criteria": [
+      "Container image successfully built and tagged in Artifact Registry",
+      "Zero ImagePullBackOff risk"
+     ],
+     "depends_on": [
+      "STEP-02-REGISTRY-DATA",
+      "STEP-04-APP-CODE"
+     ]
+    },
+    {
+     "step_id": "STEP-06-COMPUTE",
+     "step_index": 6,
+     "category": "COMPUTE",
+     "title": "Provision GKE Autopilot Cluster and Kubernetes Manifests",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Provision GKE Autopilot cluster in us-central1 and apply manifests for namespace 'stream-apps', KSA 'sa-stream-worker' with Workload Identity annotation, Deployment referencing the published image, and HPA.",
+     "acceptance_criteria": [
+      "GKE Autopilot cluster deployed",
+      "Kubernetes manifests applied with 1 replica, health probes, and HPA at 80% CPU"
+     ],
+     "depends_on": [
+      "STEP-03-IAM",
+      "STEP-05-BUILD-IMAGE"
+     ]
+    },
+    {
+     "step_id": "STEP-07-TESTS",
+     "step_index": 7,
+     "category": "TEST",
+     "title": "Implement Unit & Integration QA Test Suite",
+     "target_files": [
+      "tests/test_stream_worker.py",
+      "README.md"
+     ],
+     "description": "Write automated pytest test cases mocking Pub/Sub streaming pull and Firestore writes.",
+     "acceptance_criteria": [
+      "All pytest unit tests pass with mock fixtures",
+      "Documentation updated"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ]
+    }
+   ],
+   "created_at": null
+  },
+  "estimated_complexity": "HIGH",
+  "requires_human_approval": false,
+  "risk_assessment": "GKE Autopilot cluster provisioning is heavy stateful and takes 10 to 15 minutes, requiring execution via tf-applier with extended timeout headroom. Container packaging via Cloud Buildpacks is placed in topological sequence before GKE manifest deployment to ensure the image exists in Artifact Registry, preventing ImagePullBackOff. Workload Identity eliminates static secret credentials.",
+  "requires_vpc": true,
+  "network_purpose": "WORKLOAD_SUBNET",
+  "assigned_cidr_block": null,
+  "bundle_id": "private-gke-microservices",
+  "iac_engine": "tofu"
+ }
+}

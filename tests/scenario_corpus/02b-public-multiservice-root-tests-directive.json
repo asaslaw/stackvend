@@ -1,0 +1,194 @@
+{
+  "title": "Multi-service app: the plan names root tests/ files; the platform puts them in apps/<svc>/tests/ (CODE-03)",
+  "source": "example 02 live run 11-13 findings 4 and 5: CODE-03 routed to README.md, three README-only repairs, budget exhausted",
+  "mechanism": "M3 the judge grades against a plan the platform has overridden + M1 developer by default (fixed by TEST-LAYOUT-PLATFORM-FACT, merged 11-13)",
+  "product_id": "mesh-demo",
+  "trace": "trace-mesh-layout",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "service-a",
+        "kind": "cloudrun"
+      },
+      {
+        "name": "service-b",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "service-a",
+    "edges": [
+      {
+        "caller": "service-a",
+        "callee": "service-b",
+        "protocol": "http"
+      }
+    ],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "gateway service",
+      "target_files": [
+        "apps/service-a/main.py"
+      ]
+    },
+    {
+      "task_id": "CODE-02",
+      "title": "orders service",
+      "target_files": [
+        "apps/service-b/main.py"
+      ]
+    },
+    {
+      "task_id": "CODE-03",
+      "title": "tests and README",
+      "target_files": [
+        "tests/test_service_a.py",
+        "tests/test_service_b.py",
+        "README.md"
+      ]
+    }
+  ],
+  "blobs": {
+    "a_main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\nSERVICE_B_URL = os.environ.get('SERVICE_B_URL', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "b_main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/service-a/main.py": "@a_main",
+      "apps/service-a/requirements.txt": "@requirements",
+      "apps/service-a/Procfile": "@procfile",
+      "apps/service-a/tests/__init__.py": "",
+      "apps/service-a/tests/test_service_a.py": "def test_a():\n    assert True\n",
+      "apps/service-b/main.py": "@b_main",
+      "apps/service-b/requirements.txt": "@requirements",
+      "apps/service-b/Procfile": "@procfile",
+      "apps/service-b/tests/__init__.py": "",
+      "apps/service-b/tests/test_service_b.py": "def test_b():\n    assert True\n",
+      "README.md": "# mesh-demo\n\nTwo services.\n"
+    }
+  },
+  "generations": [
+    "build",
+    "build",
+    "build",
+    "build"
+  ],
+  "repairs": [
+    {
+      "README.md": "# mesh-demo\n\nTwo services. Tests: tests/test_service_a.py, tests/test_service_b.py.\n"
+    },
+    {
+      "README.md": "# mesh-demo\n\nTwo services.\n"
+    },
+    {
+      "README.md": "# mesh-demo\n\nTwo services; tests live in apps/<service>/tests/.\n"
+    }
+  ],
+  "sandbox": {
+    "tests_total": 49,
+    "rules": []
+  },
+  "judge_note": "the judge words the same finding differently on every attempt (live: NO_PROGRESS never fired)",
+  "judge": {
+    "0": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.92,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "Task CODE-03 mandates target files tests/test_service_a.py and tests/test_service_b.py at the repository root",
+              "task_id": "CODE-03",
+              "file": null,
+              "withdraw_if_facts_mention": "multi-service test layout rule"
+            }
+          ]
+        }
+      }
+    },
+    "1": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.92,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "CODE-03: the root tests/test_service_a.py and tests/test_service_b.py named by the plan are missing",
+              "task_id": "CODE-03",
+              "file": null,
+              "withdraw_if_facts_mention": "multi-service test layout rule"
+            }
+          ]
+        }
+      }
+    },
+    "2": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.92,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "Missing repository-root test files tests/test_service_a.py and tests/test_service_b.py (task CODE-03)",
+              "task_id": "CODE-03",
+              "file": null,
+              "withdraw_if_facts_mention": "multi-service test layout rule"
+            }
+          ]
+        }
+      }
+    },
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.92,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "Plan task CODE-03 requires tests/test_service_a.py and tests/test_service_b.py; neither exists at the root",
+              "task_id": "CODE-03",
+              "file": null,
+              "withdraw_if_facts_mention": "multi-service test layout rule"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1
+    },
+    "never_seed_files": [
+      "README.md"
+    ]
+  }
+}

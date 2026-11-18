@@ -1,0 +1,134 @@
+{
+ "golden-app": {
+  "dir": true
+ },
+ "golden-app/.gitignore": {
+  "file": "b0f6b499b6db3c9f38760baa758e6e7dffa1b149a342b98e87c3cdc705a66102"
+ },
+ "golden-app/README.md": {
+  "file": "c896c0b8ba4e790f5d7b51f11715e54cc6b51a62ac5245d5762c3fe977c0a978"
+ },
+ "golden-app/apps": {
+  "dir": true
+ },
+ "golden-app/apps/api": {
+  "dir": true
+ },
+ "golden-app/apps/api/.python-version": {
+  "file": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d"
+ },
+ "golden-app/apps/api/Procfile": {
+  "file": "97acc9877af6f45ea53233917f98bcd82733376ab9618438d647b4bb15d4d7d4"
+ },
+ "golden-app/apps/api/main.py": {
+  "file": "be6b63d6fbceff86b03db0a311ac1d6465bce23fa49cb9ead1a424a41960e29c"
+ },
+ "golden-app/apps/api/main.tf": {
+  "file": "f1e5e2577981f2be707095c4ed1a21758e92ca8916cf61947abf4a40ae51a71e"
+ },
+ "golden-app/apps/api/modules": {
+  "dir": true
+ },
+ "golden-app/apps/api/modules/compute-cloudrun": {
+  "dir": true
+ },
+ "golden-app/apps/api/modules/compute-cloudrun/main.tf": {
+  "file": "f1e5e2577981f2be707095c4ed1a21758e92ca8916cf61947abf4a40ae51a71e"
+ },
+ "golden-app/apps/api/modules/compute-cloudrun/outputs.tf": {
+  "file": "c767736fe38a41e0cbc53eb1e4edc6f95d0feafa5a9f40c2e30db1af627485fe"
+ },
+ "golden-app/apps/api/modules/compute-cloudrun/variables.tf": {
+  "file": "37590c514361fa7011483b3a5959476d6ec15d7d775ef30f4f6c54b3a0ad35c0"
+ },
+ "golden-app/apps/api/outputs.tf": {
+  "file": "c767736fe38a41e0cbc53eb1e4edc6f95d0feafa5a9f40c2e30db1af627485fe"
+ },
+ "golden-app/apps/api/requirements.txt": {
+  "file": "e9af2913de609d1de45b2fbab270c5a77281543c4dab6d1dd182f221fd04f683"
+ },
+ "golden-app/apps/api/variables.tf": {
+  "file": "37590c514361fa7011483b3a5959476d6ec15d7d775ef30f4f6c54b3a0ad35c0"
+ },
+ "golden-app/apps/web": {
+  "dir": true
+ },
+ "golden-app/apps/web/app": {
+  "dir": true
+ },
+ "golden-app/apps/web/app/[id]": {
+  "dir": true
+ },
+ "golden-app/apps/web/app/[id]/page.tsx": {
+  "file": "d422de01f3e236adac4fe0bd52251cadc25060aa94954b748bcea02cff111ae5"
+ },
+ "golden-app/apps/web/main.tf": {
+  "file": "f1e5e2577981f2be707095c4ed1a21758e92ca8916cf61947abf4a40ae51a71e"
+ },
+ "golden-app/apps/web/modules": {
+  "dir": true
+ },
+ "golden-app/apps/web/modules/compute-cloudrun": {
+  "dir": true
+ },
+ "golden-app/apps/web/modules/compute-cloudrun/main.tf": {
+  "file": "f1e5e2577981f2be707095c4ed1a21758e92ca8916cf61947abf4a40ae51a71e"
+ },
+ "golden-app/apps/web/modules/compute-cloudrun/outputs.tf": {
+  "file": "c767736fe38a41e0cbc53eb1e4edc6f95d0feafa5a9f40c2e30db1af627485fe"
+ },
+ "golden-app/apps/web/modules/compute-cloudrun/variables.tf": {
+  "file": "37590c514361fa7011483b3a5959476d6ec15d7d775ef30f4f6c54b3a0ad35c0"
+ },
+ "golden-app/apps/web/outputs.tf": {
+  "file": "c767736fe38a41e0cbc53eb1e4edc6f95d0feafa5a9f40c2e30db1af627485fe"
+ },
+ "golden-app/apps/web/variables.tf": {
+  "file": "37590c514361fa7011483b3a5959476d6ec15d7d775ef30f4f6c54b3a0ad35c0"
+ },
+ "golden-app/backend.tf": {
+  "file": "ae3d2aca783e18f750199e9217d462f94fc01c94895a8845e67f8a443db41b9c"
+ },
+ "golden-app/infra": {
+  "dir": true
+ },
+ "golden-app/infra/modules": {
+  "dir": true
+ },
+ "golden-app/infra/modules/compute-cloudrun": {
+  "dir": true
+ },
+ "golden-app/infra/modules/compute-cloudrun/main.tf": {
+  "file": "c1a7b9bcaf3a53e456e987ab19782f5ad40f458586b5a87415e5dd56956a7a02"
+ },
+ "golden-app/infra/modules/compute-cloudrun/outputs.tf": {
+  "file": "b35641a074acad13d8fe45e36c5b42a6770482ceb61d5bba86e37737e4eed119"
+ },
+ "golden-app/infra/modules/compute-cloudrun/variables.tf": {
+  "file": "7060f436d97dd30d1b2a2a91cdf76b3bf541d9dfa6f7a68550e20b0c1399fd89"
+ },
+ "golden-app/infra/workload": {
+  "dir": true
+ },
+ "golden-app/infra/workload/.terraform.lock.hcl": {
+  "file": "e1ffba302318dc9e139df2488515a9a403945f9189bace2c7148e39cfbc48e68"
+ },
+ "golden-app/infra/workload/main.tf": {
+  "file": "25baec37501029feba53a197ccf947300ecd334a031a0e8eeb0c6663090fd8d5"
+ },
+ "golden-app/infra/workload/outputs.tf": {
+  "file": "99dd09d7c7fbdcc33d78c84b8a7903d5470c446c526db58d9fc3831da5770b2a"
+ },
+ "golden-app/infra/workload/terraform.tfvars": {
+  "file": "4934784d13d8eab1aaf881031d5dc0c4435ed6748041b2e41b5a0c3e7705c020"
+ },
+ "golden-app/infra/workload/variables.tf": {
+  "file": "7d4e38a191d42eb1f11d21b5908368084939e2dbb433dccc2ebe62da0e1a3f81"
+ },
+ "golden-app/modules": {
+  "link": "infra/modules"
+ },
+ "modules": {
+  "link": "<BASE>/auto-deploy/golden-app/infra/modules"
+ }
+}

@@ -1,0 +1,64 @@
+# ==============================================================================
+# STACKVEND: WORKLOAD FOUNDATION - BASE MODULE VARIABLES
+# ==============================================================================
+
+variable "project_id" {
+  description = "Target GCP Child Project ID"
+  type        = string
+}
+
+variable "region" {
+  description = "GCP Region for regional resources"
+  type        = string
+  default     = "us-central1"
+}
+
+variable "product_id" {
+  description = "Workload Product ID"
+  type        = string
+}
+
+variable "github_repo_full_name" {
+  description = "Full GitHub repository name in owner/repo form (e.g. example-org/example-workload)"
+  type        = string
+}
+
+variable "github_repository_id" {
+  description = "FD-4AT-c: GitHub's immutable numeric id of github_repo_full_name, resolved by vending and supplied by the platform at apply time (never by generated code). Empty = not pinned; the repository name + main-branch condition still applies."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.github_repository_id == "" || can(regex("^[1-9][0-9]*$", var.github_repository_id))
+    error_message = "github_repository_id must be empty or GitHub's numeric repository id (digits only)."
+  }
+}
+
+variable "base_apis" {
+  description = "Foundational GCP APIs required by all StackVend workloads"
+  type        = list(string)
+  default = [
+    "run.googleapis.com",
+    "firestore.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "iam.googleapis.com",
+    "identitytoolkit.googleapis.com",
+    "iap.googleapis.com",
+    "pubsub.googleapis.com",
+    "storage.googleapis.com",
+  ]
+}
+
+variable "additional_apis" {
+  description = "Extra GCP APIs requested by custom extensions in custom.tf"
+  type        = list(string)
+  default     = []
+}
+
+variable "firestore_delete_protection" {
+  description = "Enable delete protection on the workload Firestore database (FD-4AZ: on by default). Set false explicitly only for an ephemeral workload."
+  type        = bool
+  default     = true
+}

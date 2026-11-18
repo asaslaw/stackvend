@@ -1,0 +1,6 @@
+{
+  "_comment": "F821/F811 fingerprints (path|code|symbol: count) accepted on main. May only shrink. Regenerate with: python .github/scripts/ruff_ratchet.py --update",
+  "select": "F821,F811",
+  "total": 0,
+  "fingerprints": {}
+}

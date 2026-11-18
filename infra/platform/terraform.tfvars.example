@@ -1,0 +1,113 @@
+# Example configuration values for the StackVend platform (host project)
+# Copy this file to infra/platform/<your-project-id>.tfvars (gitignored) and populate it.
+# scripts/apply.sh selects it by project id (PROJECT_ID=<id> bash scripts/apply.sh plan)
+# and refuses to run if its project_id differs from the target.
+# Safe to copy as is apart from the placeholders you must replace (project, org, billing, folder, people):
+# authenticated Direct IAP ingress (the installer's default) and no Cloud Build triggers.
+# Fresh project: PROJECT_ID=<id> bash scripts/apply.sh init, then apply (documentation/quickstart.md).
+
+project_id                         = "your-gcp-project-id"
+region                             = "us-central1"
+zone                               = "us-central1-a"
+organization_id                    = "organizations/012345678901"
+billing_account_id                 = "01XXXX-XXXXXX-XXXXXX"
+castor_managed_workloads_folder_id = "folders/012345678901"
+environment                        = "prod"
+github_owner                       = "your-github-organization"    # The default owner of vended workload repositories (an organization)
+workloads_github_owner             = "your-github-org-name"        # Where vended workload repositories are created
+platform_github_repo               = "your-github-username/your-platform-repo" # Control Center GITHUB_REPO (<owner>/<repo>); "" = unset
+cc_google_oauth_client_id          = ""                             # Control Center's own Web OAuth client ID: not needed behind Direct IAP (Option A below); public ingress (Option B) needs one, e.g. "123456789012-yourclientid.apps.googleusercontent.com"
+tenant_google_client_id            = ""                             # SECOND OAuth client, tenant Google sign-in only; must differ from cc_google_oauth_client_id; its secret goes to Secret Manager via bootstrap.sh, never here
+# Google Drive Intake Configuration (Optional Extension - disabled by default)
+# enable_drive_spec_polling           = false
+# google_drive_intake_folder_ids      = ""
+# google_drive_in_progress_folder_ids = ""
+# google_drive_completed_folder_ids   = ""
+
+# ------------------------------------------------------------------------------
+# Ingress Security Posture & Authentication (Plan 12)
+# ------------------------------------------------------------------------------
+# Set allow_unauthenticated explicitly: the variable's own default is true (public), kept for older installs.
+# Option A (active, recommended; the installer's default): Enterprise Authenticated (Google Direct IAP).
+# Replace the principals with real ones (an unknown user fails the apply); list yourself first.
+allow_unauthenticated = false
+authorized_invoker_members = [
+  "user:admin@example.com",
+  # "group:stackvend-admins@example.com",
+  # "domain:example.com",
+]
+enable_direct_iap = true
+# control_center_ingress_traffic = "INGRESS_TRAFFIC_ALL"
+# admin_email: bare email (no user: prefix) of the Control Center bootstrap admin.
+admin_email = "admin@example.com"
+
+# Option B: Public Sandbox (allUsers invocation with in-app Google sign-in only; short-lived evaluation only).
+# Also set cc_google_oauth_client_id above (OAuth consent screen + Web client: documentation/quickstart.md).
+# allow_unauthenticated      = true
+# authorized_invoker_members = []
+# enable_direct_iap          = false
+
+# ------------------------------------------------------------------------------
+# Version Control System (VCS) Configuration
+# ------------------------------------------------------------------------------
+# Option A: GitHub Commercial Default (Requires GitHub Account/Org + PAT)
+vcs_provider      = "GITHUB"
+deploy_git_server = false
+
+# Option B: Serverless Git (100% GCP Native / Zero Third-Party SaaS / $0 Idle)
+# vcs_provider      = "SERVERLESS_GIT"
+# deploy_git_server = true
+# github_owner      = ""
+
+# ------------------------------------------------------------------------------
+# Models and optional keys
+# ------------------------------------------------------------------------------
+# gemini_model                  = "gemini-3.7-flash"  # GEMINI_MODEL env on services + jobs: used only when a role's Settings model is empty, or the settings cannot be read / a stored id was reset; agents use Settings (new installs: gemini-4-carbon)
+# gemini_model_overrides        = {}                  # e.g. { "orchestrator-gateway-service" = "..." }
+# cloud_run_min_instances       = { "mcp-terraform-server" = 1 }  # default {} (all scale to zero; owner 10-13); this line keeps one warm terraform server (~$115/month)
+# cc_gemini_api_key_from_secret = false               # true only when castor-gemini-api-key has a version
+# grant_devops_workloads_folder_editor = false        # FD-49: folder-wide roles/editor (off by default)
+
+# ------------------------------------------------------------------------------
+# Terraform runner identity (FD-7L / FD-7L-n; infra/platform/tf_runner_identity.tf)
+# ------------------------------------------------------------------------------
+# scripts/bootstrap.sh writes PER_WORKLOAD + true for every new install (Per workload from its first apply). An existing
+# install whose tfvars does not set them stays PLATFORM (Shared, the variables.tf default) until an operator moves it:
+# Settings switch, runner identity backfill, then tf_runner_dedicated_sa = true (step B; scripts/apply.sh checks readiness).
+# tf_runner_identity       = "PER_WORKLOAD"  # or "PLATFORM" (Shared: the platform's account; variables.tf default)
+# tf_runner_dedicated_sa   = true            # step B; false = both runners on sa-castor-developer (rollback lever)
+# tf_runner_vending_act_as = false           # only if Phase 0 shows running the job with overrides needs act-as
+
+# ------------------------------------------------------------------------------
+# Self-update: the "Update StackVend" upgrader (SELFUP-B; infra/platform/platform_upgrader.tf)
+# ------------------------------------------------------------------------------
+# scripts/bootstrap.sh writes true for every new install. An existing install whose tfvars does not set it has no
+# upgrader (false, the variables.tf default) until an operator sets it and runs scripts/apply.sh apply.
+# enable_platform_upgrader           = true   # once applied, never back to false; use the kill switch below
+# platform_upgrade_trigger_disabled  = false  # true = kill switch (the trigger starts nothing)
+# platform_upgrade_approval_required = true   # every upgrade build waits for console approval
+
+# ------------------------------------------------------------------------------
+# Platform network: internal-only host services (HOST-VPC-EGRESS / HOST-INTERNAL-INGRESS; infra/platform/host_network.tf)
+# ------------------------------------------------------------------------------
+# scripts/bootstrap.sh writes host_vpc_egress = true and host_internal_ingress = true for a new install (internal-only
+# from its first apply). The variables.tf default of host_internal_ingress is false. A new install can set both in its
+# first apply (no services in state yet); an existing install turns host_internal_ingress on with its own apply once
+# host_vpc_egress (the variables.tf default, true) is applied (scripts/apply.sh refuses both in one apply on an install
+# whose services are already in state). The Control Center keeps control_center_ingress_traffic.
+# host_vpc_egress         = true   # stackvend-host network + Direct VPC egress on every host service/job except the QA job
+# host_internal_ingress   = true   # every host service except the Control Center: INGRESS_TRAFFIC_INTERNAL_ONLY
+# host_egress_subnet_cidr = "<IPAM reservation>"  # default = shared/ipam.py PLATFORM_RESERVED_CIDRS; override only if you peer the network
+# host_psc_endpoint_ip    = "<IPAM reservation>"  # default = shared/ipam.py PLATFORM_RESERVED_CIDRS (a /32)
+# host_egress_mode        = "PSC_PRIVATE_RANGES"  # Design B (default); "NAT_ALL_TRAFFIC" = Design A (Cloud NAT)
+# host_network_deployer_grants = false             # true only if deploys are refused on compute.subnetworks.*
+
+# ------------------------------------------------------------------------------
+# Data Access audit logs on the host project (documentation/configuration.md)
+# ------------------------------------------------------------------------------
+# Default {}: none, no cost. Billed as Cloud Logging volume when on. Removing an entry later is a delete: the apply needs
+# --allow-destroy=<project_id>. Firestore's audit configuration uses the service name datastore.googleapis.com.
+# host_data_access_audit_logs = {
+#   "datastore.googleapis.com"     = "DATA_WRITE"  # Firestore writes and deletes, every database in the project
+#   "secretmanager.googleapis.com" = "DATA_READ"   # reads of secret values
+# }

@@ -1,0 +1,92 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude sensitive tfvars files
+*.tfvars
+!*.tfvars.example
+*.tfvars.json
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+.pytest_cache/
+ENV/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+.claude/worktrees/
+
+# Lane 14 PR-8: Helm CLI staged at build/deploy time (never committed)
+mcp-servers/kubernetes/bin/
+.claude/settings.local.json
+
+# FD-7C P3a (SELFUP-VERSION-RECORD): release.json is written into each component by scripts/deploy-services.sh
+# before its build and removed after; never committed. One exact entry per component.
+/apps/control-center/release.json
+/apps/orchestrator-gateway/release.json
+/apps/project-vending/release.json
+/apps/log-sre-sentinel/release.json
+/apps/spec-ingestion/release.json
+/mcp-servers/terraform/release.json
+/mcp-servers/gcloud/release.json
+/mcp-servers/github/release.json
+/mcp-servers/workspace/release.json
+/mcp-servers/infracost/release.json
+/mcp-servers/compliance/release.json
+/mcp-servers/kubernetes/release.json
+/mcp-servers/agent-builder/release.json
+/apps/git-server/release.json
+/apps/refactor-scanner/release.json
+/apps/qa-runner/release.json
+/apps/finops-enforcer/release.json
+/apps/infra-rollback/release.json
+/apps/sandbox-cleaner/release.json
+/apps/sre-digest/release.json
+/apps/finops-spend-sync/release.json
+/apps/sandbox-sweeper/release.json
+/apps/billing-alert-drain/release.json

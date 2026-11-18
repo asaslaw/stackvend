@@ -1,0 +1,23 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ex04-1115
+  namespace: stream-apps
+  labels:
+    app: ex04-1115
+    app.kubernetes.io/name: ex04-1115
+    app.kubernetes.io/part-of: ex04-1115
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ex04-1115
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80

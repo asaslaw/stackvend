@@ -1,0 +1,35 @@
+{
+ "valid": {
+  "errors": [],
+  "files": {
+   ".github/workflows/deploy-golden.yml": "220d4b3b850fe3c2ea44555e57f28706b4026c826193fb227bf6e0190e87915b",
+   ".gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+   ".python-version": "02e735b3dfe1c32833eb550b7ff8ffa17f5f2bc3fa1e7bae61a8f5a3883ce398",
+   "README.md": "3297bd16b88c95e65873430d8be697a4a35192132231194fa808db4969c76993",
+   "apps/__init__.py": "15876376b207cd2410ddff2f7db964c7b52ce1662ccbc61d041d0b286f23256f",
+   "apps/api/.python-version": "02e735b3dfe1c32833eb550b7ff8ffa17f5f2bc3fa1e7bae61a8f5a3883ce398",
+   "apps/api/Procfile": "77bf9e75943f9ddba0816234a52fb01fb7a2730d9361a31f9c31dfca0f345df4",
+   "apps/api/__init__.py": "15876376b207cd2410ddff2f7db964c7b52ce1662ccbc61d041d0b286f23256f",
+   "apps/api/main.py": "20b9e099005e1dcb221d0a4d9d54114bf3b500fbb99234849c92a37146dba999",
+   "apps/api/requirements.txt": "8a97759a092a36a6bd0083b99236f8532b401d3b1dce4a188bca46f39cf81ec6",
+   "apps/web/.python-version": "02e735b3dfe1c32833eb550b7ff8ffa17f5f2bc3fa1e7bae61a8f5a3883ce398",
+   "apps/web/Procfile": "77bf9e75943f9ddba0816234a52fb01fb7a2730d9361a31f9c31dfca0f345df4",
+   "apps/web/__init__.py": "15876376b207cd2410ddff2f7db964c7b52ce1662ccbc61d041d0b286f23256f",
+   "apps/web/main.py": "9b654e92e39308461e8683b3a76d8517c54ca2986e68406395ef2f2b45095317",
+   "apps/web/requirements.txt": "193dfec4f6fc55816047e3357b9f9f46f7ce928627163f4ff3ca95e23a8e438f",
+   "infra/modules/compute-cloudrun/main.tf": "c1a7b9bcaf3a53e456e987ab19782f5ad40f458586b5a87415e5dd56956a7a02",
+   "infra/modules/compute-cloudrun/outputs.tf": "b35641a074acad13d8fe45e36c5b42a6770482ceb61d5bba86e37737e4eed119",
+   "infra/modules/compute-cloudrun/variables.tf": "7060f436d97dd30d1b2a2a91cdf76b3bf541d9dfa6f7a68550e20b0c1399fd89",
+   "infra/modules/workload-foundation/base/apis.tf": "fdbacc50e89aef6ce2b7b3bc57c79a0bc145d6df3d6ee3cfccadafe5fb033c8e",
+   "infra/modules/workload-foundation/base/database.tf": "49eb4bf8bf86d833b1d47b1729e3a99d228a83fbb80493c778d860bdbb443c91",
+   "infra/modules/workload-foundation/base/iam.tf": "61de9b381c9c5c0b354728ba616fc78d5b25a3e6fea6e0516952659c3c7397ae",
+   "infra/modules/workload-foundation/base/outputs.tf": "0db6787255262f2670b56bb2741132977cb6102976e6cd4fe80929bd7fd2094e",
+   "infra/modules/workload-foundation/base/registry.tf": "a9cb03c1c6d37ca45d03df4245c9d85e1e6708202a85f47a33af7ccca8a14b00",
+   "infra/modules/workload-foundation/base/variables.tf": "5166bcb827c5dadf9ffead5025f652e32b52b338f52547683d30cd90ba0b17cc",
+   "infra/modules/workload-foundation/base/wif.tf": "99abcec5722607a39fd4c0e09be7b37afacce4aae95e2dfe35a5e19aece1de6d",
+   "infra/workload/main.tf": "ab3df890a36a56b112974025f5e3798f4a81983f4df10dbc12cd6ee7c07d79c8",
+   "infra/workload/variables.tf": "854efb722b57dafcf4914243b1c04a8dd0eb40c0757b33dc99d96641745b138b"
+  },
+  "passed": true
+ }
+}

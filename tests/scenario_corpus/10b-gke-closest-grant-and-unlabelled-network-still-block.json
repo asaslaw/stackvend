@@ -1,0 +1,139 @@
+{
+ "title": "GKE workload: a repair that grants only the closest allowed role does not clear the Workload Identity finding, and an unlabelled network finding keeps blocking (negative control)",
+ "source": "ex04-1115 diagnosis (docs/handoff/ex04-1115b-judge-no-progress-diagnosis.md): QA attempts 1-3 of a GKE Autopilot workload passed every test; the adherence judge blocked each time on the missing Workload Identity grant and the missing networking-vpc network on iac_intent.json, neither expressible in the typed intent; three repairs could not clear them and QA stopped NO_PROGRESS",
+ "mechanism": "GKE-WI-INTENT / GKE-NETWORK-PLATFORM-FACT negative: the platform never guesses the grant, and a network finding labelled OTHER stays blocking; QA ends without a pass",
+ "product_id": "stream-demo",
+ "trace": "trace-gke-wi-closest",
+ "access": {
+  "mode": "PUBLIC_APP"
+ },
+ "iac_mode": "generate",
+ "topology": {
+  "services": [
+   {
+    "name": "stream-demo",
+    "kind": "gke-autopilot"
+   }
+  ],
+  "primary_service": "stream-demo",
+  "edges": [],
+  "resources": []
+ },
+ "task_dag": [
+  {
+   "task_id": "INFRA-01",
+   "category": "INFRA",
+   "title": "private subnet, GKE secondary ranges and Cloud NAT via networking-vpc",
+   "target_files": [
+    "infra/workload/iac_intent.json"
+   ]
+  },
+  {
+   "task_id": "INFRA-04",
+   "category": "INFRA",
+   "title": "Workload Identity binding for default/sa-stream-worker",
+   "target_files": [
+    "infra/workload/iac_intent.json"
+   ]
+  },
+  {
+   "task_id": "CODE-01",
+   "category": "CODE",
+   "title": "stream worker",
+   "target_files": [
+    "apps/stream-demo/main.py"
+   ]
+  }
+ ],
+ "blobs": {
+  "main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+  "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+  "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+  "ksa": "apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: sa-stream-worker\n  namespace: default\n  annotations:\n    iam.gke.io/gcp-service-account: sa-stream-worker@${PRODUCT_ID}.iam.gserviceaccount.com\n",
+  "deploy": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: stream-demo\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: stream-demo\n  template:\n    metadata:\n      labels:\n        app: stream-demo\n    spec:\n      serviceAccountName: sa-stream-worker\n      containers:\n        - name: stream-demo\n          image: nginx:1.27\n",
+  "intent": "{\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"account_id\": \"sa-stream-worker\",\n        \"display_name\": \"Stream worker\"\n      },\n      \"name\": \"stream_worker\",\n      \"type\": \"google_service_account\"\n    },\n    {\n      \"arguments\": {\n        \"member\": {\n          \"$member\": {\n            \"service_account\": {\n              \"$ref\": {\n                \"attr\": \"email\",\n                \"kind\": \"resource_attr\",\n                \"name\": \"stream_worker\",\n                \"type\": \"google_service_account\"\n              }\n            }\n          }\n        },\n        \"project\": {\n          \"$ref\": {\n            \"fact\": \"project_id\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"role\": \"roles/datastore.user\"\n      },\n      \"name\": \"stream_worker_datastore\",\n      \"type\": \"google_project_iam_member\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n",
+  "intent_repaired": "{\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"account_id\": \"sa-stream-worker\",\n        \"display_name\": \"Stream worker\"\n      },\n      \"name\": \"stream_worker\",\n      \"type\": \"google_service_account\"\n    },\n    {\n      \"arguments\": {\n        \"member\": {\n          \"$member\": {\n            \"service_account\": {\n              \"$ref\": {\n                \"attr\": \"email\",\n                \"kind\": \"resource_attr\",\n                \"name\": \"stream_worker\",\n                \"type\": \"google_service_account\"\n              }\n            }\n          }\n        },\n        \"project\": {\n          \"$ref\": {\n            \"fact\": \"project_id\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"role\": \"roles/datastore.user\"\n      },\n      \"name\": \"stream_worker_datastore\",\n      \"type\": \"google_project_iam_member\"\n    },\n    {\n      \"arguments\": {\n        \"member\": {\n          \"$member\": {\n            \"service_account\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          }\n        },\n        \"role\": \"roles/iam.serviceAccountUser\",\n        \"service_account_id\": {\n          \"$ref\": {\n            \"attr\": \"name\",\n            \"kind\": \"resource_attr\",\n            \"name\": \"stream_worker\",\n            \"type\": \"google_service_account\"\n          }\n        }\n      },\n      \"name\": \"workload_sa_impersonate_stream_worker\",\n      \"type\": \"google_service_account_iam_member\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n"
+ },
+ "drafts": {
+  "build": {
+   "apps/stream-demo/main.py": "@main",
+   "apps/stream-demo/requirements.txt": "@requirements",
+   "apps/stream-demo/Procfile": "@procfile",
+   "apps/stream-demo/tests/__init__.py": "",
+   "apps/stream-demo/tests/test_stream_demo.py": "def test_health():\n    assert True\n",
+   "k8s/serviceaccount.yaml": "@ksa",
+   "k8s/stream-demo.yaml": "@deploy",
+   "infra/workload/iac_intent.json": "@intent",
+   "README.md": "# stream-demo\n\nStream worker.\n"
+  }
+ },
+ "generations": [
+  "build"
+ ],
+ "repairs": [
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_repaired"
+  }
+ ],
+ "sandbox": {
+  "tests_total": 15,
+  "rules": []
+ },
+ "judge": {
+  "*": {
+   "security": {
+    "reply": {
+     "critical": []
+    }
+   },
+   "adherence": {
+    "reply": {
+     "score": 0.85,
+     "missed": [
+      {
+       "text": "Private subnet, secondary GKE pod/service CIDR ranges and Cloud NAT via networking-vpc are omitted from infra/workload/iac_intent.json (the GKE cluster uses the default network)",
+       "file": "infra/workload/iac_intent.json",
+       "task_id": "INFRA-01",
+       "schema_fields": {
+        "missed_directive_facets": "OTHER"
+       }
+      },
+      {
+       "text": "Workload Identity IAM binding (roles/iam.workloadIdentityUser) mapping serviceAccount:<PROJECT_ID>.svc.id.goog[default/sa-stream-worker] to google_service_account.stream_worker is missing from infra/workload/iac_intent.json",
+       "file": "infra/workload/iac_intent.json",
+       "task_id": "INFRA-04",
+       "withdraw_if_tree": {
+        "file": "infra/workload/iac_intent.json",
+        "contains": "gke_service_account"
+       }
+      }
+     ]
+    }
+   }
+  }
+ },
+ "expect": {
+  "outcome": {
+   "status": "STOPPED",
+   "stage": "developer",
+   "error_class": "CODE_DEFECT",
+   "qa_attempts": 2,
+   "max_generations": 1
+  }
+ }
+}

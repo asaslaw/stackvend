@@ -1,0 +1,26 @@
+{
+  "_comment": "FD-61 single source of truth for build-time vendoring. Keys = Cloud Run build directories (the buildpack context); values = repo-root paths copied into that context at build time by deploy/vendor_shared.py. Phase 0: consumed only by deploy/vendor_shared.py and tests/test_shared_packaging.py (not yet by Cloud Build triggers or scripts/deploy-services.sh). See docs/planning/wave2-lane12-consolidation-plan.md.",
+  "schema": 1,
+  "consumers": {
+    "apps/control-center": ["shared", "infra/modules"],
+    "apps/orchestrator-gateway": ["shared"],
+    "apps/project-vending": ["shared"],
+    "apps/qa-runner": ["shared"],
+    "apps/finops-enforcer": ["shared"],
+    "apps/infra-rollback": ["shared"],
+    "apps/finops-spend-sync": ["shared"],
+    "apps/sandbox-sweeper": ["shared"],
+    "apps/billing-alert-drain": ["shared"],
+    "apps/git-server": ["shared"],
+    "apps/spec-ingestion": ["shared"],
+    "mcp-servers/terraform": ["shared"],
+    "mcp-servers/github": ["shared"]
+  },
+  "module_copies": {
+    "apps/orchestrator-gateway/developer_agent/hcl_utils.py": "shared/hcl_utils.py",
+    "apps/orchestrator-gateway/developer_agent/workflow_validator.py": "shared/workflow_validator.py",
+    "apps/orchestrator-gateway/developer_agent/firestore_scanner.py": "shared/firestore_scanner.py",
+    "apps/orchestrator-gateway/architect_agent/critic_schemas.py": "shared/critic_schemas.py",
+    "mcp-servers/terraform/hcl_utils.py": "shared/hcl_utils.py"
+  }
+}

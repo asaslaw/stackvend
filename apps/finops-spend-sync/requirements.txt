@@ -1,0 +1,9 @@
+google-auth>=2.28.0
+requests>=2.31.0
+google-cloud-firestore>=2.15.0
+google-cloud-storage>=2.14.0
+# services/finops_sync.py queries the billing export only when BILLING_EXPORT_DATASET is set (optional; no Terraform
+# sets it): same library as the Control Center.
+google-cloud-bigquery>=3.20.0
+# shared/runner_identity.py (vending-signed state provenance on Per-workload installs), as in the Control Center.
+cryptography>=42.0.0

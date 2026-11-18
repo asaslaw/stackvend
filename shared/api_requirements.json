@@ -1,0 +1,501 @@
+{
+ "_doc": "Exact resource/data type and golden-module directory -> Google Cloud API table (Wave 2 Step 2 S2-C, register HS-63; loader shared/api_requirements.py). Keys are EXACT Terraform types and EXACT golden-module directory names (last path component of a module call's literal local source). No prefixes, no substrings. [] = no Google API (non-google provider or provider-side only). A module row covers every resource/data type inside that module (drift test). A type with no row is reported (IAC.API_UNKNOWN_FOR_TYPE) and the table is extended by PR. Seeded from eval/config/api_requirements_ref.json (S2-0) + lane 15's allow-list + the plan's P-1 types. Replicated byte-identical to apps/orchestrator-gateway/shared/ and mcp-servers/terraform/shared/.",
+ "base_apis": [
+  "cloudresourcemanager.googleapis.com",
+  "iam.googleapis.com",
+  "serviceusage.googleapis.com"
+ ],
+ "foundation_base_apis": [
+  "artifactregistry.googleapis.com",
+  "cloudbuild.googleapis.com",
+  "cloudresourcemanager.googleapis.com",
+  "firestore.googleapis.com",
+  "iam.googleapis.com",
+  "iap.googleapis.com",
+  "identitytoolkit.googleapis.com",
+  "pubsub.googleapis.com",
+  "run.googleapis.com",
+  "storage.googleapis.com"
+ ],
+ "kubernetes": {
+  "api_versions": [
+   "apps/v1",
+   "v1"
+  ],
+  "kinds": [
+   "DaemonSet",
+   "Deployment",
+   "HorizontalPodAutoscaler",
+   "Ingress",
+   "Service",
+   "StatefulSet"
+  ],
+  "apis": [
+   "compute.googleapis.com",
+   "container.googleapis.com"
+  ]
+ },
+ "resource_types": {
+  "google_alloydb_cluster": [
+   "alloydb.googleapis.com"
+  ],
+  "google_alloydb_instance": [
+   "alloydb.googleapis.com"
+  ],
+  "google_alloydb_user": [
+   "alloydb.googleapis.com"
+  ],
+  "google_artifact_registry_repository": [
+   "artifactregistry.googleapis.com"
+  ],
+  "google_bigquery_dataset": [
+   "bigquery.googleapis.com"
+  ],
+  "google_bigquery_dataset_access": [
+   "bigquery.googleapis.com"
+  ],
+  "google_bigquery_dataset_iam_member": [
+   "bigquery.googleapis.com"
+  ],
+  "google_bigquery_table": [
+   "bigquery.googleapis.com"
+  ],
+  "google_bigtable_instance": [
+   "bigtableadmin.googleapis.com"
+  ],
+  "google_bigtable_table": [
+   "bigtableadmin.googleapis.com"
+  ],
+  "google_billing_budget": [
+   "billingbudgets.googleapis.com"
+  ],
+  "google_cloud_run_service": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_run_service_iam_member": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_run_v2_job": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_run_v2_job_iam_member": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_run_v2_service": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_run_v2_service_iam_member": [
+   "run.googleapis.com"
+  ],
+  "google_cloud_scheduler_job": [
+   "cloudscheduler.googleapis.com"
+  ],
+  "google_cloud_tasks_queue": [
+   "cloudtasks.googleapis.com"
+  ],
+  "google_cloud_tasks_queue_iam_member": [
+   "cloudtasks.googleapis.com"
+  ],
+  "google_cloudbuild_trigger": [
+   "cloudbuild.googleapis.com"
+  ],
+  "google_cloudfunctions2_function": [
+   "artifactregistry.googleapis.com",
+   "cloudbuild.googleapis.com",
+   "cloudfunctions.googleapis.com",
+   "run.googleapis.com"
+  ],
+  "google_cloudfunctions_function": [
+   "cloudbuild.googleapis.com",
+   "cloudfunctions.googleapis.com"
+  ],
+  "google_composer_environment": [
+   "composer.googleapis.com"
+  ],
+  "google_compute_address": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_backend_service": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_firewall": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_global_address": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_global_forwarding_rule": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_instance": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_instance_from_template": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_instance_template": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_managed_ssl_certificate": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_network": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_region_network_endpoint_group": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_router": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_router_nat": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_subnetwork": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_target_https_proxy": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_url_map": [
+   "compute.googleapis.com"
+  ],
+  "google_container_cluster": [
+   "container.googleapis.com"
+  ],
+  "google_container_node_pool": [
+   "container.googleapis.com"
+  ],
+  "google_dataflow_job": [
+   "dataflow.googleapis.com"
+  ],
+  "google_discovery_engine_data_store": [
+   "discoveryengine.googleapis.com"
+  ],
+  "google_discovery_engine_search_engine": [
+   "discoveryengine.googleapis.com"
+  ],
+  "google_dns_managed_zone": [
+   "dns.googleapis.com"
+  ],
+  "google_dns_record_set": [
+   "dns.googleapis.com"
+  ],
+  "google_eventarc_trigger": [
+   "eventarc.googleapis.com"
+  ],
+  "google_firestore_database": [
+   "firestore.googleapis.com"
+  ],
+  "google_iam_workload_identity_pool": [
+   "iam.googleapis.com"
+  ],
+  "google_iam_workload_identity_pool_provider": [
+   "iam.googleapis.com"
+  ],
+  "google_iap_web_backend_service_iam_member": [
+   "iap.googleapis.com"
+  ],
+  "google_iap_web_cloud_run_service_iam_member": [
+   "iap.googleapis.com"
+  ],
+  "google_iap_web_iam_member": [
+   "iap.googleapis.com"
+  ],
+  "google_identity_platform_config": [
+   "identitytoolkit.googleapis.com"
+  ],
+  "google_identity_platform_default_supported_idp_config": [
+   "identitytoolkit.googleapis.com"
+  ],
+  "google_kms_crypto_key": [
+   "cloudkms.googleapis.com"
+  ],
+  "google_kms_crypto_key_iam_member": [
+   "cloudkms.googleapis.com"
+  ],
+  "google_kms_key_ring": [
+   "cloudkms.googleapis.com"
+  ],
+  "google_logging_metric": [
+   "logging.googleapis.com"
+  ],
+  "google_monitoring_alert_policy": [
+   "monitoring.googleapis.com"
+  ],
+  "google_monitoring_dashboard": [
+   "monitoring.googleapis.com"
+  ],
+  "google_monitoring_notification_channel": [
+   "monitoring.googleapis.com"
+  ],
+  "google_monitoring_uptime_check_config": [
+   "monitoring.googleapis.com"
+  ],
+  "google_project_iam_audit_config": [
+   "cloudresourcemanager.googleapis.com"
+  ],
+  "google_project_iam_member": [
+   "cloudresourcemanager.googleapis.com"
+  ],
+  "google_project_service": [
+   "serviceusage.googleapis.com"
+  ],
+  "google_project_service_identity": [
+   "serviceusage.googleapis.com"
+  ],
+  "google_pubsub_schema": [
+   "pubsub.googleapis.com"
+  ],
+  "google_pubsub_subscription": [
+   "pubsub.googleapis.com"
+  ],
+  "google_pubsub_subscription_iam_member": [
+   "pubsub.googleapis.com"
+  ],
+  "google_pubsub_topic": [
+   "pubsub.googleapis.com"
+  ],
+  "google_pubsub_topic_iam_member": [
+   "pubsub.googleapis.com"
+  ],
+  "google_redis_cluster": [
+   "redis.googleapis.com"
+  ],
+  "google_redis_instance": [
+   "redis.googleapis.com"
+  ],
+  "google_secret_manager_secret": [
+   "secretmanager.googleapis.com"
+  ],
+  "google_secret_manager_secret_iam_member": [
+   "secretmanager.googleapis.com"
+  ],
+  "google_secret_manager_secret_version": [
+   "secretmanager.googleapis.com"
+  ],
+  "google_service_account": [
+   "iam.googleapis.com"
+  ],
+  "google_service_account_iam_member": [
+   "iam.googleapis.com"
+  ],
+  "google_service_networking_connection": [
+   "servicenetworking.googleapis.com"
+  ],
+  "google_spanner_database": [
+   "spanner.googleapis.com"
+  ],
+  "google_spanner_instance": [
+   "spanner.googleapis.com"
+  ],
+  "google_sql_database": [
+   "sqladmin.googleapis.com"
+  ],
+  "google_sql_database_instance": [
+   "sqladmin.googleapis.com"
+  ],
+  "google_sql_user": [
+   "sqladmin.googleapis.com"
+  ],
+  "google_storage_bucket": [
+   "storage.googleapis.com"
+  ],
+  "google_storage_bucket_iam_member": [
+   "storage.googleapis.com"
+  ],
+  "google_storage_bucket_object": [
+   "storage.googleapis.com"
+  ],
+  "google_storage_notification": [
+   "storage.googleapis.com"
+  ],
+  "google_vertex_ai_dataset": [
+   "aiplatform.googleapis.com"
+  ],
+  "google_vertex_ai_endpoint": [
+   "aiplatform.googleapis.com"
+  ],
+  "google_vertex_ai_featurestore": [
+   "aiplatform.googleapis.com"
+  ],
+  "google_vertex_ai_index": [
+   "aiplatform.googleapis.com"
+  ],
+  "google_vertex_ai_index_endpoint": [
+   "aiplatform.googleapis.com"
+  ],
+  "google_vpc_access_connector": [
+   "vpcaccess.googleapis.com"
+  ],
+  "google_workflows_workflow": [
+   "workflows.googleapis.com"
+  ],
+  "kubernetes_deployment": [],
+  "kubernetes_horizontal_pod_autoscaler_v2": [],
+  "kubernetes_manifest": [],
+  "kubernetes_namespace": [],
+  "kubernetes_service": [],
+  "kubernetes_service_account": [],
+  "random_id": [],
+  "random_password": []
+ },
+ "data_types": {
+  "google_client_config": [],
+  "google_client_openid_userinfo": [],
+  "google_compute_default_service_account": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_network": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_subnetwork": [
+   "compute.googleapis.com"
+  ],
+  "google_compute_zones": [
+   "compute.googleapis.com"
+  ],
+  "google_container_cluster": [
+   "container.googleapis.com"
+  ],
+  "google_netblock_ip_ranges": [],
+  "google_project": [
+   "cloudresourcemanager.googleapis.com"
+  ],
+  "google_secret_manager_secret_version": [
+   "secretmanager.googleapis.com"
+  ],
+  "google_service_account": [
+   "iam.googleapis.com"
+  ],
+  "google_storage_project_service_account": [
+   "storage.googleapis.com"
+  ]
+ },
+ "modules": {
+  "ai-vertex-endpoint": [
+   "aiplatform.googleapis.com"
+  ],
+  "analytics-bigquery": [
+   "bigquery.googleapis.com"
+  ],
+  "base": [
+   "artifactregistry.googleapis.com",
+   "cloudresourcemanager.googleapis.com",
+   "firestore.googleapis.com",
+   "iam.googleapis.com",
+   "serviceusage.googleapis.com"
+  ],
+  "cache-redis": [
+   "compute.googleapis.com",
+   "redis.googleapis.com",
+   "servicenetworking.googleapis.com"
+  ],
+  "cloud_build": [
+   "cloudbuild.googleapis.com",
+   "cloudresourcemanager.googleapis.com",
+   "iam.googleapis.com"
+  ],
+  "compute-cloudrun": [
+   "cloudresourcemanager.googleapis.com",
+   "iap.googleapis.com",
+   "run.googleapis.com",
+   "serviceusage.googleapis.com"
+  ],
+  "compute-event-worker": [
+   "pubsub.googleapis.com",
+   "run.googleapis.com"
+  ],
+  "compute-gce-bastion": [
+   "bigquery.googleapis.com",
+   "cloudresourcemanager.googleapis.com",
+   "compute.googleapis.com",
+   "iam.googleapis.com",
+   "pubsub.googleapis.com",
+   "secretmanager.googleapis.com",
+   "storage.googleapis.com"
+  ],
+  "compute-gce-worker": [
+   "bigquery.googleapis.com",
+   "cloudresourcemanager.googleapis.com",
+   "compute.googleapis.com",
+   "iam.googleapis.com",
+   "pubsub.googleapis.com",
+   "secretmanager.googleapis.com",
+   "storage.googleapis.com"
+  ],
+  "compute-gke-autopilot": [
+   "compute.googleapis.com",
+   "container.googleapis.com"
+  ],
+  "database-alloydb": [
+   "alloydb.googleapis.com",
+   "compute.googleapis.com",
+   "secretmanager.googleapis.com",
+   "servicenetworking.googleapis.com"
+  ],
+  "database-bigtable": [
+   "bigtableadmin.googleapis.com"
+  ],
+  "database-cloudsql": [
+   "cloudresourcemanager.googleapis.com",
+   "compute.googleapis.com",
+   "secretmanager.googleapis.com",
+   "servicenetworking.googleapis.com",
+   "sqladmin.googleapis.com"
+  ],
+  "database-spanner": [
+   "spanner.googleapis.com"
+  ],
+  "dns-record": [
+   "dns.googleapis.com"
+  ],
+  "event-trigger": [
+   "eventarc.googleapis.com"
+  ],
+  "messaging-pubsub": [
+   "pubsub.googleapis.com"
+  ],
+  "networking-vpc": [
+   "compute.googleapis.com",
+   "servicenetworking.googleapis.com"
+  ],
+  "networking-vpc-connector": [
+   "vpcaccess.googleapis.com"
+  ],
+  "observability-alerts": [
+   "monitoring.googleapis.com"
+  ],
+  "orchestration-composer": [
+   "composer.googleapis.com"
+  ],
+  "scheduling-cron": [
+   "cloudscheduler.googleapis.com"
+  ],
+  "security-kms": [
+   "cloudkms.googleapis.com",
+   "serviceusage.googleapis.com",
+   "storage.googleapis.com"
+  ],
+  "security-secret": [
+   "secretmanager.googleapis.com"
+  ],
+  "storage-bucket": [
+   "storage.googleapis.com"
+  ],
+  "tasks-queue": [
+   "cloudtasks.googleapis.com"
+  ],
+  "workflows": [
+   "cloudresourcemanager.googleapis.com",
+   "workflows.googleapis.com"
+  ],
+  "workflows-dag": [
+   "workflows.googleapis.com"
+  ],
+  "workload_auth": [
+   "identitytoolkit.googleapis.com",
+   "serviceusage.googleapis.com"
+  ]
+ }
+}
