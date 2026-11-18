@@ -1,0 +1,57 @@
+{
+  "description": "StackVend Control Center vendored browser scripts (FD-4AR). Served same-origin from /static/vendor/ with SRI. npm_tarball_integrity is the npm registry dist.integrity of the package tarball (provenance only; it does not hash the individual file).",
+  "downloaded_at": "2026-10-12",
+  "approved_by": "owner (FD-4AR Q7)",
+  "files": [
+    {
+      "file": "alpinejs-3.14.9.min.js",
+      "library": "alpinejs",
+      "version": "3.14.9",
+      "source_url": "https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js",
+      "bytes": 44758,
+      "sha256": "3ed1eed252488921df65e363d6715deb04d7f92aaedb9e52199fdf73cb1e0ad3",
+      "sri_sha384": "sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F",
+      "npm_tarball_integrity": "sha512-gqSOhTEyryU9FhviNqiHBHzgjkvtukq9tevew29fTj+ofZtfsYriw4zPirHHOAy9bw8QoL3WGhyk7QqCh5AYlw=="
+    },
+    {
+      "file": "marked-15.0.12.min.js",
+      "library": "marked",
+      "version": "15.0.12",
+      "source_url": "https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js",
+      "bytes": 39903,
+      "sha256": "3e7e7d7feb3e5d58cb6c804f68ab5c24cc7e5eb6270fd6e5cbb9124739217d0c",
+      "sri_sha384": "sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+",
+      "npm_tarball_integrity": "sha512-8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA=="
+    },
+    {
+      "file": "mermaid-10.9.3.min.js",
+      "library": "mermaid",
+      "version": "10.9.3",
+      "source_url": "https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js",
+      "bytes": 3336760,
+      "sha256": "5a8ec91820bd55afef049068489369910e5d6ce70c8103952f27e29d3e76e8bc",
+      "sri_sha384": "sha384-R63zfMfSwJF4xCR11wXii+QUsbiBIdiDzDbtxia72oGWfkT7WHJfmD/I/eeHPJyT",
+      "npm_tarball_integrity": "sha512-V80X1isSEvAewIL3xhmz/rVmc27CVljcsbWxkxlWJWY/1kQa4XOABqpDl2qQLGKzpKm6WbTfUEKImBlUfFYArw=="
+    },
+    {
+      "file": "purify-3.2.6.min.js",
+      "library": "dompurify",
+      "version": "3.2.6",
+      "source_url": "https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js",
+      "bytes": 22305,
+      "sha256": "89e1fa7647cb495370d3a997ace4387f5d15d9f4c5af12352c53daa400956287",
+      "sri_sha384": "sha384-JEyTNhjM6R1ElGoJns4U2Ln4ofPcqzSsynQkmEc/KGy6336qAZl70tDLufbkla+3",
+      "npm_tarball_integrity": "sha512-/2GogDQlohXPZe6D6NOgQvXLPSYBqIWMnZ8zzOhn09REE4eyAzb+Hed3jhoM9OkuaJ8P6ZGTTVWQKAi8ieIzfQ=="
+    },
+    {
+      "file": "tailwind-play-3.4.17.js",
+      "library": "tailwindcss (play CDN runtime)",
+      "version": "3.4.17",
+      "source_url": "https://cdn.tailwindcss.com/3.4.17",
+      "bytes": 407279,
+      "sha256": "176e894661aa9cdc9a5cba6c720044cbbf7b8bd80d1c9a142a7c24b1b6c50d15",
+      "sri_sha384": "sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K",
+      "npm_tarball_integrity": null
+    }
+  ]
+}

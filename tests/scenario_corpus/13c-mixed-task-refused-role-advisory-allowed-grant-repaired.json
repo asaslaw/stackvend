@@ -1,0 +1,132 @@
+{
+ "title": "A task that asks for a refused role and an allowed grant: the judge reports two entries, the refused role is an advisory and the missing allowed grant is still repaired",
+ "source": "ex02-g13 diagnosis (docs/handoff/ex02-g13-repair-exhaustion-diagnosis.md): the architect's IAM task asked for roles/iam.serviceAccountTokenCreator on the workload service account; the adherence judge reported it missing from iac_intent.json on both QA attempts; no repair can express it (IAC.ROLE_NOT_ALLOWED, POLICY.PRIVILEGED_ROLE), so the IaC repair failed three times (two answers cut off while thinking, one refused grant) and the developer stopped on ITERATIONS",
+ "mechanism": "IAM-POLICY-PLATFORM-FACT RT 1: IAM_POLICY applies only to an entry whose sole ask is one refused role; the same task's other missing grant is its own entry labelled OTHER, a repair seed; the repair adds it, QA attempt 2 keeps only the advisory and passes",
+ "product_id": "orders-demo",
+ "trace": "trace-orders-mixed-roles",
+ "access": {
+  "mode": "PUBLIC_APP"
+ },
+ "iac_mode": "generate",
+ "topology": {
+  "services": [
+   {
+    "name": "orders-demo",
+    "kind": "cloudrun"
+   }
+  ],
+  "primary_service": "orders-demo",
+  "edges": [],
+  "resources": []
+ },
+ "task_dag": [
+  {
+   "task_id": "CODE-01",
+   "category": "CODE",
+   "title": "orders gateway with a reconcile endpoint",
+   "target_files": [
+    "apps/orders-demo/main.py"
+   ]
+  },
+  {
+   "task_id": "INFRA-03",
+   "category": "IAM",
+   "title": "workload service account bindings: roles/iam.serviceAccountTokenCreator for Scheduler OIDC and roles/iam.serviceAccountUser for the reconcile invoker",
+   "target_files": [
+    "infra/workload/main.tf"
+   ]
+  },
+  {
+   "task_id": "INFRA-04",
+   "category": "INFRA",
+   "title": "daily Cloud Scheduler job with an OIDC token",
+   "target_files": [
+    "infra/workload/main.tf"
+   ]
+  }
+ ],
+ "blobs": {
+  "main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.post('/api/v1/reconcile')\ndef reconcile():\n    return {'reconciled': 0}\n",
+  "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+  "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+  "intent": "{\n  \"modules\": [],\n  \"outputs\": [],\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"http_target\": {\n          \"http_method\": \"POST\",\n          \"oidc_token\": {\n            \"audience\": \"https://reconcile.orders.example\",\n            \"service_account_email\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          },\n          \"uri\": {\n            \"$args\": [\n              \"%s/api/v1/reconcile\",\n              {\n                \"$ref\": {\n                  \"kind\": \"service\",\n                  \"output\": \"service_uri\",\n                  \"service\": \"orders-demo\"\n                }\n              }\n            ],\n            \"$fn\": \"format\"\n          }\n        },\n        \"name\": {\n          \"$args\": [\n            \"%s-reconcile-orders\",\n            {\n              \"$ref\": {\n                \"fact\": \"product_id\",\n                \"kind\": \"fact\"\n              }\n            }\n          ],\n          \"$fn\": \"format\"\n        },\n        \"region\": {\n          \"$ref\": {\n            \"fact\": \"region\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"schedule\": \"0 2 * * *\",\n        \"time_zone\": \"Etc/UTC\"\n      },\n      \"name\": \"reconcile_orders\",\n      \"type\": \"google_cloud_scheduler_job\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n",
+  "intent_fixed": "{\n  \"modules\": [],\n  \"outputs\": [],\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"http_target\": {\n          \"http_method\": \"POST\",\n          \"oidc_token\": {\n            \"audience\": \"https://reconcile.orders.example\",\n            \"service_account_email\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          },\n          \"uri\": {\n            \"$args\": [\n              \"%s/api/v1/reconcile\",\n              {\n                \"$ref\": {\n                  \"kind\": \"service\",\n                  \"output\": \"service_uri\",\n                  \"service\": \"orders-demo\"\n                }\n              }\n            ],\n            \"$fn\": \"format\"\n          }\n        },\n        \"name\": {\n          \"$args\": [\n            \"%s-reconcile-orders\",\n            {\n              \"$ref\": {\n                \"fact\": \"product_id\",\n                \"kind\": \"fact\"\n              }\n            }\n          ],\n          \"$fn\": \"format\"\n        },\n        \"region\": {\n          \"$ref\": {\n            \"fact\": \"region\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"schedule\": \"0 2 * * *\",\n        \"time_zone\": \"Etc/UTC\"\n      },\n      \"name\": \"reconcile_orders\",\n      \"type\": \"google_cloud_scheduler_job\"\n    },\n    {\n      \"arguments\": {\n        \"account_id\": \"reconcile-invoker\",\n        \"display_name\": \"Reconcile invoker\"\n      },\n      \"name\": \"reconcile_invoker\",\n      \"type\": \"google_service_account\"\n    },\n    {\n      \"arguments\": {\n        \"member\": {\n          \"$member\": {\n            \"service_account\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          }\n        },\n        \"role\": \"roles/iam.serviceAccountUser\",\n        \"service_account_id\": {\n          \"$ref\": {\n            \"attr\": \"name\",\n            \"kind\": \"resource_attr\",\n            \"name\": \"reconcile_invoker\",\n            \"type\": \"google_service_account\"\n          }\n        }\n      },\n      \"name\": \"workload_sa_user\",\n      \"type\": \"google_service_account_iam_member\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n"
+ },
+ "drafts": {
+  "build": {
+   "apps/orders-demo/main.py": "@main",
+   "apps/orders-demo/requirements.txt": "@requirements",
+   "apps/orders-demo/Procfile": "@procfile",
+   "apps/orders-demo/tests/__init__.py": "",
+   "apps/orders-demo/tests/test_orders_demo.py": "def test_health():\n    assert True\n",
+   "infra/workload/iac_intent.json": "@intent",
+   "README.md": "# orders-demo\n\nOrders.\n"
+  }
+ },
+ "generations": [
+  "build"
+ ],
+ "repairs": [
+  {
+   "infra/workload/iac_intent.json": "@intent_fixed"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_fixed"
+  },
+  {
+   "infra/workload/iac_intent.json": "@intent_fixed"
+  }
+ ],
+ "sandbox": {
+  "tests_total": 12,
+  "rules": []
+ },
+ "judge": {
+  "*": {
+   "security": {
+    "reply": {
+     "critical": []
+    }
+   },
+   "adherence": {
+    "reply": {
+     "score": 0.9,
+     "missed": [
+      {
+       "text": "INFRA-03: Shared workload service account is missing the roles/iam.serviceAccountTokenCreator IAM binding on itself so Cloud Scheduler and token flows can mint OIDC tokens.",
+       "file": "infra/workload/iac_intent.json",
+       "task_id": "INFRA-03",
+       "schema_fields": {
+        "missed_directive_facets": "IAM_POLICY",
+        "missed_directive_denied_roles": "roles/iam.serviceAccountTokenCreator"
+       }
+      },
+      {
+       "text": "INFRA-03: Shared workload service account is missing roles/iam.serviceAccountUser on itself so Cloud Scheduler can act as it.",
+       "file": "infra/workload/iac_intent.json",
+       "task_id": "INFRA-03",
+       "schema_fields": {
+        "missed_directive_facets": "OTHER",
+        "missed_directive_denied_roles": ""
+       },
+       "withdraw_if_tree": {
+        "file": "infra/workload/iac_intent.json",
+        "contains": "workload_sa_user"
+       }
+      }
+     ]
+    }
+   }
+  }
+ },
+ "expect": {
+  "outcome": {
+   "status": "SUCCESS",
+   "qa_attempts": 2,
+   "max_generations": 1,
+   "seed_files_include": [
+    "infra/workload/iac_intent.json"
+   ]
+  }
+ }
+}

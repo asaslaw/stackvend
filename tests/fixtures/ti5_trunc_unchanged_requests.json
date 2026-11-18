@@ -1,0 +1,182 @@
+{
+ "backend_gen_invalid_then_valid": {
+  "outcome": {
+   "files": {
+    "apps/api/main.py": "x = 1\n"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "backend_gen_max_tokens_valid": {
+  "outcome": {
+   "files": {
+    "apps/api/main.py": "x = 1\n"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "backend_off_invalid_then_valid": {
+  "outcome": {
+   "files": {
+    "apps/api/main.py": "x = 1\n"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "backend_off_max_tokens_valid": {
+  "outcome": {
+   "files": {
+    "apps/api/main.py": "x = 1\n"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "backend_off_stop_valid": {
+  "outcome": {
+   "files": {
+    "apps/api/main.py": "x = 1\n"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: BACKEND_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"apps/api/main.py\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "iac_off_max_tokens_cut": {
+  "outcome": {
+   "codes": [
+    "JSON.OUTPUT_INVALID"
+   ],
+   "error": "StageError"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Unterminated string starting at: line 1 column 46 (char 45)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Unterminated string starting at: line 1 column 46 (char 45)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 65536, \"response_mime_type\": \"application/json\", \"system_instruction\": \"JUNIOR SYSTEM PROMPT\", \"temperature\": 0.2}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Unterminated string starting at: line 1 column 46 (char 45)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "intent_stop_invalid_then_valid": {
+  "outcome": {
+   "files": {
+    "infra/workload/iac_intent.json": "{\"schema\": \"iac_intent/v1\"}"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "intent_stop_invalid_x4": {
+  "outcome": {
+   "codes": [
+    "JSON.OUTPUT_INVALID"
+   ],
+   "error": "StageError"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   },
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT\n\nERROR JSON.OUTPUT_INVALID: your previous response was not valid JSON (JSONDecodeError: Invalid \\escape: line 1 column 50 (char 49)). Resend the same files as ONE valid JSON object {\"files\": {\"<path>\": \"<content>\"}}: inside JSON strings escape every backslash as \\\\ and every newline as \\n; no text outside the JSON object.",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ },
+ "intent_stop_valid": {
+  "outcome": {
+   "files": {
+    "infra/workload/iac_intent.json": "{\"schema\": \"iac_intent/v1\"}"
+   },
+   "status": "SUCCEEDED"
+  },
+  "requests": [
+   {
+    "config": "{\"max_output_tokens\": 16384, \"response_mime_type\": \"application/json\", \"system_instruction\": \"INTENT SYSTEM PROMPT\", \"temperature\": 0.2, \"thinking_config\": {\"thinking_budget\": 4096}}",
+    "contents": "=== IMMUTABLE ARCHITECTURAL ANCHOR (READ-ONLY GROUNDING) ===\nExecution Mode: STANDARD_SWARM\nIaC Engine: OPENTOFU\nLead Notes: \nRule: NEVER invent alternative service routes, ports, or event names not defined in the Shared Contracts.\nAll microservices compile against Wave 0 contracts to guarantee strict inter-service type parity.\n===========================================================\n\nTask ID: task-x\nPersona: IAC_ENGINEER\nExecution Wave: 1\nIaC Engine: OPENTOFU\n\nTask Objective:\nobjective\n\nMandatory Assigned Files (You must ONLY generate these exact files):\n[\n  \"infra/workload/iac_intent.json\"\n]\n\nShared Contracts & Schemas:\n{}\n\nSpecific Guardrails & Rules:\n[]\n\nTargeted Dependency Files From Prior Waves (Read-Only Context):\n{}\n\nGenerate 100% complete, fully implemented code for your assigned files. Respond strictly with a valid JSON object matching: {\"files\": {\"filepath\": \"content\"}}\n\nINTENT RUN CONTEXT",
+    "model": "gemini-3.8-flash"
+   }
+  ]
+ }
+}

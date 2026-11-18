@@ -1,0 +1,540 @@
+{
+ "id": "ex01-g13-cloudbuild-plan",
+ "summary": "Live run ex01-g13 (example 01, GitHub provider): the post-consensus architect plan typed root cloudbuild.yaml in INFRA-05 and STEP-CICD target_files next to the platform deploy workflow. The developer purged the file and the judge failed the run because INFRA-05 required it. v1 must refuse both entries on GITHUB and leave the deploy workflow alone.",
+ "source": {
+  "kind": "live",
+  "run_label": "ex01-g13",
+  "record": "architect stage trace agent_output (typed post-consensus plan, raw model JSON)",
+  "model": "gemini-4-carbon",
+  "diagnosis": "docs/handoff/ex01-g13-cloudbuild-plan-task-diagnosis.md"
+ },
+ "anonymized": "workload id ex01-g13 -> ex01-live (also in paths); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block nulled. Nothing else changed.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": [
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": "cloudbuild.yaml",
+     "block_address": "infra_tasks[INFRA-05].target_files[0]"
+    },
+    {
+     "code": "PLAN.PLATFORM_CI_FILE",
+     "symbol": "cloudbuild.yaml",
+     "block_address": "sequenced_build_plan.steps[STEP-CICD].target_files[0]"
+    }
+   ]
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "ex01-live",
+  "project_tier": 2,
+  "summary": "Deploy a serverless webhook ingestion and asynchronous event routing microservice on Google Cloud Run using Google Cloud Native Buildpacks, Cloud Pub/Sub push subscriptions, a 7-day lifecycle Cloud Storage archive bucket, and Firestore audit logging.",
+  "architecture_overview": "A single-service serverless event-driven architecture hosted on Cloud Run v2 (ex01-live) in us-central1, scaling from 0 to 3 instances and built via Google Cloud Native Buildpacks without manual Dockerfiles. Public webhook requests hit POST /api/v1/events, validate payload schemas (event_type, source_system, payload, timestamp), and publish to the test-events-inbound Cloud Pub/Sub topic. An authenticated Pub/Sub push subscription invokes POST /api/v1/tasks/process on the same Cloud Run service using OIDC token verification to persist raw JSON payloads into a regional Cloud Storage bucket configured with a 7-day auto-deletion lifecycle policy and write indexed audit documents to the Firestore Native collection event_audit_records. A GET /health endpoint exposes operational status, service name, and IaC engine metadata. Because no Compute Engine VMs are provisioned, the VM External IP prohibition policy is natively satisfied without requiring VPC or Cloud NAT infrastructure.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Provision Workload Foundation APIs & Artifact Registry via Golden Module",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf"
+    ],
+    "description": "Instantiate the canonical workload-foundation/base Golden Module in infra/workload/main.tf to enable required Google Cloud APIs (run.googleapis.com, firestore.googleapis.com, cloudbuild.googleapis.com, artifactregistry.googleapis.com, pubsub.googleapis.com, storage.googleapis.com, iam.googleapis.com, cloudresourcemanager.googleapis.com) and provision the container Artifact Registry repository in us-central1.",
+    "acceptance_criteria": [
+     "workload-foundation/base Golden Module instantiated in infra/workload/main.tf",
+     "All required APIs including pubsub.googleapis.com and storage.googleapis.com enabled with disable_on_destroy = false",
+     "Artifact Registry container repository provisioned via foundation module"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Firestore Native Database & Regional 7-Day Lifecycle GCS Bucket",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Provision the Firestore (default) database in FIRESTORE_NATIVE mode in us-central1 (raw google_firestore_database resource since no Firestore Golden Module exists) and instantiate the canonical storage-bucket Golden Module for raw_events_bucket in us-central1 configured with uniform bucket-level access and a 7-day Delete lifecycle rule (age = 7).",
+    "acceptance_criteria": [
+     "google_firestore_database default configured in FIRESTORE_NATIVE mode in us-central1",
+     "storage-bucket Golden Module instantiated for raw_events_bucket in regional location us-central1",
+     "GCS lifecycle rule configured with action Delete at age = 7 days and uniform bucket-level access enabled"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Provision Inbound Pub/Sub Topic via messaging-pubsub Golden Module",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Instantiate the canonical messaging-pubsub Golden Module to create the Cloud Pub/Sub topic named test-events-inbound (logical name test_events_inbound) for buffering validated webhook payloads.",
+    "acceptance_criteria": [
+     "messaging-pubsub Golden Module instantiated for topic test-events-inbound",
+     "Topic ID output wired for injection as PUBSUB_TOPIC_ID into Cloud Run"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Provision Workload Service Account & Least-Privilege IAM via workload_auth",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Instantiate the canonical workload_auth Golden Module to create the dedicated runtime workload service account and dedicated Pub/Sub push OIDC invoker service account, binding least-privilege roles: roles/pubsub.publisher on test-events-inbound, roles/storage.objectCreator on raw_events_bucket, roles/datastore.user for Firestore event_audit_records, and roles/iam.serviceAccountTokenCreator for Pub/Sub service agent OIDC token minting.",
+    "acceptance_criteria": [
+     "workload_auth Golden Module instantiated for runtime and Pub/Sub push invoker identities",
+     "Scoped IAM bindings granted for Pub/Sub publish, GCS bucket object creation, and Firestore datastore.user",
+     "Pub/Sub service agent granted roles/iam.serviceAccountTokenCreator on push invoker SA"
+    ],
+    "depends_on": [
+     "INFRA-02",
+     "INFRA-03"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-05",
+    "title": "Configure Cloud Native Buildpacks CI/CD Pipeline (Zero Dockerfiles)",
+    "category": "INFRA",
+    "target_files": [
+     "cloudbuild.yaml",
+     ".github/workflows/deploy-ex01-live.yml"
+    ],
+    "description": "Configure automated container build and deployment pipelines using Google Cloud Native Buildpacks (pack build with gcr.io/buildpacks/builder or gcloud builds submit --pack) targeting apps/ex01-live without any manual Dockerfile or docker build commands.",
+    "acceptance_criteria": [
+     "Zero Dockerfiles exist in the repository and no docker build step is present",
+     "cloudbuild.yaml and GitHub Actions workflow build the container strictly via Google Cloud Native Buildpacks (pack / --pack)",
+     "Image pushed to Artifact Registry and deployed to Cloud Run service ex01-live"
+    ],
+    "depends_on": [
+     "INFRA-04"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-06",
+    "title": "Provision Cloud Run v2 Service & Authenticated Pub/Sub Push Subscription",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Instantiate the canonical compute-cloudrun Golden Module for service ex01-live in us-central1 enforcing scale-to-zero (min_instance_count = 0) and max_instance_count = 3, injecting PUBSUB_TOPIC_ID, RAW_EVENTS_BUCKET, FIRESTORE_DATABASE, and PUSH_INVOKER_SA_EMAIL environment variables. Configure the messaging-pubsub push subscription targeting ${cloud_run_uri}/api/v1/tasks/process authenticated with an OIDC token from the push invoker service account.",
+    "acceptance_criteria": [
+     "compute-cloudrun Golden Module configured with min_instance_count = 0 and max_instance_count = 3",
+     "Environment variables PUBSUB_TOPIC_ID, RAW_EVENTS_BUCKET, and FIRESTORE_DATABASE wired to ex01-live",
+     "Authenticated Pub/Sub push subscription provisioned targeting /api/v1/tasks/process with OIDC token configuration"
+    ],
+    "depends_on": [
+     "INFRA-04",
+     "INFRA-05"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement FastAPI Webhook Ingestion, OIDC Push Worker, Health Route & Buildpack Entrypoint",
+    "category": "CODE",
+    "target_files": [
+     "apps/ex01-live/main.py",
+     "apps/ex01-live/requirements.txt",
+     "apps/ex01-live/Procfile"
+    ],
+    "description": "Implement the FastAPI microservice under apps/ex01-live/ with: (1) GET /health returning system status, service_name ('ex01-live'), and iac_engine ('tofu'); (2) public POST /api/v1/events validating JSON payloads (event_type, source_system, payload, timestamp) via Pydantic and publishing to Pub/Sub topic test-events-inbound (PUBSUB_TOPIC_ID); (3) internal POST /api/v1/tasks/process verifying the Authorization Bearer OIDC token issued to the Pub/Sub push invoker SA before decoding the Pub/Sub push envelope, persisting the raw JSON payload to GCS bucket RAW_EVENTS_BUCKET, and writing an indexed audit record to Firestore collection event_audit_records; and (4) Procfile entrypoint for Google Cloud Native Buildpacks without any Dockerfile.",
+    "acceptance_criteria": [
+     "POST /api/v1/events validates event_type, source_system, payload, and timestamp and publishes to test-events-inbound",
+     "POST /api/v1/tasks/process enforces Bearer OIDC token verification, writes raw JSON to GCS RAW_EVENTS_BUCKET, and writes audit metadata to Firestore collection event_audit_records",
+     "GET /health returns 200 OK with health status, service name ex01-live, and IaC engine tofu",
+     "Procfile configured for uvicorn entrypoint with zero Dockerfiles present"
+    ],
+    "depends_on": [
+     "INFRA-04"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Implement Pytest Suite Enforcing 100% Code Coverage & API Documentation",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_main.py",
+     "README.md"
+    ],
+    "description": "Write comprehensive unit tests in tests/test_main.py using pytest and pytest-cov mocking Pub/Sub PublisherClient, GCS Client, Firestore Client, and Google OIDC id_token verification across happy paths, schema validation errors, unauthorized push rejections, and error branches. Enforce 100% test coverage via pytest --cov=apps/ex01-live --cov-fail-under=100 and document endpoints in README.md.",
+    "acceptance_criteria": [
+     "pytest --cov=apps/ex01-live --cov-fail-under=100 passes with 100% line and branch coverage",
+     "Tests cover GET /health, POST /api/v1/events validation and publishing, and POST /api/v1/tasks/process OIDC auth, GCS archival, and Firestore event_audit_records persistence",
+     "README.md documents architecture, endpoints, and buildpack deployment"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "qa-reviewer",
+    "priority": "HIGH"
+   }
+  ],
+  "target_compute_services": [
+   "ex01-live"
+  ],
+  "compute_archetype": "cloudrun",
+  "service_topology": {
+   "services": [
+    {
+     "name": "ex01-live",
+     "kind": "cloudrun",
+     "purpose": "Exposes public webhook ingestion (POST /api/v1/events), health reporting (GET /health), and internal Pub/Sub push processing (POST /api/v1/tasks/process) to archive payloads in GCS and index audit records in Firestore.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 3,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    }
+   ],
+   "primary_service": "ex01-live",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_pubsub_topic",
+     "logical_name": "test_events_inbound",
+     "purpose": "Inbound Pub/Sub topic named test-events-inbound buffering validated webhook events for asynchronous push processing.",
+     "consumers": [
+      {
+       "service": "ex01-live",
+       "env_key": "PUBSUB_TOPIC_ID",
+       "attribute": "id"
+      }
+     ]
+    },
+    {
+     "type": "google_storage_bucket",
+     "logical_name": "raw_events_bucket",
+     "purpose": "Regional Cloud Storage bucket storing raw JSON event payloads with a 7-day Delete lifecycle rule.",
+     "consumers": [
+      {
+       "service": "ex01-live",
+       "env_key": "RAW_EVENTS_BUCKET",
+       "attribute": "name"
+      }
+     ]
+    },
+    {
+     "type": "google_firestore_database",
+     "logical_name": "default",
+     "purpose": "Firestore Native database storing indexed audit documents in the event_audit_records collection.",
+     "consumers": [
+      {
+       "service": "ex01-live",
+       "env_key": "FIRESTORE_DATABASE",
+       "attribute": "name"
+      }
+     ]
+    }
+   ],
+   "pushes": [
+    {
+     "topic": "test_events_inbound",
+     "service": "ex01-live",
+     "path": "/api/v1/tasks/process"
+    }
+   ]
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "ex01-live",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "Autonomous Build Plan for ex01-live",
+   "summary": "Topologically sequenced 10-step Golden Module architecture plan for ex01-live",
+   "created_at": null,
+   "total_steps": 10,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "run.googleapis.com",
+    "firestore.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "pubsub.googleapis.com",
+    "storage.googleapis.com",
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-FOUNDATION",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Google Cloud Foundation APIs & Artifact Registry via Golden Module",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf"
+     ],
+     "description": "Instantiate the canonical workload-foundation/base Golden Module to enable required APIs (cloudresourcemanager.googleapis.com, iam.googleapis.com, run.googleapis.com, firestore.googleapis.com, artifactregistry.googleapis.com, cloudbuild.googleapis.com, pubsub.googleapis.com, storage.googleapis.com) and provision the container Artifact Registry repository in us-central1.",
+     "acceptance_criteria": [
+      "workload-foundation/base Golden Module instantiated in infra/workload/main.tf",
+      "All required APIs including pubsub.googleapis.com and storage.googleapis.com enabled with disable_on_destroy = false",
+      "Container Artifact Registry repository provisioned via foundation module"
+     ],
+     "depends_on": [],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-02-DATABASE",
+     "step_index": 2,
+     "category": "DATABASE",
+     "title": "Provision Firestore Native Database",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create google_firestore_database (default) in FIRESTORE_NATIVE mode in us-central1 for storing event_audit_records.",
+     "acceptance_criteria": [
+      "Firestore Native DB (default) declared in us-central1 depending on workload-foundation/base APIs"
+     ],
+     "depends_on": [
+      "STEP-01-FOUNDATION"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-STORAGE",
+     "step_index": 3,
+     "category": "DATABASE",
+     "title": "Provision Regional Cloud Storage Bucket with 7-Day Lifecycle via Golden Module",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Instantiate the canonical storage-bucket Golden Module for raw_events_bucket in regional location us-central1 with uniform bucket-level access and a 7-day auto-deletion lifecycle rule (action = Delete, age = 7).",
+     "acceptance_criteria": [
+      "storage-bucket Golden Module instantiated in regional location us-central1",
+      "Uniform bucket-level access enabled",
+      "Lifecycle rule configured to auto-delete objects at age = 7 days"
+     ],
+     "depends_on": [
+      "STEP-01-FOUNDATION"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-PUBSUB-TOPIC",
+     "step_index": 4,
+     "category": "DATABASE",
+     "title": "Provision Inbound Cloud Pub/Sub Topic via Golden Module",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Instantiate the canonical messaging-pubsub Golden Module to provision the Cloud Pub/Sub topic named test-events-inbound (logical name test_events_inbound).",
+     "acceptance_criteria": [
+      "messaging-pubsub Golden Module creates topic test-events-inbound",
+      "Topic identifier exposed for Cloud Run PUBSUB_TOPIC_ID environment variable"
+     ],
+     "depends_on": [
+      "STEP-01-FOUNDATION"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-IAM",
+     "step_index": 5,
+     "category": "IAM",
+     "title": "Provision Workload & Push Invoker Identities via workload_auth Golden Module",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Instantiate the canonical workload_auth Golden Module to create the runtime service account and Pub/Sub push OIDC service account with least-privilege bindings (roles/pubsub.publisher on test-events-inbound, roles/storage.objectCreator on raw_events_bucket, roles/datastore.user on Firestore, and token creator for the Pub/Sub service agent).",
+     "acceptance_criteria": [
+      "workload_auth Golden Module instantiated for workload and push invoker identities",
+      "Minimal IAM bindings scoped to test-events-inbound, raw_events_bucket, and Firestore datastore.user"
+     ],
+     "depends_on": [
+      "STEP-02-DATABASE",
+      "STEP-STORAGE",
+      "STEP-PUBSUB-TOPIC"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-APP-CODE",
+     "step_index": 6,
+     "category": "APP_CODE",
+     "title": "Implement FastAPI Application, OIDC Push Worker & Buildpack Entrypoint",
+     "target_files": [
+      "apps/ex01-live/main.py",
+      "apps/ex01-live/requirements.txt",
+      "apps/ex01-live/Procfile"
+     ],
+     "description": "Implement FastAPI endpoints under apps/ex01-live/: public POST /api/v1/events (validating event_type, source_system, payload, timestamp and publishing to test-events-inbound), OIDC-authenticated internal POST /api/v1/tasks/process (verifying Bearer OIDC token, persisting raw JSON to GCS, and writing audit records to Firestore event_audit_records), GET /health (reporting health, service name, and IaC engine tofu), and Procfile for Google Cloud Native Buildpacks with zero Dockerfiles.",
+     "acceptance_criteria": [
+      "FastAPI app functional under apps/ex01-live/ with GET /health, POST /api/v1/events, and OIDC-verified POST /api/v1/tasks/process",
+      "Procfile entrypoint configured with zero manual Dockerfiles",
+      "Dependencies pinned in apps/ex01-live/requirements.txt"
+     ],
+     "depends_on": [
+      "STEP-IAM"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-CICD",
+     "step_index": 7,
+     "category": "CICD",
+     "title": "Configure Cloud Native Buildpacks CI/CD Pipeline (Zero Dockerfiles)",
+     "target_files": [
+      "cloudbuild.yaml",
+      ".github/workflows/deploy-ex01-live.yml"
+     ],
+     "description": "Create cloudbuild.yaml and GitHub Actions workflow using Google Cloud Native Buildpacks (pack build with gcr.io/buildpacks/builder or gcloud builds submit --pack) to build apps/ex01-live without any Dockerfile or docker build commands and deploy to Cloud Run.",
+     "acceptance_criteria": [
+      "CI/CD pipeline builds container strictly via Google Cloud Native Buildpacks (pack build or gcloud builds submit --pack)",
+      "Zero Dockerfiles and zero docker build commands exist in cloudbuild.yaml or workflows",
+      "GitHub Actions workflow includes on.push.paths filter for apps/ex01-live/**"
+     ],
+     "depends_on": [
+      "STEP-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-COMPUTE",
+     "step_index": 8,
+     "category": "COMPUTE",
+     "title": "Provision Cloud Run v2 Service via compute-cloudrun Golden Module",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Instantiate the canonical compute-cloudrun Golden Module for ex01-live in us-central1 bound to the workload service account, enforcing scale-to-zero (min_instance_count = 0) and max_instance_count = 3, with public HTTP ingress for webhook ingestion while securing /api/v1/tasks/process via application-level OIDC token validation.",
+     "acceptance_criteria": [
+      "compute-cloudrun Golden Module instantiated with min_instance_count = 0 and max_instance_count = 3",
+      "Environment variables PUBSUB_TOPIC_ID, RAW_EVENTS_BUCKET, FIRESTORE_DATABASE, and PUSH_INVOKER_SA_EMAIL configured",
+      "Cloud Run service URI exported in infra/workload/outputs.tf"
+     ],
+     "depends_on": [
+      "STEP-IAM",
+      "STEP-CICD"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-PUBSUB-PUSH",
+     "step_index": 9,
+     "category": "COMPUTE",
+     "title": "Provision Authenticated Pub/Sub Push Subscription Targeting Worker Endpoint",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Configure the authenticated Pub/Sub push subscription via messaging-pubsub on topic test-events-inbound targeting ${cloud_run_uri}/api/v1/tasks/process with OIDC token authentication bound to the push invoker service account.",
+     "acceptance_criteria": [
+      "Pub/Sub push subscription configured on test-events-inbound targeting Cloud Run /api/v1/tasks/process",
+      "Push subscription configured with oidc_token using the dedicated push invoker service account and Cloud Run audience"
+     ],
+     "depends_on": [
+      "STEP-PUBSUB-TOPIC",
+      "STEP-COMPUTE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-TESTS",
+     "step_index": 10,
+     "category": "TEST",
+     "title": "Implement Pytest Unit Test Suite with 100% Coverage",
+     "target_files": [
+      "tests/test_main.py",
+      "README.md"
+     ],
+     "description": "Write comprehensive pytest unit tests mocking GCP clients and OIDC verification across all endpoints, models, and error paths, enforcing 100% test coverage.",
+     "acceptance_criteria": [
+      "pytest --cov=apps/ex01-live --cov-fail-under=100 passes with 100% test coverage",
+      "All routes (GET /health, POST /api/v1/events, POST /api/v1/tasks/process) and OIDC auth checks verified",
+      "README.md documents API endpoints and architecture"
+     ],
+     "depends_on": [
+      "STEP-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    }
+   ]
+  },
+  "estimated_complexity": "MEDIUM",
+  "requires_human_approval": false,
+  "risk_assessment": "Low risk; serverless scale-to-zero Cloud Run architecture using canonical Golden Modules, Cloud Native Buildpacks without Dockerfiles, OIDC-secured Pub/Sub push delivery, and zero Compute Engine VMs.",
+  "requires_vpc": false,
+  "network_purpose": null,
+  "assigned_cidr_block": null,
+  "bundle_id": "event-driven-microservice",
+  "iac_engine": "tofu"
+ },
+ "prose_markers": [
+  {
+   "item": "infra_tasks[INFRA-05]",
+   "field": "acceptance_criteria[1]",
+   "contains": "cloudbuild.yaml"
+  }
+ ]
+}

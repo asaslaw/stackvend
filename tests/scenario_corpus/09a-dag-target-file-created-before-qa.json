@@ -1,0 +1,46 @@
+{
+  "title": "The plan names apps/<svc>/models.py; the swarm put the models elsewhere: the pre-commit gate has the file created before QA",
+  "source": "example 09 live run 11-15 (docs/handoff/ex09-1115-dag-target-file-diagnosis.md): QA attempt 0 passed 16/16 tests, the adherence judge's file-less finding 'Expected target file apps/ex09-1115/models.py is missing (models were placed in apps/ex09-1115/schemas/portal.py)' sent the passing build back (REGENERATE, FINDING_NOT_ON_A_DRAFT_FILE) twice and the run failed",
+  "mechanism": "PLAN-TARGET-FILES: V-PLAN-TARGETS reports the DAG target missing from the assembled tree as PLAN.TARGET_FILE_MISSING, a file to create routed to the author of another target of the same DAG task; the developer's repair loop writes it in the same dispatch, so the judge never sees a missing DAG file (before the fix: QA attempt 1 fails on the judge finding and the build is regenerated)",
+  "product_id": "admin-portal",
+  "trace": "trace-dag-target-file",
+  "access": {"mode": "PUBLIC_APP"},
+  "topology": {"services": [{"name": "admin-portal", "kind": "cloudrun"}], "primary_service": "admin-portal",
+               "edges": [], "resources": []},
+  "task_dag": [
+    {"task_id": "CODE-01", "category": "CODE", "title": "RBAC engine and domain models",
+     "target_files": ["apps/admin-portal/main.py", "apps/admin-portal/models.py"]},
+    {"task_id": "CODE-03", "category": "TEST", "title": "pytest suite", "target_files": ["tests/test_main.py"]}
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\nfrom schemas.portal import Role\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True, 'roles': [r.value for r in Role]}\n",
+    "portal": "from enum import Enum\n\n\nclass Role(str, Enum):\n    VIEWER = 'Viewer'\n    SUPER_ADMIN = 'SuperAdmin'\n",
+    "models": "from schemas.portal import Role\n\n__all__ = ['Role']\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "test_main": "def test_health():\n    assert True\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/admin-portal/main.py": "@main",
+      "apps/admin-portal/schemas/portal.py": "@portal",
+      "apps/admin-portal/requirements.txt": "@requirements",
+      "apps/admin-portal/Procfile": "@procfile",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "@test_main"
+    }
+  },
+  "generations": ["build"],
+  "repairs": [{"apps/admin-portal/models.py": "@models"}],
+  "sandbox": {"tests_total": 16, "rules": []},
+  "judge": {"*": {
+    "security": {"reply": {"critical": []}},
+    "adherence": {"reply": {"score": 0.94, "score_after_withdrawal": 1.0, "missed": [
+      {"text": "Missed Directive: Expected target file apps/admin-portal/models.py is missing from the commit (domain models were placed in apps/admin-portal/schemas/portal.py instead of the target path)",
+       "task_id": "CODE-01",
+       "withdraw_if_tree": {"file": "apps/admin-portal/models.py", "present": true}}]}}
+  }},
+  "expect": {
+    "outcome": {"status": "SUCCESS", "qa_attempts": 1, "max_generations": 1, "developer_dispatches": 1}
+  }
+}

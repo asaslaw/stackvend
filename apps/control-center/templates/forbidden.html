@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Access Denied — StackVend</title>
+    <script src="/static/vendor/tailwind-play-3.4.17.js" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center font-sans p-6">
+    <div class="max-w-md w-full bg-slate-900 border border-rose-500/20 rounded-2xl p-8 text-center shadow-2xl space-y-6">
+        <div class="w-16 h-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-lg">
+            🚫
+        </div>
+        <div class="space-y-2">
+            <h1 class="text-xl font-bold text-white tracking-tight">Access Denied</h1>
+            <p class="text-xs text-slate-400">Your Google Account is not authorized to access StackVend.</p>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+            <p class="text-xs text-slate-300 font-mono break-all">{{ safe_email }}</p>
+        </div>
+        <div class="space-y-3 pt-2">
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Contact your StackVend administrator to add this email to the Approved Users Registry.
+            </p>
+            <a href="/auth/logout" class="inline-block w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 rounded-xl border border-slate-700 transition">
+                Sign in with a different account
+            </a>
+        </div>
+    </div>
+</body>
+</html>

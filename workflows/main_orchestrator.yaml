@@ -1,0 +1,2229 @@
+# ==============================================================================
+# STACKVEND: MAIN MULTI-AGENT ORCHESTRATOR WORKFLOW
+# ==============================================================================
+# Parameterized state machine managing:
+# Ingestion -> Architect DAG -> Compliance -> FinOps + Pre-Build Gate (real wait) -> Quota Gate (real wait) ->
+# Async Vending Callback -> Developer -> Gatekeeper -> QA -> Release (+ PR approval wait) -> Async Terraform Deploy
+#
+# Lane 17 (FD-4AJ / FD-4R / FD-4AG, plan docs/planning/wave2-lane17-workflow-integrity-plan.md rev 2, PR-2):
+# - `main` runs the pipeline subworkflow `run_pipeline` inside ONE try. Every failure (typed `raise`, typed gateway
+#   HTTP body, timeout, or an error nobody anticipated) reaches the single failure handler below: release the quota
+#   claim, publish to the DLQ, notify FAILED, then RE-RAISE so the execution ends FAILED (it used to end SUCCEEDED).
+# - Failures carry `error_class` / `stage` / `reason` (gate_errors.py vocabulary); typed gateway bodies keep theirs.
+# - Every gate is a real wait or a real stop: pre-build (compliance + FinOps + operator) gate, quota gate, PR
+#   approval, kill switch (start / vending / developer / deploy), RESUME_DEVELOPER and DEPLOY_ONLY gates.
+# - Register row 24 (owner): until lane 14's sentinel fix is live on both installs, nothing here logs at ERROR.
+# - Lane 13 (FD-4F) PR-0 behaviour is preserved: QA readiness before the architect/vending, committed_paths,
+#   commit-bound QA with typed retry (max 3, QA-RETRIES), private-by-default ingress, release binds the commit.
+# - LONG-STAGE-CALLBACK (owner 11-13, apply.sh approved; plan docs/planning/stage-deadline-and-callback-plan.md): the
+#   architect, developer and QA stages run as gateway jobs answered by callback (subworkflow run_stage_job), so a
+#   stage is bounded by its await timeout, not by the 1800 s http.post cap. Same request bodies, same result shapes
+#   and the same typed failure routing as the synchronous calls; an await timeout is STAGE_TIMEOUT.
+# - STAGE-JOB-RUNNER (owner 11-13, same apply.sh; plan docs/planning/stage-job-runner-plan.md): each stage job is one
+#   execution of the stage-runner Cloud Run Job (not work on the gateway service); the await is sliced and the job is
+#   probed between slices (a job that ended without an answer -> STAGE_INTERRUPTED); /health stage_jobs_enabled false
+#   -> the synchronous routes as before (RT F4 rollback switch).
+# ==============================================================================
+
+main:
+  params: [args]
+  steps:
+    - init_failure_context:
+        assign:
+          - trace_id: ${default(map.get(args, "trace_id"), string(uuid.generate()))}
+          - args.trace_id: ${trace_id}
+          - product_id: ${default(map.get(args, "product_id"), "")}
+          - spec_doc_id: ${default(map.get(args, "spec_doc_id"), "")}
+          - gateway_url: ${default(map.get(args, "gateway_url"), "")}
+          - dlq_topic: ${default(map.get(args, "dlq_topic"), "")}
+          - failure_log_severity: "WARNING"  # row 24: WARNING until lane 14's sentinel fix is live on both installs
+
+    - run_pipeline_guarded:
+        try:
+          call: run_pipeline
+          args:
+            args: ${args}
+          result: pipeline_result
+        except:
+          as: e
+          steps:
+            - classify_failure:
+                call: build_failure
+                args:
+                  err: ${e}
+                  stage: "unknown"
+                  error_class: ""
+                  message: ""
+                result: failure
+            - release_quota_claim:
+                try:
+                  call: http.post
+                  args:
+                    url: ${gateway_url + "/events/quota-claim/release"}
+                    auth:
+                      type: OIDC
+                    body:
+                      trace_id: ${trace_id}
+                except:
+                  as: q_err
+                  steps:
+                    - log_quota_release_failure:
+                        call: sys.log
+                        args:
+                          text: '${"Quota claim release failed: " + json.encode_to_string(q_err)}'
+                          severity: ${failure_log_severity}
+            # Cloud Workflows expressions have no map literals: build the DLQ payload with assign steps.
+            - build_dlq_payload:
+                assign:
+                  - dlq_payload: ${failure}
+                  - dlq_payload.trace_id: ${trace_id}
+                  - dlq_payload.product_id: ${product_id}
+                  - dlq_payload.spec_doc_id: ${spec_doc_id}
+                  - dlq_payload.error_message: ${failure.message}
+                  - dlq_payload.workflow_execution_id: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+            - publish_dead_letter:
+                try:
+                  call: googleapis.pubsub.v1.projects.topics.publish
+                  args:
+                    topic: ${dlq_topic}
+                    body:
+                      messages:
+                        - data: ${base64.encode(json.encode(dlq_payload))}
+                except:
+                  as: dlq_err
+                  steps:
+                    - log_dlq_failure:
+                        call: sys.log
+                        args:
+                          text: '${"DLQ publish failed: " + json.encode_to_string(dlq_err)}'
+                          severity: ${failure_log_severity}
+            - notify_failure:
+                try:
+                  call: http.post
+                  args:
+                    url: ${gateway_url + "/events/workflow-status"}
+                    auth:
+                      type: OIDC
+                    body:
+                      trace_id: ${trace_id}
+                      product_id: ${product_id}
+                      status: "FAILED"
+                      current_stage: "FAILED"
+                      error_class: ${failure.error_class}
+                      failed_stage: ${failure.stage}
+                      reason: ${failure.reason}
+                      error_detail: ${failure.message}
+                      workflow_execution_id: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+                except:
+                  as: n_err
+                  steps:
+                    - log_notify_failure:
+                        call: sys.log
+                        args:
+                          text: '${"FAILED notification failed: " + json.encode_to_string(n_err)}'
+                          severity: ${failure_log_severity}
+            - fail_execution:
+                raise: ${failure}
+
+    - complete_workflow:
+        return: ${pipeline_result}
+
+
+# ------------------------------------------------------------------------------
+# build_failure: one typed failure map from any error value (RT F4).
+#   1. already a StackVendPipelineError            -> unchanged
+#   2. HTTP error whose body has an error_class    -> that class / stage / reason (typed gateway 4xx/5xx)
+#   3. an explicit error_class from the caller     -> that class
+#   4. HttpError without a typed body              -> DEPENDENCY_FAILED
+#   5. anything else                               -> UNHANDLED (raw error kept)
+# ------------------------------------------------------------------------------
+build_failure:
+  params: [err, stage, error_class, message]
+  steps:
+    - pick_kind:
+        switch:
+          - condition: ${get_type(err) == "map" and default(map.get(err, "tag"), "") == "StackVendPipelineError"}
+            return: ${err}
+          - condition: ${get_type(err) == "map" and get_type(map.get(err, "body")) == "map"}
+            next: check_typed_body
+          - condition: true
+            next: untyped
+    - check_typed_body:
+        switch:
+          - condition: ${get_type(map.get(err.body, "error_class")) == "string" and default(map.get(err.body, "error_class"), "") != ""}
+            next: typed_body
+          - condition: true
+            next: untyped
+    - typed_body:
+        return:
+          tag: "StackVendPipelineError"
+          error_class: ${err.body.error_class}
+          stage: ${default(map.get(err.body, "stage"), stage)}
+          reason: ${default(map.get(err.body, "reason"), "")}
+          remediable: false
+          message: ${message + " " + json.encode_to_string(default(map.get(err.body, "summary"), ""))}
+          raw_error: ${err}
+    - untyped:
+        switch:
+          - condition: ${error_class != ""}
+            assign:
+              - cls: ${error_class}
+            next: generic
+          - condition: ${get_type(err) == "map" and "HttpError" in default(map.get(err, "tags"), [])}
+            assign:
+              - cls: "DEPENDENCY_FAILED"
+            next: generic
+          - condition: true
+            assign:
+              - cls: "UNHANDLED"
+            next: generic
+    - generic:
+        switch:
+          - condition: ${message == ""}
+            assign:
+              - text_out: ${json.encode_to_string(err)}
+            next: generic_return
+          - condition: true
+            assign:
+              - text_out: ${message}
+            next: generic_return
+    - generic_return:
+        return:
+          tag: "StackVendPipelineError"
+          error_class: ${cls}
+          stage: ${stage}
+          reason: ""
+          remediable: false
+          message: ${text_out}
+          raw_error: ${err}
+
+
+# ------------------------------------------------------------------------------
+# run_stage_job (LONG-STAGE-CALLBACK + STAGE-JOB-RUNNER, owner 11-13): one long LLM stage as a stage-runner Cloud Run
+# Job execution answered by callback (plan docs/planning/stage-job-runner-plan.md).
+#   RT F4 switch: the gateway's /health `stage_jobs_enabled` false -> the synchronous route exactly as before
+#   LONG-STAGE-CALLBACK (same body, `sync_timeout_s`, same result), so a rollback is a gateway deploy, not an apply.
+#   Otherwise: create a callback endpoint -> POST the stage's request + callback_url to the gateway job route (202
+#   once the execution exists; one execution per callback URL, so the dispatch is retried) -> await the callback in
+#   slices of at most 300 s up to await_timeout_s (the gateway's CALLBACK budget + margin, stage_deadline.STAGE_BUDGETS;
+#   parity test); between slices GET /agent/stage-job/state: DEAD (the execution ended without an answer, or the
+#   answer was undeliverable) -> one last 30 s wait for an answer already sent, then STAGE_INTERRUPTED (typed, at
+#   once instead of at the bound); a probe read error never fails the stage. The callback body is
+#   {stage, job_id, trace_id, http_status, body}: exactly the answer the synchronous route would have given.
+#   2xx -> returns {code, body} like http.post, so every step after it is unchanged. Non-2xx -> the same typed
+#   failure build_failure makes from the synchronous HttpError (typed body kept, untyped -> DEPENDENCY_FAILED).
+#   No callback in time -> STAGE_TIMEOUT (typed, never UNHANDLED). A malformed callback -> CONTRACT_VIOLATION.
+# ------------------------------------------------------------------------------
+run_stage_job:
+  params: [gateway_url, path, sync_path, sync_timeout_s, stage, request, await_timeout_s, failure_message]
+  steps:
+    - read_stage_runner_switch:
+        try:
+          call: http.get
+          args:
+            url: ${gateway_url + "/health"}
+            auth:
+              type: OIDC
+            timeout: 60
+          result: stage_health
+        retry: ${http.default_retry}
+    - choose_stage_runner:
+        switch:
+          - condition: ${default(map.get(stage_health.body, "stage_jobs_enabled"), false) == true}
+            next: create_stage_callback
+        next: run_stage_synchronously
+    # RT F4: the pre-LONG-STAGE-CALLBACK call, unchanged (an error propagates to the caller's except as before).
+    - run_stage_synchronously:
+        call: http.post
+        args:
+          url: ${gateway_url + sync_path}
+          auth:
+            type: OIDC
+          timeout: ${sync_timeout_s}
+          body: ${request}
+        result: stage_sync_answer
+    - return_stage_sync_answer:
+        return: ${stage_sync_answer}
+    - create_stage_callback:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: stage_callback
+    - attach_stage_callback:
+        assign:
+          - request.callback_url: ${stage_callback.url}
+    - dispatch_stage_job:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + path}
+            auth:
+              type: OIDC
+            timeout: 60
+            body: ${request}
+          result: stage_dispatch_ack
+        retry: ${http.default_retry}  # idempotent: the gateway starts one execution per callback URL
+    - release_stage_request:
+        assign:
+          - stage_trace_id: ${request.trace_id}
+          - stage_job_id: ${stage_dispatch_ack.body.job_id}
+          - stage_dispatch_ack: null
+          - request: null  # memory: the request is not needed while the stage runs
+          - stage_waited_s: 0
+    - size_stage_slice:
+        assign:
+          - stage_slice_s: 300
+    - shorten_last_stage_slice:
+        switch:
+          - condition: ${await_timeout_s - stage_waited_s < stage_slice_s}
+            next: set_last_stage_slice
+        next: await_stage_callback
+    - set_last_stage_slice:
+        assign:
+          - stage_slice_s: ${await_timeout_s - stage_waited_s}
+    - await_stage_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${stage_callback}
+            timeout: ${stage_slice_s}
+          result: stage_callback_response
+        except:
+          as: stage_wait_err
+          steps:
+            - read_stage_wait_tags:
+                assign:
+                  - stage_wait_tags: ${default(map.get(stage_wait_err, "tags"), [])}
+            - stage_slice_timed_out:
+                switch:
+                  - condition: ${"TimeoutError" in stage_wait_tags}
+                    next: count_stage_wait
+            # RT S6: a wait that failed for another reason names its error tags.
+            - raise_stage_wait_failed:
+                raise:
+                  tag: "StackVendPipelineError"
+                  error_class: "STAGE_TIMEOUT"
+                  stage: ${stage}
+                  reason: "STAGE_CALLBACK_WAIT_FAILED"
+                  remediable: false
+                  message: '${failure_message + ": waiting for the stage job callback failed (tags " + json.encode_to_string(stage_wait_tags) + ")"}'
+                  raw_error: ${stage_wait_err}
+        next: read_stage_answer
+    - count_stage_wait:
+        assign:
+          - stage_waited_s: ${stage_waited_s + stage_slice_s}
+    - stage_wait_exhausted:
+        switch:
+          - condition: ${stage_waited_s >= await_timeout_s}
+            next: raise_stage_timeout
+        next: probe_stage_job
+    - raise_stage_timeout:
+        raise:
+          tag: "StackVendPipelineError"
+          error_class: "STAGE_TIMEOUT"
+          stage: ${stage}
+          reason: "STAGE_CALLBACK_TIMEOUT"
+          remediable: false
+          message: '${failure_message + ": the stage job did not answer within " + string(await_timeout_s) + " s"}'
+    - probe_stage_job:
+        try:
+          call: http.get
+          args:
+            url: ${gateway_url + "/agent/stage-job/state"}
+            auth:
+              type: OIDC
+            timeout: 60
+            query:
+              trace_id: ${stage_trace_id}
+              stage: ${stage}
+              job_id: ${stage_job_id}
+          result: stage_job_state
+        except:
+          as: stage_probe_err
+          steps:
+            - stage_probe_unreadable:
+                next: size_stage_slice  # a probe failure never fails the stage: the await bound still holds
+    - stage_job_dead:
+        switch:
+          - condition: ${default(map.get(stage_job_state.body, "state"), "") == "DEAD"}
+            next: drain_stage_callback
+        next: size_stage_slice
+    # The job can no longer answer. One last short wait takes an answer that was sent just before the probe.
+    - drain_stage_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${stage_callback}
+            timeout: 30
+          result: stage_callback_response
+        except:
+          as: stage_drain_err
+          steps:
+            - raise_stage_interrupted:
+                raise:
+                  tag: "StackVendPipelineError"
+                  error_class: "STAGE_INTERRUPTED"
+                  stage: ${stage}
+                  reason: '${"STAGE_JOB_" + default(map.get(stage_job_state.body, "reason"), "DEAD")}'
+                  remediable: false
+                  message: '${failure_message + ": the stage-runner job ended without an answer (" + default(map.get(stage_job_state.body, "detail"), "no detail") + ")"}'
+                  raw_error: ${stage_job_state.body}
+    - read_stage_answer:
+        assign:
+          - stage_answer: ${stage_callback_response.http_request.body}
+          - stage_callback_response: null
+    - check_stage_answer:
+        switch:
+          - condition: ${get_type(stage_answer) != "map"}
+            next: raise_stage_contract
+          - condition: ${get_type(map.get(stage_answer, "http_status")) != "integer" or get_type(map.get(stage_answer, "body")) != "map"}
+            next: raise_stage_contract
+          - condition: ${stage_answer.http_status >= 200 and stage_answer.http_status < 300}
+            return:
+              code: ${stage_answer.http_status}
+              body: ${stage_answer.body}
+          - condition: true
+            next: build_stage_http_error
+    - raise_stage_contract:
+        raise:
+          tag: "StackVendPipelineError"
+          error_class: "CONTRACT_VIOLATION"
+          stage: ${stage}
+          reason: "STAGE_CALLBACK_CONTRACT"
+          remediable: false
+          message: '${failure_message + ": the stage job callback has no integer http_status and map body"}'
+    # The HttpError map Workflows raises for a non-2xx http.post, so build_failure types it exactly as before.
+    - build_stage_http_error:
+        assign:
+          - stage_http_error:
+              tags: ["HttpError"]
+              code: ${stage_answer.http_status}
+              message: '${"HTTP server responded with error code " + string(stage_answer.http_status)}'
+              body: ${stage_answer.body}
+              headers: {}
+    - type_stage_failure:
+        call: build_failure
+        args:
+          err: ${stage_http_error}
+          stage: ${stage}
+          error_class: ""
+          message: ${failure_message}
+        result: pipeline_failure
+    - raise_stage_failure:
+        raise: ${pipeline_failure}
+
+
+# ------------------------------------------------------------------------------
+# assert_kill_switch_clear (AJ-12): active -> KILL_SWITCH_ACTIVE; unreadable -> GATE_UNAVAILABLE (fail closed).
+# ------------------------------------------------------------------------------
+assert_kill_switch_clear:
+  params: [gateway_url, stage]
+  steps:
+    - read_kill_switch:
+        try:
+          call: http.get
+          args:
+            url: ${gateway_url + "/governance/kill-switch"}
+            auth:
+              type: OIDC
+            timeout: 60
+          result: kill_switch
+        retry: ${http.default_retry}
+        except:
+          as: ks_err
+          steps:
+            - kill_switch_unreadable:
+                raise:
+                  tag: "StackVendPipelineError"
+                  error_class: "GATE_UNAVAILABLE"
+                  stage: ${stage}
+                  reason: "KILL_SWITCH_UNREADABLE"
+                  remediable: false
+                  message: '${"Platform kill switch could not be read; the run stops (fail closed): " + json.encode_to_string(ks_err)}'
+    - check_kill_switch:
+        switch:
+          - condition: ${get_type(map.get(kill_switch.body, "active")) != "boolean"}
+            raise:
+              tag: "StackVendPipelineError"
+              error_class: "CONTRACT_VIOLATION"
+              stage: ${stage}
+              reason: "KILL_SWITCH_CONTRACT"
+              remediable: false
+              message: "Kill switch response has no boolean `active`"
+          - condition: ${kill_switch.body.active}
+            raise:
+              tag: "StackVendPipelineError"
+              error_class: "KILL_SWITCH_ACTIVE"
+              stage: ${stage}
+              reason: ${default(map.get(kill_switch.body, "reason"), "")}
+              remediable: false
+              message: "Platform emergency stop is active; the run was stopped"
+          - condition: true
+            next: kill_switch_clear
+    - kill_switch_clear:
+        return: true
+
+
+# ------------------------------------------------------------------------------
+# run_pipeline: the pipeline body. Every terminal failure assigns error_detail (+ error_class, failure_stage,
+# caught_error) and jumps to prep_dead_letter_payload, which RAISES a typed failure for main's handler.
+# ------------------------------------------------------------------------------
+run_pipeline:
+  params: [args]
+  steps:
+    - init_context:
+        assign:
+          - trace_id: ${args.trace_id}
+          - spec_doc_id: ${default(map.get(args, "spec_doc_id"), "")}
+          - product_id: ${default(map.get(args, "product_id"), "")}
+          - source_channel: ${default(map.get(args, "source_channel"), "google_docs")}
+          - rework_counter: 0
+          - human_feedback: ""
+          - policy_matrix: ${default(map.get(args, "policy_matrix"), null)}
+          - policy_harvest_status: "NOT_RUN"
+          - retry_count: 0
+          - max_retries: 3  # QA-RETRIES (owner 10-29): up to 3 QA CODE_DEFECT repair rounds (was 1, FD-4F 19o)
+          - tf_retry_count: 0
+          - max_tf_retries: 2
+          - tf_remediation_context: '${default(map.get(args, "tf_remediation_context"), "")}'
+          - tf_validation_report: null  # TI-5-R3: set from the deploy callback in increment_tf_retry
+          - error_detail: ""
+          - error_class: ""
+          - failure_stage: ""
+          - caught_error: null
+          - gateway_url: ${default(map.get(args, "gateway_url"), "")}
+          - vending_mcp_url: ${default(map.get(args, "vending_mcp_url"), "")}
+          - workspace_mcp_url: ${default(map.get(args, "workspace_mcp_url"), "")}
+          - terraform_mcp_url: ${default(map.get(args, "terraform_mcp_url"), "")}
+          - infracost_mcp_url: ${default(map.get(args, "infracost_mcp_url"), "")}
+          - compliance_mcp_url: ${default(map.get(args, "compliance_mcp_url"), "")}
+          - folder_id: ${default(map.get(args, "folder_id"), "")}
+          - quota_snapshot: ${default(map.get(args, "quota_snapshot"), null)}
+          - execution_mode: '${default(map.get(args, "execution_mode"), "FULL_BUILD")}'
+          - target_project_id: '${default(map.get(args, "target_project_id"), default(map.get(args, "project_id"), "castor-" + product_id))}'
+          - target_branch: '${default(map.get(args, "target_branch"), default(map.get(args, "branch"), "main"))}'
+          - pull_request_url: ""
+          - proposed_infra_plan: null
+          - compliance_output: null
+          - architect_output: null
+          - finops_output: null
+          - finops_error: ""
+          - finops_body: null  # bundle RT F6: resolved by explicit null checks (resolve_finops_view)
+          - finops_cost_display: "not evaluated"
+          - finops_risk_assessment: "UNKNOWN"
+          - prebuild_output: null
+          - plan_approval_id: ""
+          - finops_hitl_requested: false
+          - quota_recheck_n: 0
+          - quota_gate_reason: ""
+          - quota_validation_result: null
+          - quota_body: null  # bundle RT F6: resolved by explicit null checks (resolve_quota_view)
+          - quota_target_region: ""
+          - quota_violations: []
+          - quota_remediation: null
+          - quota_source: ""
+          - deployment_output: null
+
+    # F9: one rule for a missing product_id (no "default-workload")
+    - require_product_id:
+        switch:
+          - condition: ${product_id == "" or gateway_url == ""}
+            assign:
+              - error_detail: "Workflow started without product_id or gateway_url"
+              - error_class: "CONTRACT_VIOLATION"
+              - failure_stage: "pipeline_start"
+            next: prep_dead_letter_payload
+          - condition: true
+            next: check_gateway_contract
+
+    # A PR-2 workflow that reaches an install whose gateway is older stops here at $0 (plan §2.4)
+    - check_gateway_contract:
+        try:
+          call: http.get
+          args:
+            url: ${gateway_url + "/health"}
+            auth:
+              type: OIDC
+            timeout: 60
+          result: gateway_health
+        retry: ${http.default_retry}
+        except:
+          as: health_err
+          steps:
+            - route_gateway_unreachable:
+                assign:
+                  - error_detail: "Gateway /health unreachable at pipeline start"
+                  - error_class: "GATE_UNAVAILABLE"
+                  - failure_stage: "gateway_contract"
+                  - caught_error: ${health_err}
+                next: prep_dead_letter_payload
+
+    - evaluate_gateway_contract:
+        switch:
+          - condition: ${get_type(map.get(gateway_health.body, "workflow_contract")) != "integer"}
+            next: route_gateway_contract_too_old
+          - condition: ${gateway_health.body.workflow_contract < 3}
+            next: route_gateway_contract_too_old
+          - condition: true
+            next: kill_switch_at_start
+
+    - route_gateway_contract_too_old:
+        assign:
+          - error_detail: "Gateway workflow_contract < 3 (stage-job routes, LONG-STAGE-CALLBACK): this workflow needs a newer orchestrator-gateway-service revision"
+          - error_class: "GATE_UNAVAILABLE"
+          - failure_stage: "gateway_contract"
+        next: prep_dead_letter_payload
+
+    - kill_switch_at_start:
+        call: assert_kill_switch_clear
+        args:
+          gateway_url: ${gateway_url}
+          stage: "pipeline_start"
+
+    # ==============================================================================
+    # Step 0: Pre-Discovery Upstream GCP Org Policy & Quota Harvesting (0 LLM, ~150ms)
+    # ==============================================================================
+    - check_policy_harvest:
+        switch:
+          - condition: ${folder_id != "" and compliance_mcp_url != "" and policy_matrix == null}
+            next: harvest_folder_policies
+          - condition: true
+            next: notify_discovery_skipped
+
+    - harvest_folder_policies:
+        try:
+          call: http.post
+          args:
+            url: ${compliance_mcp_url + "/harvest-policies"}
+            auth:
+              type: OIDC
+            body:
+              folder_id: ${folder_id}
+          result: harvest_result
+        except:
+          as: harvest_err
+          steps:
+            - log_harvest_error:
+                call: sys.log
+                args:
+                  text: '${"Org policy harvesting failed (becomes a pre-build gate reason): " + json.encode_to_string(harvest_err)}'
+                  severity: WARNING
+            - mark_harvest_failed:
+                assign:
+                  - policy_harvest_status: "FAILED"
+                next: notify_discovery_degraded
+
+    - assign_harvested_policies:
+        assign:
+          - policy_matrix: ${harvest_result.body}
+          - policy_harvest_status: "SUCCESS"
+        next: notify_discovery_success
+
+    - notify_discovery_success:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "ARCHITECT"
+              stage_name: "discovery"
+              stage_status: "SUCCESS"
+              stage_summary: "GCP Org Policies harvested from folder (0 LLM)"
+          result: notify_discovery_ack
+        except:
+          as: disc_err
+          steps:
+            - log_discovery_stage_warning:
+                call: sys.log
+                args:
+                  text: "Discovery stage heartbeat skipped"
+                  severity: INFO
+        next: check_quota_harvest
+
+    # AJ-16: a harvest failure is reported honestly (DEGRADED), never as "defaults applied"
+    - notify_discovery_degraded:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "ARCHITECT"
+              stage_name: "discovery"
+              stage_status: "DEGRADED"
+              stage_summary: "Org policy harvest FAILED; the pre-build gate will require an operator decision"
+          result: notify_discovery_ack
+        except:
+          as: disc_err3
+          steps:
+            - log_discovery_degraded_warning:
+                call: sys.log
+                args:
+                  text: "Discovery degraded heartbeat skipped"
+                  severity: INFO
+        next: check_quota_harvest
+
+    - notify_discovery_skipped:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "ARCHITECT"
+              stage_name: "discovery"
+              stage_status: "SKIPPED"
+              stage_summary: "No folder constraint to harvest (no folder_id or policy matrix already supplied)"
+          result: notify_discovery_ack
+        except:
+          as: disc_err2
+          steps:
+            - log_discovery_skipped_warning:
+                call: sys.log
+                args:
+                  text: "Discovery skipped heartbeat warning"
+                  severity: INFO
+        next: check_quota_harvest
+
+    # ==============================================================================
+    # Step 0.5: Pre-Discovery Regional Quota Harvesting (0 LLM, <150ms) -- advisory input to the architect only
+    # ==============================================================================
+    - check_quota_harvest:
+        switch:
+          - condition: ${quota_snapshot == null}
+            next: harvest_project_quotas
+          - condition: true
+            next: evaluate_resume_checkpoint
+
+    - harvest_project_quotas:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/discovery/quotas"}
+            auth:
+              type: OIDC
+            body:
+              project_id: ${target_project_id}  # AJ-9: the GCP project, never the product id
+              regions: ["us-central1", "us-east4", "europe-west1"]
+          result: quota_harvest_result
+        except:
+          as: quota_err
+          steps:
+            - log_quota_harvest_warning:
+                call: sys.log
+                args:
+                  text: '${"Quota harvesting skipped (architect gets no snapshot): " + json.encode_to_string(quota_err)}'
+                  severity: WARNING
+                next: evaluate_resume_checkpoint
+
+    - assign_harvested_quotas:
+        assign:
+          - quota_snapshot: ${quota_harvest_result.body}
+        next: evaluate_resume_checkpoint
+
+    # ==============================================================================
+    # Step 0.8: Execution-mode routing. DEPLOY_ONLY -> deploy-only gate (RT F2); FULL / RESUME -> QA readiness.
+    # ==============================================================================
+    - evaluate_resume_checkpoint:
+        switch:
+          - condition: ${execution_mode == "DEPLOY_ONLY"}
+            next: deploy_only_gate
+          - condition: true
+            next: check_qa_readiness
+
+    # FD-4F (register row 19 option A): every run that will reach QA checks QA readiness BEFORE any LLM call or
+    # vending. 200 = ready; 503 GATE_UNAVAILABLE/QA_NOT_CONFIGURED = stop now at $0 (typed failure).
+    - check_qa_readiness:
+        try:
+          call: http.get
+          args:
+            url: ${gateway_url + "/agent/qa/readiness"}
+            auth:
+              type: OIDC
+            timeout: 60
+          result: qa_readiness_output
+        except:
+          as: qa_ready_err
+          steps:
+            - route_qa_not_ready:
+                assign:
+                  - error_detail: "QA gate not ready; stopped before vending"
+                  - failure_stage: "qa_readiness"
+                  - caught_error: ${qa_ready_err}
+                next: prep_dead_letter_payload
+
+    - route_after_qa_readiness:
+        switch:
+          - condition: ${execution_mode == "RESUME_DEVELOPER"}
+            next: load_resume_outcome
+          - condition: true
+            next: architect_decomposition
+
+    # RT F1: RESUME_DEVELOPER reuses the prior FULL build's persisted gate decisions (same trace), never defaults
+    - load_resume_outcome:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/agent/resume/outcome"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+          result: resume_outcome
+        except:
+          as: resume_err
+          steps:
+            - route_resume_unavailable:
+                assign:
+                  - error_detail: "No reusable full-build gate decision for RESUME_DEVELOPER; run a full build"
+                  - failure_stage: "resume"
+                  - caught_error: ${resume_err}
+                next: prep_dead_letter_payload
+
+    - check_resume_gate:
+        switch:
+          - condition: ${get_type(map.get(resume_outcome.body, "prebuild_gate")) != "map" or get_type(map.get(resume_outcome.body, "compliance")) != "map"}
+            next: route_resume_contract
+          - condition: ${default(map.get(resume_outcome.body.prebuild_gate, "status"), "") in ["PASS", "APPROVED"]}
+            assign:
+              - compliance_output:
+                  body: ${resume_outcome.body.compliance}
+              # bundle RT F6 (extension): no architect ran; an empty body (not null) so no map.get sees null
+              - architect_output:
+                  body: {}
+            next: check_quota_preflight
+          - condition: true
+            next: route_resume_contract
+
+    - route_resume_contract:
+        assign:
+          - error_detail: "Resume outcome has no PASS/APPROVED pre-build gate; run a full build"
+          - error_class: "GATE_UNAVAILABLE"
+          - failure_stage: "resume"
+        next: prep_dead_letter_payload
+
+    # Step 1: Architect Agent ingests specification and breaks down Task DAG (LONG-STAGE-CALLBACK: a callback job;
+    # await 2100 s = the gateway's 1800 s CALLBACK budget + 300 s margin)
+    - architect_decomposition:
+        try:
+          call: run_stage_job
+          args:
+            gateway_url: ${gateway_url}
+            path: "/agent/architect/decompose-job"
+            sync_path: "/agent/architect/decompose"  # RT F4: used only when the gateway reports stage_jobs_enabled false
+            sync_timeout_s: 600  # the pre-LONG-STAGE-CALLBACK http.post timeout
+            stage: "architect"
+            await_timeout_s: 2100
+            failure_message: "Architect decomposition failed"
+            request:
+              trace_id: ${trace_id}
+              spec_doc_id: ${spec_doc_id}
+              spec_text: ${default(map.get(args, "spec_text"), "")}
+              product_id: ${product_id}
+              source_channel: ${source_channel}
+              workspace_mcp_url: ${workspace_mcp_url}
+              policy_matrix: ${policy_matrix}
+              human_feedback: ${human_feedback}
+              quota_snapshot: ${quota_snapshot}
+          result: architect_output
+        except:
+          as: arch_err
+          steps:
+            - route_architect_failure:
+                assign:
+                  - error_detail: "Architect decomposition failed"
+                  - failure_stage: "architect"
+                  - caught_error: ${arch_err}
+                next: prep_dead_letter_payload
+
+    - assign_architect_plan:
+        assign:
+          - proposed_infra_plan: ${default(map.get(architect_output.body, "infra_plan"), null)}
+
+    - notify_architect_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "COMPLIANCE"
+              stage_name: "architect"
+              stage_status: "SUCCESS"
+              stage_summary: "Task DAG decomposed successfully"
+          result: notify_architect_ack
+        except:
+          as: stage_err
+          steps:
+            - log_architect_stage_warning:
+                call: sys.log
+                args:
+                  text: "Architect stage heartbeat skipped"
+                  severity: INFO
+
+    # Step 1.5: Enterprise Compliance & Assured Workloads Agent (compliance server engine, fail closed)
+    - audit_compliance:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/agent/compliance/audit"}
+            auth:
+              type: OIDC
+            timeout: 300  # the Workflows default, written out (STAGE-DEADLINE: gateway compliance budget 270 s)
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              spec_text: ${default(map.get(args, "spec_text"), "")}
+              task_dag: ${default(map.get(architect_output.body, "task_dag"), [])}
+              folder_id: ${folder_id}
+              plan_markdown: ${default(map.get(architect_output.body, "plan_markdown"), "")}
+              plan_file_path: ${default(map.get(architect_output.body, "plan_file_path"), "")}
+              policy_matrix: ${policy_matrix}
+              # Explicit profile selection only (never inferred from spec text); "" = none (the gateway then uses
+              # the selection stored on the workload, else STANDARD recorded as DEFAULT_STANDARD).
+              compliance_profile: ${default(map.get(args, "compliance_profile"), "")}
+          result: compliance_output
+        except:
+          as: comp_err
+          steps:
+            - route_compliance_failure:
+                assign:
+                  - error_detail: "Compliance audit failed"
+                  - failure_stage: "compliance"
+                  - caught_error: ${comp_err}
+                next: prep_dead_letter_payload
+
+    - notify_compliance_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "FINOPS"
+              stage_name: "compliance"
+              stage_status: "SUCCESS"
+              stage_summary: "Enterprise compliance checks verified"
+          result: notify_compliance_ack
+        except:
+          as: stage_err
+          steps:
+            - log_compliance_stage_warning:
+                call: sys.log
+                args:
+                  text: "Compliance stage heartbeat skipped"
+                  severity: INFO
+
+    # Step 2: FinOps & Pre-Flight Cost Evaluation (AG-3: an error becomes a gate reason, never "LOW, no approval")
+    - evaluate_infra_cost:
+        try:
+          call: http.post
+          args:
+            url: ${infracost_mcp_url + "/evaluate"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              proposed_infra_plan: ${proposed_infra_plan}
+          result: finops_output
+        except:
+          as: finops_err
+          steps:
+            - log_finops_error:
+                call: sys.log
+                args:
+                  text: '${"Infracost cost evaluation unavailable (becomes a pre-build gate reason): " + json.encode_to_string(finops_err)}'
+                  severity: WARNING
+            - assign_finops_unavailable:
+                assign:
+                  - finops_output: null
+                  - finops_error: ${json.encode_to_string(finops_err)}
+                next: notify_finops_degraded
+
+    - notify_finops_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "FINOPS"
+              stage_name: "finops"
+              stage_status: "SUCCESS"
+              stage_summary: "Cost estimate received (priced from the plan's typed compute record; see the plan approval card)"
+        except:
+          as: finops_notify_err
+          steps:
+            - log_finops_notify_warning:
+                call: sys.log
+                args:
+                  text: "FinOps status heartbeat skipped"
+                  severity: INFO
+        next: resolve_finops_view
+
+    - notify_finops_degraded:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "FINOPS"
+              stage_name: "finops"
+              stage_status: "DEGRADED"
+              stage_summary: "Cost not evaluated (Infracost unavailable); an operator must approve the plan"
+        except:
+          as: finops_notify_err2
+          steps:
+            - log_finops_degraded_warning:
+                call: sys.log
+                args:
+                  text: "FinOps degraded heartbeat skipped"
+                  severity: INFO
+        next: resolve_finops_view
+
+    # Bundle RT F6: the FinOps view is resolved with explicit `== null` checks so no map.get below ever receives
+    # null (a FinOps outage leaves finops_output null). The run reaches the operator wait whatever the runtime's
+    # map.get(null, k) semantics are.
+    - resolve_finops_view:
+        switch:
+          - condition: ${finops_output == null}
+            assign:
+              - finops_body: null
+            next: resolve_finops_display
+          - condition: true
+            assign:
+              - finops_body: ${map.get(finops_output, "body")}
+            next: resolve_finops_display
+
+    - resolve_finops_display:
+        switch:
+          - condition: ${finops_body == null}
+            assign:
+              - finops_cost_display: "not evaluated"
+              - finops_risk_assessment: "UNKNOWN"
+            next: create_plan_approval_callback
+          - condition: true
+            assign:
+              - finops_cost_display: ${default(map.get(finops_body, "monthly_cost_estimate"), "not evaluated")}
+              - finops_risk_assessment: ${default(map.get(finops_body, "risk_assessment"), "UNKNOWN")}
+            next: create_plan_approval_callback
+
+    # ==============================================================================
+    # Step 2.5: Pre-Build Gate (FD-4AG + compliance HITL + operator request): the gateway decides, the run WAITS
+    # ==============================================================================
+    - create_plan_approval_callback:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: plan_approval_callback
+
+    - evaluate_pre_build_gate:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/pre-build-gate"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              callback_url: ${plan_approval_callback.url}
+              rework_cycle: ${rework_counter}
+              compliance: ${map.get(compliance_output, "body")}
+              finops: ${finops_body}
+              finops_error: ${finops_error}
+              policy_harvest_status: ${policy_harvest_status}
+              operator_requested: ${default(map.get(args, "require_plan_approval"), false) == true}
+              spec_doc_id: ${spec_doc_id}
+              plan_markdown: ${default(map.get(map.get(compliance_output, "body"), "plan_markdown"), default(map.get(architect_output.body, "plan_markdown"), ""))}
+              plan_file_path: ${default(map.get(map.get(compliance_output, "body"), "plan_file_path"), default(map.get(architect_output.body, "plan_file_path"), ""))}
+              task_dag: ${default(map.get(map.get(compliance_output, "body"), "task_dag"), default(map.get(architect_output.body, "task_dag"), []))}
+              compliance_summary: ${default(map.get(map.get(compliance_output, "body"), "compliance_summary"), "")}
+          result: prebuild_output
+        retry: ${http.default_retry}  # idempotent: deterministic approval id per trace + rework cycle (RT F7)
+        except:
+          as: prebuild_err
+          steps:
+            - route_prebuild_gate_failure:
+                assign:
+                  - error_detail: "Pre-build gate could not be evaluated"
+                  - failure_stage: "prebuild_gate"
+                  - caught_error: ${prebuild_err}
+                next: prep_dead_letter_payload
+
+    - check_policy_gates:
+        switch:
+          - condition: ${default(map.get(prebuild_output.body, "decision"), "") == "AWAIT_APPROVAL" and spec_doc_id != "" and finops_hitl_requested != true}
+            assign:
+              - plan_approval_id: ${prebuild_output.body.approval_id}
+            next: await_human_approval
+          - condition: ${default(map.get(prebuild_output.body, "decision"), "") == "AWAIT_APPROVAL"}
+            assign:
+              - plan_approval_id: ${prebuild_output.body.approval_id}
+            next: notify_plan_approval_pending
+          - condition: ${default(map.get(prebuild_output.body, "decision"), "") == "PASS"}
+            next: check_quota_preflight
+          - condition: true
+            next: route_prebuild_contract
+
+    - route_prebuild_contract:
+        assign:
+          - error_detail: "Pre-build gate returned no PASS / AWAIT_APPROVAL decision"
+          - error_class: "CONTRACT_VIOLATION"
+          - failure_stage: "prebuild_gate"
+        next: prep_dead_letter_payload
+
+    # Google-Docs channel: also post the approval callout on the spec Doc (workspace /request-approval only NOTIFIES;
+    # the approval record is the gateway's). A failed request stops the run, typed (register row WS-2); it never
+    # continues to the build.
+    - await_human_approval:
+        try:
+          call: http.post
+          args:
+            url: ${workspace_mcp_url + "/request-approval"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              spec_doc_id: ${spec_doc_id}
+              approval_id: ${plan_approval_id}  # AG-7 (bundle RT F4): the gateway owns the record; notify only
+              cost_delta_monthly: ${finops_cost_display}
+              risk_assessment: ${finops_risk_assessment}
+          result: approval_request_output
+        except:
+          as: finops_hitl_err
+          steps:
+            - route_finops_hitl_request_failure:
+                assign:
+                  - error_detail: "FinOps Tier-3 approval request failed (run stopped, not approved)"
+                  - failure_stage: "prebuild_gate"
+                  - caught_error: ${finops_hitl_err}
+                next: prep_dead_letter_payload
+
+    - route_finops_hitl_to_approval_gate:
+        assign:
+          - finops_hitl_requested: true
+        next: notify_plan_approval_pending
+
+    # F10: the reaper exempts stages containing APPROVAL / CALLBACK / QUOTA_PAUSED
+    - notify_plan_approval_pending:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "AWAITING_PLAN_APPROVAL"
+              stage_name: "plan_approval"
+              stage_status: "PAUSED_FOR_APPROVAL"
+              stage_summary: ${"Waiting for an operator decision in Control Center -> Approvals (" + plan_approval_id + ")"}
+        except:
+          as: plan_hb_err
+          steps:
+            - log_plan_hb_warning:
+                call: sys.log
+                args:
+                  text: "Plan approval heartbeat skipped"
+                  severity: INFO
+
+    - await_plan_approval_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${plan_approval_callback}
+            timeout: 86400  # 24 hours
+          result: plan_approval_response
+        except:
+          as: plan_appr_err
+          steps:
+            - route_plan_approval_timeout:
+                assign:
+                  - error_detail: "Architectural Plan Approval timed out (no operator decision in 24 h)"
+                  - error_class: "GATE_TIMEOUT"
+                  - failure_stage: "plan_approval"
+                  - caught_error: ${plan_appr_err}
+                next: prep_dead_letter_payload
+
+    - assign_plan_decision:
+        assign:
+          - plan_decision: ${default(map.get(plan_approval_response.http_request.body, "decision"), "")}
+
+    # RT F1: the decision is persisted (re-verified against the approval record) so a resume can rely on it
+    - persist_plan_decision:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/pre-build-gate/decision"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              approval_id: ${plan_approval_id}
+              decision: ${plan_decision}
+          result: plan_decision_ack
+        # Bundle RT F3: the Control Center writes the decision only after delivering the callback, so 503
+        # DECISION_PENDING may last longer than http.default_retry (~8 s). 10 retries, 2 s doubling to 30 s
+        # (~4-5 min) before the run fails closed as unverified. Idempotent: the route only re-reads the record.
+        retry:
+          predicate: ${http.default_retry_predicate}
+          max_retries: 10
+          backoff:
+            initial_delay: 2
+            max_delay: 30
+            multiplier: 2
+        except:
+          as: plan_dec_err
+          steps:
+            - route_plan_decision_unverified:
+                assign:
+                  - error_detail: "Plan approval decision could not be verified against the approval record"
+                  - failure_stage: "plan_approval"
+                  - caught_error: ${plan_dec_err}
+                next: prep_dead_letter_payload
+
+    - handle_plan_approval_decision:
+        switch:
+          - condition: ${plan_decision == "APPROVED"}
+            next: check_quota_preflight
+          - condition: ${plan_decision == "REWORK" and rework_counter < 2}
+            assign:
+              - rework_counter: ${rework_counter + 1}
+              - finops_hitl_requested: false
+              - human_feedback: ${default(map.get(plan_approval_response.http_request.body, "feedback"), "Please revise the architectural plan")}
+            next: architect_decomposition
+          - condition: true
+            next: handle_plan_rejection
+
+    - handle_plan_rejection:
+        assign:
+          - error_detail: '${"Workload declined during Architectural Plan Review (decision: " + plan_decision + ")"}'
+          - error_class: "POLICY_REJECTED"
+          - failure_stage: "plan_approval"
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Step 2.6: Pre-Developer Quota & Capacity Feasibility Gate (AJ-8/9/10: unverified != valid; a real wait)
+    # ==============================================================================
+    - check_quota_preflight:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/discovery/validate-headroom"}
+            auth:
+              type: OIDC
+            body:
+              project_id: ${target_project_id}
+              target_region: ${default(map.get(architect_output, ["body", "architecture_plan", "target_region"]), "")}  # RT F6: path form, no nested null; FD-4AL: "" = the gateway resolves the platform region
+              architecture_spec: ${map.get(architect_output, "body")}
+              trace_id: ${trace_id}
+          result: quota_validation_result
+        except:
+          as: quota_val_err
+          steps:
+            - log_quota_validation_warning:
+                call: sys.log
+                args:
+                  text: '${"Quota preflight unverified (operator decides): " + json.encode_to_string(quota_val_err)}'
+                  severity: WARNING
+            - mark_quota_unverified:
+                assign:
+                  - quota_gate_reason: "QUOTA_UNVERIFIED"
+                  - quota_body: null  # unverified: no inspector answer (never a previous check's answer)
+                next: resolve_quota_view
+
+    - capture_quota_body:
+        assign:
+          - quota_body: ${map.get(quota_validation_result, "body")}
+
+    - evaluate_quota_decision:
+        switch:
+          - condition: ${quota_body == null}
+            assign:
+              - quota_gate_reason: "QUOTA_INSUFFICIENT"
+            next: resolve_quota_view
+          - condition: ${default(map.get(quota_body, "is_valid"), false) == true}
+            next: kill_switch_before_vending_route
+          - condition: true
+            assign:
+              - quota_gate_reason: "QUOTA_INSUFFICIENT"
+            next: resolve_quota_view
+
+    # Bundle RT F6: explicit `== null` checks so no map.get receives null on the quota-unverified path
+    - resolve_quota_view:
+        switch:
+          - condition: ${quota_body == null}
+            assign:
+              - quota_target_region: ""
+              - quota_violations: []
+              - quota_remediation: null
+              - quota_source: ""
+            next: pause_for_quota_approval
+          - condition: true
+            assign:
+              - quota_target_region: ${default(map.get(quota_body, "target_region"), "")}
+              - quota_violations: ${default(map.get(quota_body, "violations"), [])}
+              - quota_remediation: ${default(map.get(quota_body, "remediation"), null)}
+              - quota_source: ${default(map.get(quota_body, "quota_source"), "")}
+            next: pause_for_quota_approval
+
+    - pause_for_quota_approval:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: quota_callback
+
+    - register_quota_alert:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/approval-request"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              approval_type: "QUOTA_GATE"
+              callback_url: ${quota_callback.url}
+              recheck_n: ${quota_recheck_n}
+              reason: ${quota_gate_reason}
+              target_region: ${quota_target_region}
+              violations: ${quota_violations}
+              remediation: ${quota_remediation}
+              quota_source: ${quota_source}
+          result: quota_alert_ack
+        retry: ${http.default_retry}  # idempotent: deterministic approval id per trace + re-check number (RT F7)
+        except:
+          as: quota_reg_err
+          steps:
+            - route_quota_gate_unavailable:
+                assign:
+                  - error_detail: "Quota gate could not be registered for an operator decision"
+                  - failure_stage: "quota_gate"
+                  - caught_error: ${quota_reg_err}
+                next: prep_dead_letter_payload
+
+    - notify_quota_paused:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "QUOTA_PAUSED"
+              stage_name: "quota_gate"
+              stage_status: "PAUSED_FOR_QUOTA_APPROVAL"
+              stage_summary: '${"Quota gate (" + quota_gate_reason + "): waiting for an operator decision in Control Center -> Approvals"}'
+        except:
+          as: quota_hb_err
+          steps:
+            - log_quota_hb_warning:
+                call: sys.log
+                args:
+                  text: "Quota gate heartbeat skipped"
+                  severity: INFO
+
+    - await_quota_resolution:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${quota_callback}
+            timeout: 86400  # 24 hours
+          result: quota_resume_response
+        except:
+          as: quota_resume_err
+          steps:
+            - route_quota_timeout:
+                assign:
+                  - error_detail: "Quota gate timed out (no operator decision in 24 h)"
+                  - error_class: "GATE_TIMEOUT"
+                  - failure_stage: "quota_gate"
+                  - caught_error: ${quota_resume_err}
+                next: prep_dead_letter_payload
+
+    # APPROVED = "re-check quota" (bounded to 3 re-checks); REJECTED / anything else = stop
+    - handle_quota_resume_decision:
+        switch:
+          - condition: ${default(map.get(quota_resume_response.http_request.body, "decision"), "") == "APPROVED" and quota_recheck_n < 3}
+            assign:
+              - quota_recheck_n: ${quota_recheck_n + 1}
+            next: check_quota_preflight
+          - condition: ${default(map.get(quota_resume_response.http_request.body, "decision"), "") == "APPROVED"}
+            next: route_quota_recheck_exhausted
+          - condition: true
+            next: route_quota_rejected
+
+    - route_quota_recheck_exhausted:
+        assign:
+          - error_detail: "Quota still insufficient after 3 operator re-checks"
+          - error_class: "GATE_UNAVAILABLE"
+          - failure_stage: "quota_gate"
+        next: prep_dead_letter_payload
+
+    - route_quota_rejected:
+        assign:
+          - error_detail: "Operator rejected the run at the quota gate"
+          - error_class: "POLICY_REJECTED"
+          - failure_stage: "quota_gate"
+        next: prep_dead_letter_payload
+
+    # RESUME_DEVELOPER skips vending (the child project exists); FULL_BUILD vends
+    - kill_switch_before_vending_route:
+        switch:
+          - condition: ${execution_mode == "RESUME_DEVELOPER"}
+            next: kill_switch_before_developer
+          - condition: true
+            next: kill_switch_before_vending
+
+    - kill_switch_before_vending:
+        call: assert_kill_switch_clear
+        args:
+          gateway_url: ${gateway_url}
+          stage: "vending"
+
+    # ==============================================================================
+    # Step 3b: Provision isolated GCP child project & GitHub repo via Async Callback
+    # ==============================================================================
+    - create_vending_callback:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: vending_callback
+
+    - dispatch_vending_task:
+        try:
+          call: http.post
+          args:
+            url: ${vending_mcp_url + "/vend-all-async"}
+            auth:
+              type: OIDC
+            body:
+              product_id: ${product_id}
+              trace_id: ${trace_id}
+              folder_id: ${folder_id}
+              # FD-4CI-b: no initial_budget -- vending keeps the budget the workload was created with, and gives a
+              # new record (Drive intake) the platform's Default Monthly Budget Ceiling (it used to force 40.0).
+              callback_url: ${vending_callback.url}
+              # Lane 18 S2: the workload's explicit sandbox selection, recorded by vending at project birth (vend-time
+              # provenance = the only TTL authority). Sent by the Control Center intake (vending vocabulary); absent
+              # -> not a sandbox. Keyword-detected sandboxes arrive with source KEYWORD and are never TTL-eligible.
+              is_sandbox: ${default(map.get(args, "is_sandbox"), false)}
+              sandbox_auto_decommission: ${default(map.get(args, "sandbox_auto_decommission"), false)}
+              sandbox_designation_source: ${default(map.get(args, "sandbox_designation_source"), null)}
+              sandbox_ttl_days: ${default(map.get(args, "sandbox_ttl_days"), null)}
+          result: vending_dispatch_ack
+        except:
+          as: vend_dispatch_err
+          steps:
+            - route_vending_dispatch_failure:
+                assign:
+                  - error_detail: "Project vending dispatch failed"
+                  - failure_stage: "vending"
+                  - caught_error: ${vend_dispatch_err}
+                next: prep_dead_letter_payload
+
+    - notify_vending_waiting:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "VENDING_CALLBACK"
+              stage_name: "vending"
+              stage_status: "IN_FLIGHT"
+              stage_summary: "Waiting for the project vending callback"
+        except:
+          as: vend_hb_err
+          steps:
+            - log_vend_hb_warning:
+                call: sys.log
+                args:
+                  text: "Vending heartbeat skipped"
+                  severity: INFO
+
+    - await_vending_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${vending_callback}
+            timeout: 1200  # 20 minutes maximum
+          result: vending_callback_response
+        except:
+          as: vend_wait_err
+          steps:
+            - route_vending_timeout:
+                assign:
+                  - error_detail: "Project vending timed out after 20 minutes"
+                  - error_class: "GATE_TIMEOUT"
+                  - failure_stage: "vending"
+                  - caught_error: ${vend_wait_err}
+                next: prep_dead_letter_payload
+
+    - extract_vending_output:
+        assign:
+          - vending_output: ${vending_callback_response.http_request.body}
+          - vending_status: ${default(map.get(vending_output, "status"), "")}
+          - target_project_id: '${default(map.get(vending_output, "project_id"), target_project_id)}'
+
+    - check_vending_status:
+        switch:
+          - condition: ${vending_status == "SUCCESS" or vending_status == "WORKLOAD_VENDED"}
+            next: kill_switch_before_developer
+          - condition: true
+            next: handle_vending_failure
+
+    - handle_vending_failure:
+        assign:
+          - error_detail: '${"Project vending failed (status " + json.encode_to_string(vending_status) + "): " + json.encode_to_string(default(map.get(vending_output, "error"), "Unknown error"))}'
+          - error_class: '${default(map.get(vending_output, "error_class"), "DEPENDENCY_FAILED")}'
+          - failure_stage: "vending"
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Step 4: Developer Agent generates application code and unit tests (LONG-STAGE-CALLBACK: a callback job)
+    # ==============================================================================
+    - kill_switch_before_developer:
+        call: assert_kill_switch_clear
+        args:
+          gateway_url: ${gateway_url}
+          stage: "developer"
+
+    # Await 3900 s = the gateway's 3600 s CALLBACK budget + 300 s margin (11-13: Carbon developer 561-1209 s, one
+    # over 1800 s; the old 1800 s http.post cap is gone).
+    - dispatch_developer_implementation:
+        try:
+          call: run_stage_job
+          args:
+            gateway_url: ${gateway_url}
+            path: "/agent/developer/execute-job"
+            sync_path: "/agent/developer/execute"  # RT F4: used only when the gateway reports stage_jobs_enabled false
+            sync_timeout_s: 1800  # the pre-LONG-STAGE-CALLBACK http.post timeout
+            stage: "developer"
+            await_timeout_s: 3900
+            failure_message: "Developer implementation failed"
+            request:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              spec_text: ${default(map.get(args, "spec_text"), "")}
+              task_dag: ${default(map.get(map.get(compliance_output, "body"), "task_dag"), default(map.get(args, "task_dag"), []))}
+              retry_count: ${retry_count}
+              tf_retry_count: ${tf_retry_count}
+              tf_remediation_context: ${tf_remediation_context}
+              # TI-5-R3: the last deploy's typed report (null on a first build / older tf-applier = today's path)
+              tf_validation_report: ${tf_validation_report}
+              plan_markdown: ${default(map.get(map.get(compliance_output, "body"), "plan_markdown"), default(map.get(map.get(architect_output, "body"), "plan_markdown"), default(map.get(args, "plan_markdown"), "")))}
+              plan_file_path: ${default(map.get(map.get(compliance_output, "body"), "plan_file_path"), default(map.get(map.get(architect_output, "body"), "plan_file_path"), default(map.get(args, "plan_file_path"), "")))}
+              domain_restricted_sharing: ${default(map.get(map.get(compliance_output, "body"), "domain_restricted_sharing"), false)}
+              allowed_domains: ${default(map.get(map.get(compliance_output, "body"), "allowed_domains"), [])}
+              allow_unauthenticated: ${default(map.get(map.get(compliance_output, "body"), "allow_unauthenticated"), false)}
+              enable_direct_iap: ${default(map.get(map.get(compliance_output, "body"), "enable_direct_iap"), false)}
+              # FD-4R R-6: the gateway reads ingress ONLY from this trace's persisted compliance decision (the flags
+              # above are legacy and ignored). FULL: this trace; RESUME_DEVELOPER: the prior FULL build's trace.
+              compliance_trace_id: ${default(map.get(map.get(compliance_output, "body"), "trace_id"), trace_id)}
+          result: developer_output
+        except:
+          as: dev_err
+          steps:
+            - route_developer_failure:
+                assign:
+                  - error_detail: "Developer implementation failed"
+                  - failure_stage: "developer"
+                  - caught_error: ${dev_err}
+                next: prep_dead_letter_payload
+
+    - check_developer_status:
+        switch:
+          - condition: ${default(map.get(developer_output.body, "status"), "") != "SUCCESS"}
+            next: handle_developer_failure
+          - condition: true
+            next: notify_developer_stage
+
+    # A 2xx answer that is not SUCCESS. A typed body (non-empty error_class) goes to build_failure as the error, so
+    # its class, reason and stage reach the DLQ record and the FAILED notification unchanged (remediable false), the
+    # same through the synchronous call and the stage-runner callback (both return {code, body}). Untyped: as before.
+    - handle_developer_failure:
+        assign:
+          - error_detail: '${"Developer implementation failed: " + json.encode_to_string(default(map.get(developer_output.body, "error"), "Unknown developer error"))}'
+          - error_class: '${default(map.get(developer_output.body, "error_class"), "CONTRACT_VIOLATION")}'
+          - failure_stage: "developer"
+          - caught_error: ${developer_output}
+        next: prep_dead_letter_payload
+
+    - notify_developer_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "QA"
+              stage_name: "developer"
+              stage_status: "SUCCESS"
+              stage_summary: "Microservice application code and tests generated"
+          result: notify_developer_ack
+        except:
+          as: stage_err
+          steps:
+            - log_dev_stage_warning:
+                call: sys.log
+                args:
+                  text: "Developer stage heartbeat skipped"
+                  severity: INFO
+
+    # ==============================================================================
+    # Step 4.5: Anti-Hallucination Gatekeeper (AST Curing, Dependencies, & Syntax)
+    # ==============================================================================
+    - gatekeeper_verification:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/agent/gatekeeper/verify"}
+            auth:
+              type: OIDC
+            timeout: 300
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              branch_name: ${developer_output.body.branch_name}
+              committed_paths: ${default(map.get(developer_output.body, "files_committed"), null)}
+          result: gatekeeper_output
+        except:
+          as: gk_err
+          steps:
+            - log_gatekeeper_warning:
+                call: sys.log
+                args:
+                  text: '${"Gatekeeper check error: " + json.encode_to_string(gk_err)}'
+                  severity: WARNING
+            - route_gatekeeper_exception:
+                assign:
+                  - error_detail: "Gatekeeper check failed"
+                  - failure_stage: "gatekeeper"
+                  - caught_error: ${gk_err}
+                next: prep_dead_letter_payload
+
+    - check_gatekeeper_decision:
+        switch:
+          - condition: ${default(map.get(gatekeeper_output.body, "passed"), false) != true}
+            next: handle_gatekeeper_failure
+          - condition: true
+            next: notify_gatekeeper_stage
+
+    - handle_gatekeeper_failure:
+        assign:
+          - error_detail: '${"Gatekeeper rejected the build: " + json.encode_to_string(default(map.get(gatekeeper_output.body, "summary"), "Detected compilation or contract violations"))}'
+          - error_class: '${default(map.get(gatekeeper_output.body, "error_class"), "CODE_DEFECT")}'
+          - failure_stage: "gatekeeper"
+        next: prep_dead_letter_payload
+
+    - notify_gatekeeper_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "QA"
+              stage_name: "gatekeeper"
+              stage_status: "SUCCESS"
+              stage_summary: "AST monorepo imports sanitized, PyPI dependencies reconciled, py_compile verified"
+        except:
+          as: gk_notify_err
+          steps:
+            - log_gk_notify_warning:
+                call: sys.log
+                args:
+                  text: "Gatekeeper status heartbeat skipped"
+                  severity: INFO
+
+    # ==============================================================================
+    # Step 5: QA (FD-4F): isolated QA job + Stage 2 dual-lens on the commit the gatekeeper verified
+    # ==============================================================================
+    # Await 3000 s = the gateway's 2700 s QA CALLBACK budget + 300 s margin (LONG-STAGE-CALLBACK).
+    - dispatch_qa_verification:
+        try:
+          call: run_stage_job
+          args:
+            gateway_url: ${gateway_url}
+            path: "/agent/qa/verify-job"
+            sync_path: "/agent/qa/verify"  # RT F4: used only when the gateway reports stage_jobs_enabled false
+            sync_timeout_s: 1800  # the pre-LONG-STAGE-CALLBACK http.post timeout
+            stage: "qa"
+            await_timeout_s: 3000
+            failure_message: "QA gate unavailable or platform defect (not retried)"
+            request:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              branch_name: ${developer_output.body.branch_name}
+              expected_commit_sha: ${gatekeeper_output.body.commit_sha}
+              attempt: ${retry_count}
+              task_dag: ${default(map.get(map.get(compliance_output, "body"), "task_dag"), default(map.get(args, "task_dag"), []))}
+          result: qa_response
+        except:
+          as: qa_err
+          steps:
+            - route_qa_unavailable:
+                assign:
+                  - error_detail: "QA gate unavailable or platform defect (not retried)"
+                  - failure_stage: "qa"
+                  - caught_error: ${qa_err}
+                next: prep_dead_letter_payload
+
+    - extract_qa_output:
+        assign:
+          - qa_output: ${qa_response.body}
+
+    - check_qa_status:
+        switch:
+          - condition: ${default(map.get(qa_output, "passed"), false) == true}
+            next: notify_qa_stage
+          - condition: ${default(map.get(qa_output, "error_class"), "") == "CODE_DEFECT" and default(map.get(qa_output, "retryable"), false) == true and retry_count < max_retries}
+            next: increment_qa_retry
+          - condition: true
+            next: handle_qa_exhausted
+
+    - notify_qa_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "RELEASE"
+              stage_name: "qa"
+              stage_status: "SUCCESS"
+              stage_summary: "Automated QA test suite passed"
+          result: notify_qa_ack
+        except:
+          as: stage_err
+          steps:
+            - log_qa_stage_warning:
+                call: sys.log
+                args:
+                  text: "QA stage heartbeat skipped"
+                  severity: INFO
+        next: release_promotion
+
+    - increment_qa_retry:
+        assign:
+          - retry_count: ${retry_count + 1}
+          # TI-5-R3: a QA code defect is not a deploy finding: the QA re-run is today's regeneration, never a repair
+          # of the intent from an earlier deploy's report
+          - tf_validation_report: null
+        next: kill_switch_before_developer
+
+    # A typed QA verdict that is not retried (non-retryable class, or retries exhausted) keeps its class, reason and
+    # stage through build_failure (the summary is appended there), synchronous or by callback alike.
+    - handle_qa_exhausted:
+        assign:
+          - error_detail: '${"QA failed (" + json.encode_to_string(default(map.get(qa_output, "reason"), "CODE_DEFECT")) + ")"}'
+          - error_class: '${default(map.get(qa_output, "error_class"), "CODE_DEFECT")}'
+          - failure_stage: "qa"
+          - caught_error:
+              body: ${qa_output}
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Step 6: Release Engineer submits verified Pull Request (AJ-6 / AJ-7)
+    # ==============================================================================
+    - release_promotion:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/agent/release/promote"}
+            auth:
+              type: OIDC
+            timeout: 600
+            body:
+              trace_id: ${trace_id}
+              spec_doc_id: ${spec_doc_id}
+              product_id: ${product_id}
+              branch_name: ${developer_output.body.branch_name}
+              test_summary: ${default(map.get(qa_output, "summary"), "QA verified")}
+              expected_commit_sha: ${gatekeeper_output.body.commit_sha}
+          result: release_output
+        except:
+          as: rel_err
+          steps:
+            - route_release_failure:
+                assign:
+                  - error_detail: "Release promotion failed"
+                  - failure_stage: "release"
+                  - caught_error: ${rel_err}
+                next: prep_dead_letter_payload
+
+    - assign_release_pr:
+        assign:
+          - pull_request_url: ${default(map.get(release_output.body, "pull_request_url"), "")}
+          - release_status: ${default(map.get(release_output.body, "status"), "")}
+          - release_approval_id: ${default(map.get(release_output.body, "approval_id"), "")}
+
+    - check_hitl_requirement:
+        switch:
+          - condition: ${release_status == "SUCCESS" and default(map.get(release_output.body, "auto_merged"), false) == true}
+            next: kill_switch_before_deploy
+          - condition: ${release_status == "SUCCESS" and get_type(release_approval_id) == "string" and release_approval_id != ""}
+            next: create_approval_callback
+          - condition: true
+            next: route_release_contract
+
+    - route_release_contract:
+        assign:
+          - error_detail: '${"Release returned neither an auto-merge nor a human-review approval record (status " + json.encode_to_string(release_status) + ")"}'
+          - error_class: "RELEASE_FAILED"
+          - failure_stage: "release"
+        next: prep_dead_letter_payload
+
+    - create_approval_callback:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: approval_callback
+
+    - register_approval_callback:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/approval-callback"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              approval_id: ${release_approval_id}
+              callback_url: ${approval_callback.url}
+          result: reg_ack
+        except:
+          as: reg_err
+          steps:
+            - route_approval_registration_failure:
+                assign:
+                  - error_detail: "PR approval callback could not be registered on its approval record"
+                  - failure_stage: "release"
+                  - caught_error: ${reg_err}
+                next: prep_dead_letter_payload
+
+    - check_approval_registration:
+        switch:
+          - condition: ${default(map.get(reg_ack.body, "status"), "") == "SUCCESS"}
+            next: notify_pr_approval_pending
+          - condition: true
+            next: route_approval_registration_contract
+
+    - route_approval_registration_contract:
+        assign:
+          - error_detail: "PR approval callback registration did not return SUCCESS"
+          - error_class: "CONTRACT_VIOLATION"
+          - failure_stage: "release"
+        next: prep_dead_letter_payload
+
+    - notify_pr_approval_pending:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "AWAITING_PR_APPROVAL"
+              stage_name: "release"
+              stage_status: "PAUSED_FOR_APPROVAL"
+              stage_summary: ${"Pull Request awaiting human code review (" + release_approval_id + ")"}
+        except:
+          as: pr_hb_err
+          steps:
+            - log_pr_hb_warning:
+                call: sys.log
+                args:
+                  text: "PR approval heartbeat skipped"
+                  severity: INFO
+
+    - await_approval_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${approval_callback}
+            timeout: 86400  # 24 hours for human operator review
+          result: approval_response
+        except:
+          as: appr_err
+          steps:
+            - route_approval_timeout:
+                assign:
+                  - error_detail: "HITL PR approval timed out (no decision in 24 h)"
+                  - error_class: "GATE_TIMEOUT"
+                  - failure_stage: "release"
+                  - caught_error: ${appr_err}
+                next: prep_dead_letter_payload
+
+    - check_approval_decision:
+        switch:
+          - condition: ${default(map.get(approval_response.http_request.body, "decision"), "") == "APPROVED"}
+            next: kill_switch_before_deploy
+          - condition: ${default(map.get(approval_response.http_request.body, "decision"), "") == "MERGE_FAILED"}
+            next: handle_merge_failed
+          - condition: ${default(map.get(approval_response.http_request.body, "decision"), "") == "REJECTED"}
+            next: handle_approval_rejection
+          - condition: true
+            next: route_approval_contract
+
+    - handle_approval_rejection:
+        assign:
+          - error_detail: '${"HITL Approval rejected: " + json.encode_to_string(default(map.get(approval_response.http_request.body, "decision_reason"), "Operator rejected pull request"))}'
+          - error_class: "POLICY_REJECTED"
+          - failure_stage: "release"
+        next: prep_dead_letter_payload
+
+    # FD-4BE / lane 16: a failed merge is an immediate typed failure (MAIN_MOVED or RELEASE_FAILED), no 24 h wait
+    - handle_merge_failed:
+        assign:
+          - error_detail: '${"PR merge failed: " + json.encode_to_string(default(map.get(approval_response.http_request.body, "reason"), "merge failed"))}'
+          - error_class: '${default(map.get(approval_response.http_request.body, "error_class"), "RELEASE_FAILED")}'
+          - failure_stage: "release"
+        next: prep_dead_letter_payload
+
+    - route_approval_contract:
+        assign:
+          - error_detail: "PR approval callback carried no known decision"
+          - error_class: "CONTRACT_VIOLATION"
+          - failure_stage: "release"
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Step 6.5: DEPLOY_ONLY gate (RT F2): only reviewed code is re-applied (default branch / ledger MERGED)
+    # ==============================================================================
+    - deploy_only_gate:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/governance/deploy-only-gate"}
+            auth:
+              type: OIDC
+            timeout: 60
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              branch: ${target_branch}
+          result: deploy_only_decision
+        except:
+          as: deploy_only_err
+          steps:
+            - route_deploy_only_refused:
+                assign:
+                  - error_detail: '${"DEPLOY_ONLY refused for branch " + target_branch}'
+                  - failure_stage: "deploy_only_gate"
+                  - caught_error: ${deploy_only_err}
+                next: prep_dead_letter_payload
+
+    - check_deploy_only_decision:
+        switch:
+          - condition: ${default(map.get(deploy_only_decision.body, "status"), "") == "ALLOW"}
+            next: kill_switch_before_deploy
+          - condition: true
+            next: route_deploy_only_contract
+
+    - route_deploy_only_contract:
+        assign:
+          - error_detail: "DEPLOY_ONLY gate returned no ALLOW decision"
+          - error_class: "CONTRACT_VIOLATION"
+          - failure_stage: "deploy_only_gate"
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Step 7: Deploy workload infrastructure via Terraform Async Callback
+    # ==============================================================================
+    - kill_switch_before_deploy:
+        call: assert_kill_switch_clear
+        args:
+          gateway_url: ${gateway_url}
+          stage: "terraform"
+
+    - create_deploy_callback:
+        call: events.create_callback_endpoint
+        args:
+          http_callback_method: "POST"
+        result: deploy_callback
+
+    - dispatch_infra_deployment:
+        try:
+          call: http.post
+          args:
+            url: ${terraform_mcp_url + "/deploy-async"}
+            auth:
+              type: OIDC
+            body:
+              product_id: ${product_id}
+              trace_id: ${trace_id}
+              target_project_id: ${target_project_id}
+              branch: ${target_branch}
+              callback_url: ${deploy_callback.url}
+          result: deploy_dispatch_ack
+        except:
+          as: deploy_dispatch_err
+          steps:
+            - route_deploy_dispatch_failure:
+                assign:
+                  - error_detail: "Infrastructure deployment dispatch failed"
+                  - failure_stage: "terraform"
+                  - caught_error: ${deploy_dispatch_err}
+                next: prep_dead_letter_payload
+
+    - notify_deploy_waiting:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "TERRAFORM_CALLBACK"
+              stage_name: "terraform"
+              stage_status: "IN_FLIGHT"
+              stage_summary: "Waiting for the tf-applier callback"
+        except:
+          as: deploy_hb_err
+          steps:
+            - log_deploy_hb_warning:
+                call: sys.log
+                args:
+                  text: "Deploy heartbeat skipped"
+                  severity: INFO
+
+    # AJ-15: tf-applier job timeout (86400 s, infra/platform/main.tf) + 15 min, so a long apply is not misreported
+    - await_deploy_callback:
+        try:
+          call: events.await_callback
+          args:
+            callback: ${deploy_callback}
+            timeout: 87300
+          result: deploy_callback_response
+        except:
+          as: deploy_wait_err
+          steps:
+            - route_deploy_timeout:
+                assign:
+                  - error_detail: "No tf-applier callback within the job timeout + 15 min; tf-applier may still hold the state lock: do not relaunch until the job ends"
+                  - error_class: "DEPLOY_TIMEOUT"
+                  - failure_stage: "terraform"
+                  - caught_error: ${deploy_wait_err}
+                next: prep_dead_letter_payload
+
+    - extract_deploy_output:
+        assign:
+          - deployment_output: ${deploy_callback_response.http_request.body}
+          - deploy_status: ${default(map.get(deployment_output, "status"), "")}
+          - deploy_error_class: ${default(map.get(deployment_output, "error_class"), "")}
+
+    # AJ-14: route on error_class. Non-remediable classes go to the operator, never to developer remediation.
+    # FD-4D-c / FD-4AI-c F1: success is exactly "SUCCESS" (the callback scope already normalizes it; the old DEPLOYED
+    # alias is gone). REPO_TREE_INCOMPLETE (the repository could not be read completely) keeps its class and stops
+    # for the operator: a developer retry cannot fix a rate limit, a timeout or a repo over the file limit.
+    # FD-4AW-b-r: APPLY_CONTENT_POLICY (the plan breaks the platform content policy; nothing applied; human-written
+    # files included) also stops for the operator. Same list as gate_errors.NON_REMEDIABLE_DEPLOY_CLASSES (parity test).
+    # FD-4AQ W1b (AQ-6): PROVIDER_NOT_ALLOWED (init refused a provider outside the platform allow-list, named in the
+    # config or recorded in state) stops for the operator too.
+    # TOFU-TIMEOUT-OP (owner 10-25): TOFU_TIMEOUT (an OpenTofu command ran past its time limit, AQ-5, and was
+    # interrupted; the state lock may still be held) stops for the operator too; a developer retry cannot fix it.
+    # FD55-W6c: WORKFLOW_INVALID (a committed workflow file fails the platform's workflow validator; nothing was
+    # built, planned or applied; the result names the file and line) stops for the operator too: the workflow
+    # files are platform renders, not developer IaC.
+    # WF-OPERATOR-FLAG (owner 10-27): a failed deploy result with `operator_required: true` also stops for the
+    # operator, whatever its class, so a new operator stop needs no workflow change (it still sets its own typed
+    # error_class, which the run records). Typed boolean: only the JSON value true counts (a string "true" does not).
+    # Success is checked first; the class list is unchanged. Nothing sets the flag yet.
+    - check_deploy_status:
+        switch:
+          - condition: ${deploy_status == "SUCCESS"}
+            next: notify_workflow_success
+          - condition: ${deploy_error_class in ["STATE_LOCKED", "DEPLOY_TIMEOUT", "QUOTA_EXHAUSTED", "GCE_STOCKOUT", "PERMISSION_DENIED", "DESTROY_BLOCKED", "DESTROY_REQUIRES_APPROVAL", "REPO_TREE_INCOMPLETE", "APPLY_CONTENT_POLICY", "PROVIDER_NOT_ALLOWED", "TOFU_TIMEOUT", "WORKFLOW_INVALID"]}
+            next: handle_operator_deploy_failure
+          - condition: ${default(map.get(deployment_output, "operator_required"), false) == true}
+            next: handle_operator_deploy_failure
+          - condition: true
+            next: check_tf_remediation
+
+    - check_tf_remediation:
+        switch:
+          - condition: ${execution_mode == "DEPLOY_ONLY"}
+            next: handle_deploy_failure
+          - condition: ${(deploy_error_class == "IAC_DEFECT" or deploy_error_class == "") and tf_retry_count < max_tf_retries}
+            next: increment_tf_retry
+          - condition: true
+            next: handle_deploy_failure
+
+    - increment_tf_retry:
+        assign:
+          - tf_retry_count: ${tf_retry_count + 1}
+          - tf_remediation_context: '${default(map.get(deployment_output, "error"), "Terraform deployment validation failed")}'
+          # TI-5-R3: the deploy's typed validation_report (intent workspaces) rides to the developer with the text
+          - tf_validation_report: ${default(map.get(deployment_output, "validation_report"), null)}
+          # TI-5-R3 F1 (memory): drop the callback copies (the body holds the report twice); every read of them sits
+          # in the deploy-result region, and the next deploy reassigns both before any read
+          - deploy_callback_response: null
+          - deployment_output: null
+
+    - log_tf_remediation:
+        call: sys.log
+        args:
+          text: '${"Terraform failure detected. Routing to Developer Agent for bounded remediation attempt " + string(tf_retry_count) + "/" + string(max_tf_retries)}'
+          severity: WARNING
+
+    - notify_tf_remediation_stage:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              current_stage: "DEVELOPER"
+              stage_name: "terraform_remediation"
+              stage_status: "RETRYING"
+              stage_summary: '${"IaC remediation loop " + string(tf_retry_count) + "/" + string(max_tf_retries)}'
+          result: notify_remediation_ack
+        except:
+          as: stage_err
+          steps:
+            - log_remediation_stage_warning:
+                call: sys.log
+                args:
+                  text: "Terraform remediation heartbeat skipped"
+                  severity: INFO
+        next: kill_switch_before_developer
+
+    - handle_operator_deploy_failure:
+        assign:
+          - error_detail: '${"Terraform deployment failed: " + deploy_error_class + " (operator action required, no automatic retry): " + json.encode_to_string(default(map.get(deployment_output, "error"), "Unknown error")) + " lock_holder=" + json.encode_to_string(default(map.get(deployment_output, "lock_holder"), null))}'
+          - error_class: ${deploy_error_class}
+          - failure_stage: "terraform"
+        next: prep_dead_letter_payload
+
+    - handle_deploy_failure:
+        assign:
+          - error_detail: '${"Terraform deployment failed after " + string(tf_retry_count) + " retries: " + json.encode_to_string(default(map.get(deployment_output, "error"), "Unknown error"))}'
+          - error_class: "DEPLOY_FAILED"
+          - failure_stage: "terraform"
+        next: prep_dead_letter_payload
+
+    # ==============================================================================
+    # Terminal steps. Failure: build ONE typed failure and RAISE it to main's handler (DLQ + FAILED + re-raise).
+    # ==============================================================================
+    - prep_dead_letter_payload:
+        call: build_failure
+        args:
+          err: ${caught_error}
+          stage: ${failure_stage}
+          error_class: ${error_class}
+          message: ${error_detail}
+        result: pipeline_failure
+
+    - raise_pipeline_failure:
+        raise: ${pipeline_failure}
+
+    - notify_workflow_success:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/workflow-status"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+              product_id: ${product_id}
+              status: "SUCCEEDED"
+              current_stage: "COMPLETE"
+              service_url: ${default(map.get(deployment_output, "service_url"), "")}
+              pull_request_url: ${pull_request_url}
+              state_file: ${default(map.get(deployment_output, "state_file"), "")}
+              workflow_execution_id: ${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}
+          result: notify_success_ack
+        except:
+          as: notify_err
+          steps:
+            - log_notify_warning:
+                call: sys.log
+                args:
+                  text: "Could not notify gateway of workflow completion"
+                  severity: WARNING
+
+    - release_quota_on_success:
+        try:
+          call: http.post
+          args:
+            url: ${gateway_url + "/events/quota-claim/release"}
+            auth:
+              type: OIDC
+            body:
+              trace_id: ${trace_id}
+        except:
+          as: q_ok_err
+          steps:
+            - log_quota_release_on_success:
+                call: sys.log
+                args:
+                  text: "Quota claim release after success skipped"
+                  severity: INFO
+
+    - complete_pipeline:
+        return:
+          status: "SUCCESS"
+          trace_id: ${trace_id}
+          product_id: ${product_id}
+          pull_request_url: ${pull_request_url}
+          service_url: ${default(map.get(deployment_output, "service_url"), "")}
+          state_file: ${default(map.get(deployment_output, "state_file"), "")}

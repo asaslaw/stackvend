@@ -1,0 +1,12 @@
+# Exact pins of the test toolchain installed into every per-service QA venv (FD-4F plan section 3).
+# Row QA-TOOLCHAIN-PINS: a workload requirement for a package pinned here (same canonical name) is left out of the
+# QA install and the pin here is used instead (a note in the report's logs). Any other conflict with these pins is a
+# CODE_DEFECT (REQ.UNRESOLVABLE). Every line must be a plain PEP 508 name pin: anything else is a runner error (exit 11).
+# Row QA-PYTEST-CRASH: a pinned package the toolchain does not install itself (a pytest plugin) is installed at the pin
+# here when, and only when, the workload's requirements name it.
+pytest==9.1.1
+pytest-timeout==2.4.0
+# The pytest plugin the QA allow-list loads that pins pytest below 9 in its older releases: the release the platform's
+# own CI runs with pytest 9.1.1 (.github/ci-constraints.txt). anyio and pytest-mock are not pinned: anyio is a runtime
+# dependency of FastAPI/Starlette, and no pytest-9 release of pytest-mock is verified in this repository.
+pytest-asyncio==1.4.0

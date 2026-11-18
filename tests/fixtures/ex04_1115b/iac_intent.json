@@ -1,0 +1,243 @@
+{
+  "modules": [
+    {
+      "args": {
+        "ack_deadline_seconds": 20,
+        "enable_subscription": true,
+        "message_retention_duration": "604800s",
+        "topic_name_suffix": "stream-events"
+      },
+      "module": "messaging-pubsub",
+      "name": "stream_events",
+      "realizes": "stream_events"
+    }
+  ],
+  "outputs": [
+    {
+      "description": "Pub/Sub topic name for stream events",
+      "name": "stream_events_topic",
+      "value": {
+        "$ref": {
+          "kind": "module_output",
+          "module": "stream_events",
+          "output": "topic_name"
+        }
+      }
+    },
+    {
+      "description": "Pub/Sub pull subscription name for GKE stream worker",
+      "name": "stream_gke_subscription",
+      "value": {
+        "$ref": {
+          "attr": "name",
+          "kind": "resource_attr",
+          "name": "stream_gke_sub",
+          "type": "google_pubsub_subscription"
+        }
+      }
+    },
+    {
+      "description": "Foundation Firestore database name",
+      "name": "firestore_database_name",
+      "value": {
+        "$ref": {
+          "fact": "database_name",
+          "kind": "fact"
+        }
+      }
+    },
+    {
+      "description": "Dedicated GCP service account email for stream worker",
+      "name": "stream_worker_sa_email",
+      "value": {
+        "$ref": {
+          "attr": "email",
+          "kind": "resource_attr",
+          "name": "stream_worker",
+          "type": "google_service_account"
+        }
+      }
+    }
+  ],
+  "resources": [
+    {
+      "arguments": {
+        "ack_deadline_seconds": 20,
+        "message_retention_duration": "604800s",
+        "name": "stream-gke-sub",
+        "topic": {
+          "$ref": {
+            "kind": "module_output",
+            "module": "stream_events",
+            "output": "topic_id"
+          }
+        }
+      },
+      "name": "stream_gke_sub",
+      "realizes": "stream_gke_sub",
+      "type": "google_pubsub_subscription"
+    },
+    {
+      "arguments": {
+        "account_id": "sa-stream-worker",
+        "display_name": "Stream Worker Service Account"
+      },
+      "name": "stream_worker",
+      "type": "google_service_account"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "attr": "email",
+                "kind": "resource_attr",
+                "name": "stream_worker",
+                "type": "google_service_account"
+              }
+            }
+          }
+        },
+        "role": "roles/pubsub.subscriber",
+        "subscription": {
+          "$ref": {
+            "attr": "name",
+            "kind": "resource_attr",
+            "name": "stream_gke_sub",
+            "type": "google_pubsub_subscription"
+          }
+        }
+      },
+      "name": "stream_worker_sub_subscriber",
+      "type": "google_pubsub_subscription_iam_member"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "fact": "workload_sa_email",
+                "kind": "fact"
+              }
+            }
+          }
+        },
+        "role": "roles/pubsub.subscriber",
+        "subscription": {
+          "$ref": {
+            "attr": "name",
+            "kind": "resource_attr",
+            "name": "stream_gke_sub",
+            "type": "google_pubsub_subscription"
+          }
+        }
+      },
+      "name": "workload_sa_sub_subscriber",
+      "type": "google_pubsub_subscription_iam_member"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "attr": "email",
+                "kind": "resource_attr",
+                "name": "stream_worker",
+                "type": "google_service_account"
+              }
+            }
+          }
+        },
+        "role": "roles/pubsub.subscriber",
+        "subscription": {
+          "$ref": {
+            "kind": "module_output",
+            "module": "stream_events",
+            "output": "subscription_name"
+          }
+        }
+      },
+      "name": "stream_worker_module_sub_subscriber",
+      "type": "google_pubsub_subscription_iam_member"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "attr": "email",
+                "kind": "resource_attr",
+                "name": "stream_worker",
+                "type": "google_service_account"
+              }
+            }
+          }
+        },
+        "project": {
+          "$ref": {
+            "fact": "project_id",
+            "kind": "fact"
+          }
+        },
+        "role": "roles/datastore.user"
+      },
+      "name": "stream_worker_datastore_user",
+      "type": "google_project_iam_member"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "attr": "email",
+                "kind": "resource_attr",
+                "name": "stream_worker",
+                "type": "google_service_account"
+              }
+            }
+          }
+        },
+        "project": {
+          "$ref": {
+            "fact": "project_id",
+            "kind": "fact"
+          }
+        },
+        "role": "roles/logging.logWriter"
+      },
+      "name": "stream_worker_log_writer",
+      "type": "google_project_iam_member"
+    },
+    {
+      "arguments": {
+        "member": {
+          "$member": {
+            "service_account": {
+              "$ref": {
+                "fact": "workload_sa_email",
+                "kind": "fact"
+              }
+            }
+          }
+        },
+        "role": "roles/iam.serviceAccountUser",
+        "service_account_id": {
+          "$ref": {
+            "attr": "name",
+            "kind": "resource_attr",
+            "name": "stream_worker",
+            "type": "google_service_account"
+          }
+        }
+      },
+      "name": "workload_sa_impersonate_stream_worker",
+      "type": "google_service_account_iam_member"
+    }
+  ],
+  "schema": "iac_intent/v1"
+}

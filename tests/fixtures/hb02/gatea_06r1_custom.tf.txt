@@ -1,0 +1,222 @@
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+locals {
+  workload_sa_email = var.workload_sa_email != "" ? var.workload_sa_email : try(module.foundation.workload_sa_email, "")
+}
+
+# Cloud Storage - Media Bucket for Catalog Assets
+resource "google_storage_bucket" "media_bucket" {
+  name                        = "${var.project_id}-media-bucket"
+  location                    = var.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+
+  labels = {
+    environment = var.environment
+    workload    = "castor-storefront"
+  }
+}
+
+# Cloud Storage - Invoices Bucket with 30-day lifecycle auto-delete rule
+resource "google_storage_bucket" "invoices_bucket" {
+  name                        = "${var.project_id}-invoices-bucket"
+  location                    = var.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+
+  labels = {
+    environment = var.environment
+    workload    = "castor-factory"
+  }
+}
+
+# Pub/Sub Topic for Asynchronous Orders
+resource "google_pubsub_topic" "orders_topic" {
+  name = "orders-topic"
+
+  labels = {
+    environment = var.environment
+    workload    = "castor-orders"
+  }
+}
+
+# Dedicated Pub/Sub Invoker Service Account for Cloud Run Push Subscription
+resource "google_service_account" "pubsub_invoker" {
+  account_id   = "pubsub-invoker-sa"
+  display_name = "Pub/Sub Invoker Service Account"
+  project      = var.project_id
+}
+
+# Grant Invoker Service Account permission to invoke Cloud Run services
+resource "google_project_iam_member" "pubsub_invoker_run" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.pubsub_invoker.email}"
+}
+
+# Grant Pub/Sub Service Agent token creator role on the invoker SA for OIDC authentication
+resource "google_service_account_iam_member" "pubsub_token_creator" {
+  service_account_id = google_service_account.pubsub_invoker.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+}
+
+# Pub/Sub Push Subscription targeting factory-worker Cloud Run URI
+resource "google_pubsub_subscription" "factory_push_sub" {
+  name  = "factory-orders-push-sub"
+  topic = google_pubsub_topic.orders_topic.name
+
+  push_config {
+    push_endpoint = "${var.factory_worker_url}/api/v1/factory/process-order"
+
+    oidc_token {
+      service_account_email = google_service_account.pubsub_invoker.email
+    }
+  }
+
+  ack_deadline_seconds = 60
+
+  labels = {
+    environment = var.environment
+    workload    = "castor-factory"
+  }
+}
+
+# Secret Manager Secret for Stripe Mock Key
+resource "google_secret_manager_secret" "stripe_mock_key" {
+  secret_id = "stripe-mock-key"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    workload    = "castor-payment"
+  }
+}
+
+resource "google_secret_manager_secret_version" "stripe_mock_key_version" {
+  secret      = google_secret_manager_secret.stripe_mock_key.id
+  secret_data = "mock_sk_test_castor_default_secret_key"
+}
+
+# Workload Service Account IAM Permissions
+resource "google_secret_manager_secret_iam_member" "workload_stripe_access" {
+  count     = local.workload_sa_email != "" ? 1 : 0
+  secret_id = google_secret_manager_secret.stripe_mock_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${local.workload_sa_email}"
+}
+
+resource "google_storage_bucket_iam_member" "workload_invoices_admin" {
+  count  = local.workload_sa_email != "" ? 1 : 0
+  bucket = google_storage_bucket.invoices_bucket.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${local.workload_sa_email}"
+}
+
+resource "google_storage_bucket_iam_member" "workload_media_viewer" {
+  count  = local.workload_sa_email != "" ? 1 : 0
+  bucket = google_storage_bucket.media_bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${local.workload_sa_email}"
+}
+
+resource "google_pubsub_topic_iam_member" "workload_orders_publisher" {
+  count  = local.workload_sa_email != "" ? 1 : 0
+  topic  = google_pubsub_topic.orders_topic.name
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:${local.workload_sa_email}"
+}
+
+# stackvend: from infra/workload/variables.tf (IAC_ENGINEER)
+
+
+variable "environment" {
+  type        = string
+  description = "Deployment environment name"
+  default     = "production"
+}
+
+variable "factory_worker_url" {
+  type        = string
+  description = "Cloud Run URI for the factory-worker microservice"
+  default     = "https://factory-worker-placeholder.a.run.app"
+}
+
+variable "workload_sa_email" {
+  type        = string
+  description = "Service account email of the workload runtime (optional override if not using module.foundation.workload_sa_email)"
+  default     = ""
+}
+
+# stackvend: from infra/workload/outputs.tf (IAC_ENGINEER)
+output "gcs_bucket_name" {
+  description = "Canonical GCS bucket name for media assets"
+  value       = google_storage_bucket.media_bucket.name
+}
+
+output "media_bucket_name" {
+  description = "Name of the media storage bucket"
+  value       = google_storage_bucket.media_bucket.name
+}
+
+output "invoices_bucket_name" {
+  description = "Name of the invoices storage bucket"
+  value       = google_storage_bucket.invoices_bucket.name
+}
+
+output "pubsub_topic_id" {
+  description = "Canonical Pub/Sub topic ID for orders"
+  value       = google_pubsub_topic.orders_topic.name
+}
+
+output "orders_topic_name" {
+  description = "Name of the orders Pub/Sub topic"
+  value       = google_pubsub_topic.orders_topic.name
+}
+
+output "secret_stripe_mock_key" {
+  description = "Canonical Secret Manager secret ID for Stripe mock key"
+  value       = google_secret_manager_secret.stripe_mock_key.secret_id
+}
+
+output "factory_push_subscription_id" {
+  description = "ID of the factory orders push subscription"
+  value       = google_pubsub_subscription.factory_push_sub.id
+}
+
+output "pubsub_invoker_sa_email" {
+  description = "Email of the dedicated Pub/Sub invoker service account"
+  value       = google_service_account.pubsub_invoker.email
+}
+
+output "firestore_database_name" {
+  description = "Referenced Firestore database name from foundation module"
+  value       = try(module.foundation.database_name, "(default)")
+}
+
+module "compute_factory_worker" {
+  source                = "../modules/compute-event-worker"
+  project_id            = var.project_id
+  region                = var.region
+  product_id            = var.product_id
+  service_account_email = module.foundation.workload_sa_email
+  container_image       = replace(var.container_image, "/app:", "/factory-worker:")
+  cpu_limit             = var.cpu_limit
+  memory_limit          = var.memory_limit
+
+  depends_on = [module.foundation]
+}

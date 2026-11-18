@@ -1,0 +1,117 @@
+{
+  "title": "Typed intent workload: a judge finding on iac_intent.json that names no intent entry never justifies a deletion (negative control)",
+  "source": "ex02-1115 diagnosis (docs/handoff/ex02-1115-iac-judge-repair-diagnosis.md): the QA judge found a duplicate Cloud Scheduler job in iac_intent.json; the IaC repair deleted the duplicate module twice and the preservation rule rejected it both times (PRESERVATION_VIOLATION)",
+  "mechanism": "JUDGE-NAMED-INTENT-REMOVAL negative: without an exact judge-named address the preservation rule is unchanged; the deleting repair is refused (PRESERVATION_VIOLATION) until the dispatch's iterations run out",
+  "product_id": "orders-demo",
+  "trace": "trace-orders-unnamed-cron",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "iac_mode": "generate",
+  "topology": {
+    "services": [
+      {
+        "name": "orders-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "orders-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "orders service with a reconcile endpoint",
+      "target_files": [
+        "apps/orders-demo/main.py"
+      ]
+    },
+    {
+      "task_id": "INFRA-04",
+      "title": "one daily Cloud Scheduler job that POSTs /api/v1/reconcile",
+      "target_files": [
+        "infra/workload/iac_intent.json"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.post('/api/v1/reconcile')\ndef reconcile():\n    return {'reconciled': 0}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "intent": "{\n  \"modules\": [\n    {\n      \"args\": {\n        \"http_method\": \"POST\",\n        \"job_name_suffix\": \"reconcile-cron\",\n        \"schedule\": \"0 2 * * *\",\n        \"service_account_email\": {\n          \"$ref\": {\n            \"fact\": \"workload_sa_email\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"target_uri\": {\n          \"$ref\": {\n            \"kind\": \"service\",\n            \"output\": \"service_uri\",\n            \"service\": \"orders-demo\"\n          }\n        },\n        \"time_zone\": \"UTC\"\n      },\n      \"module\": \"scheduling-cron\",\n      \"name\": \"daily_reconcile_cron\"\n    }\n  ],\n  \"outputs\": [\n    {\n      \"description\": \"Cloud Scheduler job ID of the daily reconciliation\",\n      \"name\": \"reconcile_job_id\",\n      \"value\": {\n        \"$ref\": {\n          \"attr\": \"id\",\n          \"kind\": \"resource_attr\",\n          \"name\": \"daily_reconcile\",\n          \"type\": \"google_cloud_scheduler_job\"\n        }\n      }\n    }\n  ],\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"http_target\": {\n          \"http_method\": \"POST\",\n          \"oidc_token\": {\n            \"service_account_email\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          },\n          \"uri\": {\n            \"$args\": [\n              \"%s/api/v1/reconcile\",\n              {\n                \"$ref\": {\n                  \"kind\": \"service\",\n                  \"output\": \"service_uri\",\n                  \"service\": \"orders-demo\"\n                }\n              }\n            ],\n            \"$fn\": \"format\"\n          }\n        },\n        \"name\": {\n          \"$args\": [\n            \"%s-daily-reconcile\",\n            {\n              \"$ref\": {\n                \"fact\": \"product_id\",\n                \"kind\": \"fact\"\n              }\n            }\n          ],\n          \"$fn\": \"format\"\n        },\n        \"region\": {\n          \"$ref\": {\n            \"fact\": \"region\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"schedule\": \"0 2 * * *\",\n        \"time_zone\": \"UTC\"\n      },\n      \"name\": \"daily_reconcile\",\n      \"type\": \"google_cloud_scheduler_job\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n",
+    "intent_repaired": "{\n  \"modules\": [],\n  \"outputs\": [\n    {\n      \"description\": \"Cloud Scheduler job ID of the daily reconciliation\",\n      \"name\": \"reconcile_job_id\",\n      \"value\": {\n        \"$ref\": {\n          \"attr\": \"id\",\n          \"kind\": \"resource_attr\",\n          \"name\": \"daily_reconcile\",\n          \"type\": \"google_cloud_scheduler_job\"\n        }\n      }\n    }\n  ],\n  \"resources\": [\n    {\n      \"arguments\": {\n        \"http_target\": {\n          \"http_method\": \"POST\",\n          \"oidc_token\": {\n            \"service_account_email\": {\n              \"$ref\": {\n                \"fact\": \"workload_sa_email\",\n                \"kind\": \"fact\"\n              }\n            }\n          },\n          \"uri\": {\n            \"$args\": [\n              \"%s/api/v1/reconcile\",\n              {\n                \"$ref\": {\n                  \"kind\": \"service\",\n                  \"output\": \"service_uri\",\n                  \"service\": \"orders-demo\"\n                }\n              }\n            ],\n            \"$fn\": \"format\"\n          }\n        },\n        \"name\": {\n          \"$args\": [\n            \"%s-daily-reconcile\",\n            {\n              \"$ref\": {\n                \"fact\": \"product_id\",\n                \"kind\": \"fact\"\n              }\n            }\n          ],\n          \"$fn\": \"format\"\n        },\n        \"region\": {\n          \"$ref\": {\n            \"fact\": \"region\",\n            \"kind\": \"fact\"\n          }\n        },\n        \"schedule\": \"0 2 * * *\",\n        \"time_zone\": \"UTC\"\n      },\n      \"name\": \"daily_reconcile\",\n      \"type\": \"google_cloud_scheduler_job\"\n    }\n  ],\n  \"schema\": \"iac_intent/v1\"\n}\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/orders-demo/main.py": "@main",
+      "apps/orders-demo/requirements.txt": "@requirements",
+      "apps/orders-demo/Procfile": "@procfile",
+      "apps/orders-demo/tests/__init__.py": "",
+      "apps/orders-demo/tests/test_orders_demo.py": "def test_health():\n    assert True\n",
+      "infra/workload/iac_intent.json": "@intent",
+      "README.md": "# orders-demo\n\nOrders.\n"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "repairs": [
+    {
+      "infra/workload/iac_intent.json": "@intent_repaired"
+    },
+    {
+      "infra/workload/iac_intent.json": "@intent_repaired"
+    },
+    {
+      "infra/workload/iac_intent.json": "@intent_repaired"
+    }
+  ],
+  "sandbox": {
+    "tests_total": 12,
+    "rules": []
+  },
+  "judge": {
+    "0": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.92,
+          "missed": [
+            {
+              "text": "infra/workload/iac_intent.json defines duplicate Cloud Scheduler jobs: module `daily_reconcile_cron` targets the service root (`POST /`) instead of `/api/v1/reconcile`, alongside the raw `google_cloud_scheduler_job.daily_reconcile` resource targeting `/api/v1/reconcile`",
+              "file": "infra/workload/iac_intent.json",
+              "task_id": "INFRA-04"
+            }
+          ]
+        }
+      }
+    },
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "STOPPED",
+      "stage": "developer",
+      "error_class": "CODE_DEFECT",
+      "qa_attempts": 1,
+      "max_generations": 1
+    }
+  }
+}

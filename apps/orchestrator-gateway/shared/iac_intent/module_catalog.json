@@ -1,0 +1,2064 @@
+{
+ "ai_instantiable": [
+  "ai-vertex-endpoint",
+  "analytics-bigquery",
+  "cache-redis",
+  "database-alloydb",
+  "database-bigtable",
+  "database-cloudsql",
+  "database-spanner",
+  "dns-record",
+  "event-trigger",
+  "messaging-pubsub",
+  "observability-alerts",
+  "orchestration-composer",
+  "scheduling-cron",
+  "security-kms",
+  "security-secret",
+  "storage-bucket",
+  "tasks-queue",
+  "workflows-dag"
+ ],
+ "built_by": "scripts/build_iac_catalog.py (python-hcl2)",
+ "modules": {
+  "ai-vertex-endpoint": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_vertex_ai_endpoint"
+   ],
+   "outputs": {
+    "endpoint_id": {
+     "description": "The ID of the Vertex AI Endpoint.",
+     "sensitive": false
+    },
+    "endpoint_name": {
+     "description": "The name of the Vertex AI Endpoint.",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/ai-vertex-endpoint",
+   "variables": {
+    "description": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "Managed Vertex AI Endpoint provisioned by StackVend",
+     "description": "The description of the Vertex AI Endpoint.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "display_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "User-facing display name of the Vertex AI Endpoint.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "endpoint_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The resource name of the Vertex AI Endpoint. If empty, derived from product_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Optional Cloud KMS CryptoKey resource name for customer-managed encryption.",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "labels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": {},
+     "description": "Key-value labels to attach to the Vertex AI Endpoint.",
+     "has_default": true,
+     "hcl_type": "map(string)",
+     "sensitive": false
+    },
+    "network": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "Optional VPC network name/self-link for private service connect / direct peering.",
+     "fact": "network_by_project_number",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "product_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "StackVend product/workload identifier for labeling and naming defaults.",
+     "fact": "product_id",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "The GCP project ID to deploy the Vertex AI Endpoint in.",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "The GCP region to deploy the Vertex AI Endpoint in.",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "analytics-bigquery": {
+   "count_drivers": {
+    "workload_sa_email": [
+     "google_bigquery_dataset_access.workload_editor.count"
+    ]
+   },
+   "declares_types": [
+    "google_bigquery_dataset",
+    "google_bigquery_dataset_access"
+   ],
+   "outputs": {
+    "dataset_id": {
+     "description": "Identifier of the BigQuery dataset",
+     "sensitive": false
+    },
+    "dataset_name": {
+     "description": "Fully qualified ID of the dataset",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/analytics-bigquery",
+   "variables": {
+    "dataset_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "analytics",
+     "description": "Dataset ID (letters, numbers, underscores)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "delete_contents_on_destroy": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Delete all tables when dataset is destroyed",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "HELD",
+     "count_driver": false,
+     "default": null,
+     "description": "Cloud KMS CryptoKey resource name for the dataset's default table encryption (CMEK), in the dataset's location. The BigQuery encryption service account needs r\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "reason": "a CMEK BigQuery dataset needs the BigQuery encryption account granted on the key, which the security-kms module cannot grant yet; omit kms_key_name (Google-managed encryption)",
+     "row": "TI-5-G3c",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "BigQuery Dataset Region/Location",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Workload service account email to grant dataEditor role",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "cache-redis": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_redis_instance"
+   ],
+   "outputs": {
+    "current_location_id": {
+     "description": "The zone where the instance is currently provisioned",
+     "sensitive": false
+    },
+    "host": {
+     "description": "IP address of the Redis instance",
+     "sensitive": false
+    },
+    "instance_id": {
+     "description": "Identifier of the Redis instance",
+     "sensitive": false
+    },
+    "port": {
+     "description": "Port number of the Redis instance",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/cache-redis",
+   "variables": {
+    "auth_enabled": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Enable Redis AUTH password authentication",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "authorized_network": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "default",
+     "description": "VPC Network ID authorized to connect to Redis",
+     "fact": "network",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "instance_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "cache",
+     "description": "Suffix for the Redis instance name (e.g. 'cache', 'session')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Cloud KMS CryptoKey resource name (CMEK) for the instance, in the instance's region. The Memorystore service agent needs roles/cloudkms.cryptoKeyEncrypterDecry\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "memory_size_gb": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 1,
+     "description": "Redis memory size in GiB",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "tier": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "BASIC",
+     "description": "Service tier (BASIC or STANDARD_HA)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "transit_encryption_mode": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "SERVER_AUTHENTICATION",
+     "description": "In-transit encryption mode (SERVER_AUTHENTICATION or DISABLED)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "database-alloydb": {
+   "count_drivers": {
+    "grant_workload_secret_access": [
+     "google_secret_manager_secret_iam_member.workload_accessor.count"
+    ],
+    "initial_user_password": [
+     "random_password.alloydb_password.count"
+    ]
+   },
+   "declares_types": [
+    "google_alloydb_cluster",
+    "google_alloydb_instance",
+    "google_secret_manager_secret",
+    "google_secret_manager_secret_iam_member",
+    "google_secret_manager_secret_version",
+    "random_password"
+   ],
+   "outputs": {
+    "cluster_id": {
+     "description": "The ID of the AlloyDB cluster.",
+     "sensitive": false
+    },
+    "cluster_name": {
+     "description": "The resource name of the AlloyDB cluster.",
+     "sensitive": false
+    },
+    "instance_id": {
+     "description": "The ID of the primary AlloyDB instance.",
+     "sensitive": false
+    },
+    "ip_address": {
+     "description": "The private IP address of the primary AlloyDB instance.",
+     "sensitive": false
+    },
+    "secret_id_password": {
+     "description": "Secret Manager secret_id holding the initial user's (postgres) password (read it at runtime; the password itself is never an output)",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/database-alloydb",
+   "variables": {
+    "cluster_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The unique identifier of the AlloyDB cluster. If empty, derived from product_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "cpu_count": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 2,
+     "description": "Number of vCPUs allocated to the primary instance (2, 4, 8, 16, etc.). Default 2.",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "grant_workload_secret_access": {
+     "class": "AI",
+     "count_driver": true,
+     "default": false,
+     "description": "Grant workload_sa_email roles/secretmanager.secretAccessor on the password secret (requires workload_sa_email)",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "initial_user_password": {
+     "class": "SECRET",
+     "count_driver": true,
+     "default": null,
+     "description": "Initial password for the cluster's initial user (postgres). If null, a random password is generated. Either way it is stored in Secret Manager (output secret_i\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "policy": "omit",
+     "sensitive": true
+    },
+    "instance_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The unique identifier of the primary AlloyDB instance. If empty, derived from cluster_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Optional Cloud KMS CryptoKey resource name for CMEK encryption.",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "labels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": {},
+     "description": "Key-value labels to attach to the AlloyDB resources.",
+     "has_default": true,
+     "hcl_type": "map(string)",
+     "sensitive": false
+    },
+    "network": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "VPC network ID (projects/PROJECT/global/networks/NAME, e.g. networking-vpc's network_id) with an active Private Services Access connection; depend on that modu\u2026",
+     "fact": "network",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "product_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "StackVend product/workload identifier for labeling and naming defaults.",
+     "fact": "product_id",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "The GCP project ID to deploy AlloyDB in.",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "The GCP region to host the AlloyDB cluster.",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "Workload runtime service account email that grant_workload_secret_access gives read access to the password secret",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "database-bigtable": {
+   "count_drivers": {
+    "table_name": [
+     "google_bigtable_table.table.count"
+    ]
+   },
+   "declares_types": [
+    "google_bigtable_instance",
+    "google_bigtable_table"
+   ],
+   "outputs": {
+    "cluster_id": {
+     "description": "The ID of the Bigtable cluster.",
+     "sensitive": false
+    },
+    "instance_id": {
+     "description": "The ID of the Cloud Bigtable instance.",
+     "sensitive": false
+    },
+    "table_id": {
+     "description": "The ID of the created Bigtable table, if any.",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/database-bigtable",
+   "variables": {
+    "cluster_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The unique ID of the primary Bigtable cluster. If empty, derived from instance_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "column_families": {
+     "class": "AI",
+     "count_driver": false,
+     "default": [],
+     "description": "Optional list of column family names to create in the initial table.",
+     "has_default": true,
+     "hcl_type": "list(string)",
+     "sensitive": false
+    },
+    "deletion_protection": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Block OpenTofu from deleting the Bigtable instance (FD-4AZ: on by default). Set false explicitly only for an ephemeral instance you intend to destroy.",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "display_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "Descriptive display name for the Bigtable instance.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "instance_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The unique ID of the Cloud Bigtable instance. If empty, derived from product_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "labels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": {},
+     "description": "Key-value labels to attach to the Bigtable instance.",
+     "has_default": true,
+     "hcl_type": "map(string)",
+     "sensitive": false
+    },
+    "num_nodes": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 1,
+     "description": "Number of nodes allocated to the Bigtable cluster. Default 1.",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "product_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "StackVend product/workload identifier for labeling and naming defaults.",
+     "fact": "product_id",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "The GCP project ID to deploy Cloud Bigtable in.",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "storage_type": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "SSD",
+     "description": "Storage type for the cluster: 'SSD' (recommended for low latency) or 'HDD'.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "table_name": {
+     "class": "AI",
+     "count_driver": true,
+     "default": "",
+     "description": "Optional initial Bigtable table to create.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "zone": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1-a",
+     "description": "The GCP zone for the primary Bigtable cluster.",
+     "fact": "zone",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "database-cloudsql": {
+   "count_drivers": {
+    "grant_workload_secret_access": [
+     "google_secret_manager_secret_iam_member.workload_accessor.count"
+    ],
+    "workload_sa_email": [
+     "google_project_iam_member.cloudsql_client.count"
+    ]
+   },
+   "declares_types": [
+    "google_project_iam_member",
+    "google_secret_manager_secret",
+    "google_secret_manager_secret_iam_member",
+    "google_secret_manager_secret_version",
+    "google_sql_database",
+    "google_sql_database_instance",
+    "google_sql_user",
+    "random_password"
+   ],
+   "outputs": {
+    "database_name": {
+     "description": "Name of the default logical database",
+     "sensitive": false
+    },
+    "db_user": {
+     "description": "Name of the database user",
+     "sensitive": false
+    },
+    "instance_connection_name": {
+     "description": "Connection name for Cloud SQL Auth Proxy socket (PROJECT:REGION:INSTANCE)",
+     "sensitive": false
+    },
+    "instance_name": {
+     "description": "Name of the Cloud SQL instance",
+     "sensitive": false
+    },
+    "private_ip_address": {
+     "description": "Private IP address of the instance on private_network_id (empty when the instance has no private IP)",
+     "sensitive": false
+    },
+    "secret_id_password": {
+     "description": "Secret Manager secret_id holding the db_user password (read it at runtime; the password itself is never an output)",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/database-cloudsql",
+   "variables": {
+    "database_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "app_db",
+     "description": "Name of the initial logical database",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "database_version": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "POSTGRES_16",
+     "description": "Database engine version (e.g. 'POSTGRES_16', 'MYSQL_8_0')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "db_password": {
+     "class": "SECRET",
+     "count_driver": false,
+     "default": "",
+     "description": "Optional caller-supplied password for db_user. If empty, a random 32-character password is generated. Either way it is stored in Secret Manager (output secret_\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "policy": "omit",
+     "sensitive": true
+    },
+    "db_user": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "app_user",
+     "description": "Master database username",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "deletion_protection": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Block OpenTofu from deleting the Cloud SQL instance (FD-4AZ: on by default). Set false explicitly only for an ephemeral instance you intend to destroy.",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "enable_public_ip": {
+     "allowed_values": [
+      false
+     ],
+     "class": "AI",
+     "count_driver": false,
+     "default": false,
+     "description": "Give the instance a public IPv4 address (off by default). Needed only when private_network_id is not set; connections still require TLS (ssl_mode).",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "grant_workload_secret_access": {
+     "class": "AI",
+     "count_driver": true,
+     "default": false,
+     "description": "Grant workload_sa_email roles/secretmanager.secretAccessor on the database password secret (requires workload_sa_email)",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "instance_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "pg-db",
+     "description": "Suffix for the Cloud SQL instance name (e.g. 'db', 'postgres')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Cloud KMS CryptoKey resource name (CMEK) for the instance, in the instance's region. The Cloud SQL service agent needs roles/cloudkms.cryptoKeyEncrypterDecrypt\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "private_network_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "VPC network ID or self-link (projects/PROJECT/global/networks/NAME) for the instance's private IP. The network must already have an active Private Services Acc\u2026",
+     "fact": "network",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "ssl_mode": {
+     "allowed_values": [
+      "ENCRYPTED_ONLY",
+      "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+     ],
+     "class": "AI",
+     "count_driver": false,
+     "default": "ENCRYPTED_ONLY",
+     "description": "Cloud SQL connection encryption: ENCRYPTED_ONLY (default: TLS required, no client certificate), TRUSTED_CLIENT_CERTIFICATE_REQUIRED (TLS plus a client certific\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "tier": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "db-f1-micro",
+     "description": "Machine tier (e.g. 'db-f1-micro', 'db-custom-2-7680')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Workload runtime service account email to grant cloudsql.client role",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "database-spanner": {
+   "count_drivers": {
+    "database_name": [
+     "google_spanner_database.database.count"
+    ]
+   },
+   "declares_types": [
+    "google_spanner_database",
+    "google_spanner_instance"
+   ],
+   "outputs": {
+    "database_id": {
+     "description": "The name of the database created, if any.",
+     "sensitive": false
+    },
+    "database_state": {
+     "description": "The operational state of the Spanner database, if any.",
+     "sensitive": false
+    },
+    "instance_id": {
+     "description": "The ID of the created Cloud Spanner instance.",
+     "sensitive": false
+    },
+    "instance_state": {
+     "description": "The operational state of the Spanner instance.",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/database-spanner",
+   "variables": {
+    "config": {
+     "class": "HELD",
+     "count_driver": false,
+     "default": "",
+     "description": "Leave empty and pass region: the configuration is then regional-<region> (RT14-36, data residency); with region set, any other value is refused at plan. Withou\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "reason": "the platform sets the Spanner instance configuration to regional-<workload region> so the data stays in the workload's region; omit config",
+     "row": "RT14-36",
+     "sensitive": false
+    },
+    "database_name": {
+     "class": "AI",
+     "count_driver": true,
+     "default": "",
+     "description": "Optional initial database name to create within the instance.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "ddl_statements": {
+     "class": "AI",
+     "count_driver": false,
+     "default": [],
+     "description": "Optional DDL statements to execute upon database creation.",
+     "has_default": true,
+     "hcl_type": "list(string)",
+     "sensitive": false
+    },
+    "deletion_protection": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Block OpenTofu from deleting the Spanner database (FD-4AZ: on by default). Set false explicitly only for an ephemeral database you intend to destroy.",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "display_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The descriptive display name for the Spanner instance.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "instance_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The unique ID of the Cloud Spanner instance. If empty, derived from product_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Optional Cloud KMS CryptoKey resource name for CMEK encryption.",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "labels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": {},
+     "description": "Key-value labels to attach to the Cloud Spanner instance.",
+     "has_default": true,
+     "hcl_type": "map(string)",
+     "sensitive": false
+    },
+    "processing_units": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 100,
+     "description": "Compute capacity allocated in processing units (1000 processing units = 1 node). Default 100 for cost efficiency.",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "product_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "StackVend product/workload identifier for labeling and naming defaults.",
+     "fact": "product_id",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "The GCP project ID to deploy the Cloud Spanner instance in.",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "Workload region; the instance configuration is regional-<region> (RT14-36). Pass region = var.region. Null: config is used as written (RT14-F2) and must be set.",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "dns-record": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_dns_record_set"
+   ],
+   "outputs": {
+    "record_name": {
+     "description": "Name of the DNS record",
+     "sensitive": false
+    },
+    "record_type": {
+     "description": "Type of the DNS record",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/dns-record",
+   "variables": {
+    "managed_zone": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "Name of the Google Cloud DNS managed zone",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "record_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "Fully qualified domain name (must end with a period, e.g. 'api.example.com.')",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "record_type": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "CNAME",
+     "description": "DNS record type (A, CNAME, TXT, etc.)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "rrdatas": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "List of resource record data strings",
+     "has_default": false,
+     "hcl_type": "list(string)",
+     "sensitive": false
+    },
+    "ttl": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 300,
+     "description": "Time to live (seconds)",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    }
+   }
+  },
+  "event-trigger": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_eventarc_trigger"
+   ],
+   "outputs": {
+    "trigger_id": {
+     "description": "Resource ID of the Eventarc trigger",
+     "sensitive": false
+    },
+    "trigger_name": {
+     "description": "Name of the Eventarc trigger",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/event-trigger",
+   "variables": {
+    "destination_run_service_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Target Cloud Run service name",
+     "has_default": false,
+     "hcl_type": "string",
+     "refs": [
+      "service:service_name"
+     ],
+     "sensitive": false
+    },
+    "event_type": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "google.cloud.storage.object.v1.finalized",
+     "description": "Event type to match (e.g. 'google.cloud.storage.object.v1.finalized')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "service_account_email": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Service account email authorized to invoke the destination Cloud Run service",
+     "has_default": false,
+     "hcl_type": "string",
+     "refs": [
+      "fact:workload_sa_email",
+      "resource_attr:google_service_account.email"
+     ],
+     "sensitive": false
+    },
+    "trigger_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "gcs-trigger",
+     "description": "Suffix for the Eventarc trigger name",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "messaging-pubsub": {
+   "count_drivers": {
+    "enable_dead_letter": [
+     "google_pubsub_topic.dead_letter.count"
+    ],
+    "enable_subscription": [
+     "google_pubsub_subscription.subscription.count",
+     "google_pubsub_subscription_iam_member.subscriber.count"
+    ],
+    "workload_sa_email": [
+     "google_pubsub_subscription_iam_member.subscriber.count",
+     "google_pubsub_topic_iam_member.publisher.count"
+    ]
+   },
+   "declares_types": [
+    "google_pubsub_subscription",
+    "google_pubsub_subscription_iam_member",
+    "google_pubsub_topic",
+    "google_pubsub_topic_iam_member"
+   ],
+   "outputs": {
+    "dead_letter_topic_id": {
+     "description": "Resource ID of the Dead Letter topic (if enabled)",
+     "sensitive": false
+    },
+    "subscription_id": {
+     "description": "Resource ID of the subscription (if enabled)",
+     "sensitive": false
+    },
+    "subscription_name": {
+     "description": "Name of the subscription (if enabled)",
+     "sensitive": false
+    },
+    "topic_id": {
+     "description": "Resource ID of the Pub/Sub topic",
+     "sensitive": false
+    },
+    "topic_name": {
+     "description": "Name of the Pub/Sub topic",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/messaging-pubsub",
+   "variables": {
+    "ack_deadline_seconds": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 20,
+     "description": "Subscription acknowledge deadline in seconds",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "enable_dead_letter": {
+     "class": "AI",
+     "count_driver": true,
+     "default": false,
+     "description": "Whether to create a Dead Letter Queue (DLQ) topic for failed messages",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "enable_subscription": {
+     "class": "AI",
+     "count_driver": true,
+     "default": true,
+     "description": "Whether to create a pull subscription on this topic",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Cloud KMS CryptoKey resource name (CMEK) for the topic and its dead-letter topic. The Pub/Sub service agent needs roles/cloudkms.cryptoKeyEncrypterDecrypter on\u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "message_retention_duration": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "604800s",
+     "description": "Message retention duration (e.g. '604800s' for 7 days)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "push": {
+     "class": "PUSH",
+     "count_driver": false,
+     "default": null,
+     "description": "PUSH-SUB-RENDER: push delivery for the subscription, rendered by the platform from the typed intent: the endpoint (the workload's own Cloud Run service URL plu\u2026",
+     "has_default": true,
+     "hcl_type": "object({endpoint = string, service_account_email = string, audience = string})",
+     "sensitive": false
+    },
+    "topic_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "events",
+     "description": "Suffix for the Pub/Sub topic name (e.g. 'events', 'audit')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Workload service account email to grant publisher/subscriber IAM",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "observability-alerts": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_monitoring_alert_policy"
+   ],
+   "outputs": {
+    "alert_policy_id": {
+     "description": "Resource ID of the Cloud Monitoring alert policy",
+     "sensitive": false
+    },
+    "alert_policy_name": {
+     "description": "Display name of the alert policy",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/observability-alerts",
+   "variables": {
+    "alert_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "high-error-rate",
+     "description": "Suffix for the alert policy display name (e.g. '5xx-errors', 'high-latency')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "duration": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "300s",
+     "description": "Duration over which metric violation is measured (e.g. '300s')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "filter": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.labels.response_code_class=\"5xx\"",
+     "description": "Cloud Monitoring metric filter expression",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "notification_channels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": [],
+     "description": "List of Cloud Monitoring notification channel IDs",
+     "has_default": true,
+     "hcl_type": "list(string)",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "threshold_value": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 5,
+     "description": "Threshold value above which the alert triggers",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    }
+   }
+  },
+  "orchestration-composer": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_composer_environment"
+   ],
+   "outputs": {
+    "airflow_uri": {
+     "description": "The URI of the Apache Airflow Web UI.",
+     "sensitive": false
+    },
+    "environment_id": {
+     "description": "The ID of the Cloud Composer environment.",
+     "sensitive": false
+    },
+    "environment_name": {
+     "description": "The name of the Cloud Composer environment.",
+     "sensitive": false
+    },
+    "gcs_bucket": {
+     "description": "The Cloud Storage prefix/bucket used by the environment.",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/orchestration-composer",
+   "variables": {
+    "environment_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "",
+     "description": "The name of the Cloud Composer environment. If empty, derived from product_id.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "environment_size": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "ENVIRONMENT_SIZE_SMALL",
+     "description": "The size of the Cloud Composer 2 environment: 'ENVIRONMENT_SIZE_SMALL', 'ENVIRONMENT_SIZE_MEDIUM', or 'ENVIRONMENT_SIZE_LARGE'.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "image_version": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "The version of the Airflow image to use. Defaults to null (latest Composer 2 image).",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "labels": {
+     "class": "AI",
+     "count_driver": false,
+     "default": {},
+     "description": "Key-value labels to attach to the Cloud Composer environment.",
+     "has_default": true,
+     "hcl_type": "map(string)",
+     "sensitive": false
+    },
+    "product_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "",
+     "description": "StackVend product/workload identifier for labeling and naming defaults.",
+     "fact": "product_id",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "The GCP project ID to deploy Cloud Composer in.",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "The GCP region to host the Cloud Composer environment.",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "service_account": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Optional custom service account for Composer workers. If null, uses default compute service account.",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "fact:workload_sa_email",
+      "resource_attr:google_service_account.email"
+     ],
+     "sensitive": false
+    }
+   }
+  },
+  "scheduling-cron": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_cloud_scheduler_job"
+   ],
+   "outputs": {
+    "job_id": {
+     "description": "Resource ID of the Cloud Scheduler job",
+     "sensitive": false
+    },
+    "job_name": {
+     "description": "Name of the Cloud Scheduler job",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/scheduling-cron",
+   "variables": {
+    "audience": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "OIDC token audience (e.g. the exact audience constant the target service verifies). Null keeps the default: the target URI. Needs service_account_email.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "http_method": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "POST",
+     "description": "HTTP method to invoke",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "job_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "sync",
+     "description": "Suffix for the cron job name (e.g. 'nightly-sync')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "schedule": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "0 0 * * *",
+     "description": "Cron schedule expression (e.g. '0 2 * * *' for 2 AM daily)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "service_account_email": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": "",
+     "description": "Service account email for OIDC token authorization",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "fact:workload_sa_email",
+      "resource_attr:google_service_account.email"
+     ],
+     "sensitive": false
+    },
+    "target_uri": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Target HTTP URI to invoke (e.g. Cloud Run service URL + '/jobs/sync')",
+     "has_default": false,
+     "hcl_type": "string",
+     "refs": [
+      "service:service_uri"
+     ],
+     "sensitive": false
+    },
+    "time_zone": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "UTC",
+     "description": "Time zone for cron schedule",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "security-kms": {
+   "count_drivers": {
+    "enable_apis": [
+     "google_project_service.required.for_each"
+    ],
+    "service_agent_services": [
+     "data.google_storage_project_service_account.gcs.count",
+     "google_kms_crypto_key_iam_member.service_agents.for_each",
+     "google_project_service.required.for_each",
+     "google_project_service_identity.agents.for_each"
+    ],
+    "workload_sa_email": [
+     "google_kms_crypto_key_iam_member.encrypter_decrypter.count"
+    ]
+   },
+   "declares_types": [
+    "google_kms_crypto_key",
+    "google_kms_crypto_key_iam_member",
+    "google_kms_key_ring",
+    "google_project_service",
+    "google_project_service_identity"
+   ],
+   "outputs": {
+    "crypto_key_id": {
+     "description": "Resource ID of the KMS CryptoKey",
+     "sensitive": false
+    },
+    "crypto_key_name": {
+     "description": "Cloud KMS resource name of the CryptoKey (known at plan time)",
+     "sensitive": false
+    },
+    "keyring_id": {
+     "description": "Resource ID of the KMS Keyring",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/security-kms",
+   "variables": {
+    "enable_apis": {
+     "class": "AI",
+     "count_driver": true,
+     "default": false,
+     "description": "Enable cloudkms.googleapis.com and every service_agent_services API from this module (never disabled on destroy).",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "key_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "workload-cmek",
+     "description": "Name for the KMS CryptoKey",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "keyring_name": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "keyring",
+     "description": "Name suffix for the KMS Keyring",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "location": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "KMS Keyring Location (e.g. 'us-central1' or 'global')",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "protection_level": {
+     "allowed_values": [
+      "SOFTWARE",
+      "HSM"
+     ],
+     "class": "AI",
+     "count_driver": false,
+     "default": "SOFTWARE",
+     "description": "Protection level of the key's versions: SOFTWARE (default) or HSM. Create-only: set it before the first apply.",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "rotation_period": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "7776000s",
+     "description": "Automated key rotation period in seconds (e.g. '7776000s' for 90 days)",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "service_agent_services": {
+     "allowed_items": [
+      "aiplatform.googleapis.com",
+      "alloydb.googleapis.com",
+      "artifactregistry.googleapis.com",
+      "container.googleapis.com",
+      "firestore.googleapis.com",
+      "pubsub.googleapis.com",
+      "redis.googleapis.com",
+      "run.googleapis.com",
+      "secretmanager.googleapis.com",
+      "spanner.googleapis.com",
+      "sqladmin.googleapis.com",
+      "storage.googleapis.com"
+     ],
+     "class": "AI",
+     "count_driver": true,
+     "default": [],
+     "description": "Google APIs whose service agents are granted roles/cloudkms.cryptoKeyEncrypterDecrypter on the key (e.g. artifactregistry.googleapis.com). Default: none.",
+     "has_default": true,
+     "hcl_type": "list(string)",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Workload service account email to grant encrypter/decrypter role",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "security-secret": {
+   "count_drivers": {
+    "generate_initial_version": [
+     "google_secret_manager_secret_version.generated.count",
+     "random_password.initial.count"
+    ],
+    "secret_data": [
+     "google_secret_manager_secret_version.version.count"
+    ],
+    "workload_sa_email": [
+     "google_secret_manager_secret_iam_member.accessor.count"
+    ]
+   },
+   "declares_types": [
+    "google_secret_manager_secret",
+    "google_secret_manager_secret_iam_member",
+    "google_secret_manager_secret_version",
+    "random_password"
+   ],
+   "outputs": {
+    "secret_id": {
+     "description": "Identifier of the secret",
+     "sensitive": false
+    },
+    "secret_name": {
+     "description": "Fully qualified resource name of the secret",
+     "sensitive": false
+    },
+    "secret_version_id": {
+     "description": "Resource ID of the created version (if initial data was provided)",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/security-secret",
+   "variables": {
+    "generate_initial_version": {
+     "class": "TOPOLOGY",
+     "count_driver": true,
+     "default": false,
+     "description": "Create one random first version (64 letters and digits) for a value the workload itself makes and uses. Set by the platform on typed infrastructure; stable acr\u2026",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false,
+     "topology": "initial_value"
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "secret_data": {
+     "class": "SECRET",
+     "count_driver": true,
+     "default": "",
+     "description": "Initial secret payload value (optional, can be populated out-of-band)",
+     "has_default": true,
+     "hcl_type": "string",
+     "policy": "omit",
+     "sensitive": true
+    },
+    "secret_id": {
+     "class": "AI",
+     "count_driver": false,
+     "default": null,
+     "description": "Secret identifier (e.g. 'stripe_api_key', 'db_password')",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Runtime service account email to grant secretAccessor role",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "storage-bucket": {
+   "count_drivers": {
+    "workload_sa_email": [
+     "google_storage_bucket_iam_member.workload_admin.count"
+    ]
+   },
+   "declares_types": [
+    "google_storage_bucket",
+    "google_storage_bucket_iam_member"
+   ],
+   "outputs": {
+    "bucket_name": {
+     "description": "Name of the created GCS bucket",
+     "sensitive": false
+    },
+    "bucket_url": {
+     "description": "URL of the created GCS bucket",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/storage-bucket",
+   "variables": {
+    "bucket_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "data",
+     "description": "Suffix for the bucket name (e.g. 'uploads', 'assets')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "kms_key_name": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Cloud KMS CryptoKey resource name for the bucket's default customer-managed encryption (CMEK), in the bucket's location. The Cloud Storage service agent needs \u2026",
+     "has_default": true,
+     "hcl_type": "string",
+     "refs": [
+      "module_output:security-kms.crypto_key_name"
+     ],
+     "sensitive": false
+    },
+    "lifecycle_delete_age_days": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 0,
+     "description": "Number of days before objects are automatically deleted (0 to disable)",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "prevent_destroy": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "When true (FD-4AZ default), force_destroy is off: OpenTofu cannot delete the bucket while it still holds objects. Set false explicitly only for an ephemeral bu\u2026",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "uniform_bucket_level_access": {
+     "class": "AI",
+     "count_driver": false,
+     "default": true,
+     "description": "Enforce uniform bucket-level access (Org Policy compliant)",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "versioning_enabled": {
+     "class": "AI",
+     "count_driver": false,
+     "default": false,
+     "description": "Enable object versioning",
+     "has_default": true,
+     "hcl_type": "bool",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Runtime service account email to grant storage.objectAdmin",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "tasks-queue": {
+   "count_drivers": {
+    "workload_sa_email": [
+     "google_cloud_tasks_queue_iam_member.enqueuer.count"
+    ]
+   },
+   "declares_types": [
+    "google_cloud_tasks_queue",
+    "google_cloud_tasks_queue_iam_member"
+   ],
+   "outputs": {
+    "queue_id": {
+     "description": "Resource ID of the Cloud Tasks queue",
+     "sensitive": false
+    },
+    "queue_name": {
+     "description": "Name of the Cloud Tasks queue",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/tasks-queue",
+   "variables": {
+    "max_attempts": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 5,
+     "description": "Maximum retry attempts before sending to DLQ",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "max_concurrent_dispatches": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 50,
+     "description": "Maximum number of concurrent tasks dispatched",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "max_dispatches_per_second": {
+     "class": "AI",
+     "count_driver": false,
+     "default": 100,
+     "description": "Maximum dispatch rate per second",
+     "has_default": true,
+     "hcl_type": "number",
+     "sensitive": false
+    },
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "queue_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "tasks",
+     "description": "Suffix for the Cloud Tasks queue name (e.g. 'webhooks', 'background')",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workload_sa_email": {
+     "class": "FACT",
+     "count_driver": true,
+     "default": "",
+     "description": "Workload service account email to grant enqueuer role",
+     "fact": "workload_sa_email",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  },
+  "workflows-dag": {
+   "count_drivers": {},
+   "declares_types": [
+    "google_workflows_workflow"
+   ],
+   "outputs": {
+    "workflow_id": {
+     "description": "Resource ID of the Cloud Workflows state machine",
+     "sensitive": false
+    },
+    "workflow_name": {
+     "description": "Name of the Cloud Workflows state machine",
+     "sensitive": false
+    }
+   },
+   "source": "../modules/workflows-dag",
+   "variables": {
+    "project_id": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": null,
+     "description": "GCP Project ID",
+     "fact": "project_id",
+     "has_default": false,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "region": {
+     "class": "FACT",
+     "count_driver": false,
+     "default": "us-central1",
+     "description": "GCP Region",
+     "fact": "region",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "service_account_email": {
+     "class": "REF_ONLY",
+     "count_driver": false,
+     "default": null,
+     "description": "Service account email that executes the workflow steps",
+     "has_default": false,
+     "hcl_type": "string",
+     "refs": [
+      "fact:workload_sa_email",
+      "resource_attr:google_service_account.email"
+     ],
+     "sensitive": false
+    },
+    "source_contents": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "main:\n  steps:\n    - init:\n        return: 'ok'\n",
+     "description": "YAML source definition for the workflow state machine",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    },
+    "workflow_name_suffix": {
+     "class": "AI",
+     "count_driver": false,
+     "default": "pipeline",
+     "description": "Suffix for the workflow resource name",
+     "has_default": true,
+     "hcl_type": "string",
+     "sensitive": false
+    }
+   }
+  }
+ },
+ "platform_only": {
+  "compute-cloudrun": "topology (compute)",
+  "compute-event-worker": "topology (compute)",
+  "compute-gce-bastion": "topology (compute)",
+  "compute-gce-worker": "topology (compute)",
+  "compute-gke-autopilot": "topology (compute)",
+  "networking-vpc": "lane 11 (network)",
+  "networking-vpc-connector": "lane 11 (network)",
+  "workflows": "orchestrator / SRE identities",
+  "workload-foundation": "platform foundation",
+  "workload_auth": "platform foundation"
+ },
+ "schema": "iac_intent_module_catalog/v1"
+}

@@ -1,0 +1,23 @@
+{
+ "_comment": "F9 replay provenance: spec pins for cassettes recorded before the harness stored the spec in the cassette meta. The architect, red-team and lead requests embed the example spec; the harness used to read it from the CURRENT checkout's documentation/examples, so a replay after a docs edit (6bebe01 rewrote 04-09) diverged at those sites, differently per checkout. A pin is matched by the cassette meta's exact (frozen_now, model); its spec text is read from git at examples_sha and must hash to spec_sha256[example] (sha256 of the UTF-8 spec text, spec_mode full). New recordings carry spec_text/spec_sha256 in their meta and need no pin.",
+ "pins": [
+  {
+   "cassettes": "20261012T172959Z-44a2747-record",
+   "frozen_now": "2026-10-12T17:29:59+00:00",
+   "model": "gemini-3.8-flash",
+   "examples_sha": "44a274790b9579c7286c07c8032c45e50dfd71f9",
+   "spec_mode": "full",
+   "spec_sha256": {
+    "01": "b40371d1a116e2f16195562b72d1759b89d920e4a5a934f181ed3a785cde8af8",
+    "02": "78dff0651ea23378a89bdf55eb4888a3eb1b506094753cd4b322e612abe4a030",
+    "03": "4fe425fefd4ba899e5bca40f4cc7280d41e91e27db77371be1f8961126e0e6c0",
+    "04": "5bef01aa8a3bfbded584504ceaac083cbc552a2e97a3166abb10c8dc35de8827",
+    "05": "49f49bc776c24d08402dc3d793219d7aebb09a4203095eed57edb9c2581d3d85",
+    "06": "96a0c0ee543cc0796348eb885714daf17c305b252d12e3caa7393dcd837f8363",
+    "07": "74638559ec628cd899ce1455c90863b5ca197e5426a9eca38ec81838241cf715",
+    "08": "14665d11698c99c39031ec4809ffc550ecb3e59e6922364c53f2a19d3812d8ae",
+    "09": "f15fea00df0d0fd613986295d3923e5eb0c9b35a74e0c7719e3d45c649975c83"
+   }
+  }
+ ]
+}

@@ -1,0 +1,307 @@
+{
+ "id": "ex06-fd4amc-r2-conditional-token-creator",
+ "summary": "Recorded set FD4AMC, example 06 run 2, consensus re-plan answer (no model build plan): 'Grant roles/iam.serviceAccountTokenCreator ... if needed' in prose. Must pass: prose is never read.",
+ "source": {
+  "kind": "cassette",
+  "set": "20261020-FD4AMC-critic-0109-fresh-a767c849",
+  "example": "06",
+  "run": 2,
+  "answer_index": 1,
+  "answer": "second ArchitectAgent._single_turn_decompose answer (consensus remediation turn)",
+  "model": "gemini-3.8-flash"
+ },
+ "anonymized": "recorded eval cassette (public example spec); assigned_cidr_block nulled.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": []
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "test-06-widget-factory-ecommerce",
+  "project_tier": 2,
+  "summary": "Full-stack e-commerce web platform for an industrial custom widget factory featuring a public FastAPI storefront with interactive widget configurator, shopping cart, Secret Manager payment validation, Pub/Sub order dispatch, and an asynchronous Cloud Run factory fulfillment worker managing Firestore inventory and GCS invoices.",
+  "architecture_overview": "The architecture comprises two Cloud Run v2 services (scaled to zero by default): a public Storefront & API Gateway hosting the FastAPI web application with embedded Tailwind CSS and Alpine.js frontend, and an internal Factory Warehouse fulfillment worker. The Storefront allows interactive customization of widget materials, bore sizes, and finishes, manages cart state, and provides a checkout endpoint validating credentials via Google Secret Manager. Placed orders are published to a Cloud Pub/Sub topic. An authenticated Pub/Sub push subscription triggers the internal Warehouse Worker via an OIDC token with roles/run.invoker permissions. The Warehouse Worker performs atomic inventory ledger updates in Google Cloud Firestore (Native Mode), generates digital invoice manifests to Google Cloud Storage (/invoices), and advances the order manufacturing lifecycle, while customer tracking is exposed via GET /track/{order_id}.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable Required Google Cloud Service APIs",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Declare google_project_service resources for run.googleapis.com, firestore.googleapis.com, pubsub.googleapis.com, storage.googleapis.com, secretmanager.googleapis.com, artifactregistry.googleapis.com, and iam.googleapis.com with disable_on_destroy set to false.",
+    "acceptance_criteria": [
+     "All required GCP APIs declared with disable_on_destroy = false",
+     "Terraform/OpenTofu validation passes"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Storage, Database, Pub/Sub Topic, and Secrets",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Provision Firestore Native Database ((default)), private GCS bucket for invoice manifests with 30-day lifecycle expiration, public GCS bucket for widget media, Pub/Sub topic 'widget-orders-placed', and Google Secret Manager secret 'widget-factory-stripe-mock-key' with an initial mock secret version.",
+    "acceptance_criteria": [
+     "Firestore Native DB resource declared",
+     "GCS buckets for invoices and catalog media configured with lifecycle rules",
+     "Pub/Sub topic widget-orders-placed declared",
+     "Secret Manager secret initialized"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Configure Service Accounts and Least-Privilege IAM Bindings",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Create dedicated service accounts: Storefront SA, Warehouse Worker SA, and Pub/Sub Push Invoker SA. Bind roles/datastore.user, roles/pubsub.publisher, and roles/secretmanager.secretAccessor to Storefront SA. Bind roles/datastore.user and roles/storage.objectAdmin to Warehouse Worker SA. Grant roles/iam.serviceAccountTokenCreator to Pub/Sub service agent if needed.",
+    "acceptance_criteria": [
+     "Storefront SA bound to roles/datastore.user, roles/pubsub.publisher, and roles/secretmanager.secretAccessor",
+     "Warehouse Worker SA bound to roles/datastore.user and roles/storage.objectAdmin",
+     "Dedicated Pub/Sub Invoker SA created for push auth"
+    ],
+    "depends_on": [
+     "INFRA-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Provision Cloud Run v2 Services for Storefront and Warehouse Worker",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Provision the public Storefront Cloud Run service (ingress = INGRESS_TRAFFIC_ALL, public unauthenticated invoker binding) and the internal Warehouse Worker Cloud Run service (ingress = INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER). Bind roles/run.invoker on Warehouse Worker to the Pub/Sub Invoker SA.",
+    "acceptance_criteria": [
+     "Storefront Cloud Run v2 service declared with public access",
+     "Warehouse Worker Cloud Run v2 service declared with internal ingress",
+     "roles/run.invoker on Warehouse Worker granted strictly to Pub/Sub Invoker SA",
+     "Cloud Run service URLs exported as outputs"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-05",
+    "title": "Provision Authenticated Pub/Sub Push Subscription to Warehouse Worker",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Provision google_pubsub_subscription 'factory-fulfillment-push-sub' attached to 'widget-orders-placed' topic with a push_config targeting the Warehouse Worker endpoint (/api/v1/factory/process-order). Configure OIDC authentication referencing the Pub/Sub Invoker SA and the Warehouse Worker service URI as the audience.",
+    "acceptance_criteria": [
+     "Pub/Sub push subscription configured after Warehouse Worker Cloud Run service creation",
+     "Push endpoint references warehouse worker URI without circular dependency",
+     "OIDC authentication token configured with Pub/Sub Invoker SA identity"
+    ],
+    "depends_on": [
+     "INFRA-04"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement Storefront FastAPI Application, UI, Configurator, and Seeding",
+    "category": "CODE",
+    "target_files": [
+     "apps/storefront/main.py",
+     "apps/storefront/requirements.txt",
+     "apps/storefront/Procfile",
+     "apps/storefront/.python-version"
+    ],
+    "description": "Develop the Storefront FastAPI application under apps/storefront/. Implement dynamic catalog endpoints (GET /), startup seeding routine for the 5 initial widget SKUs into Firestore 'widgets' collection, interactive HTML/Tailwind/Alpine.js widget configurator with client-side pricing computation, shopping cart handling, and order tracking portal (GET /track/{order_id}).",
+    "acceptance_criteria": [
+     "FastAPI app boots cleanly and seeds 5 initial SKUs into Firestore 'widgets' collection",
+     "Embedded Tailwind CSS / Alpine.js UI displays catalog and dynamic configurator",
+     "GET /track/{order_id} retrieves and displays real-time order status timeline"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Implement Storefront Checkout Pipeline, Secret Validation, and Pub/Sub Publishing",
+    "category": "CODE",
+    "target_files": [
+     "apps/storefront/main.py",
+     "apps/storefront/services/checkout.py"
+    ],
+    "description": "Implement POST /api/v1/orders/checkout in Storefront. Validate payment against the mock key stored in Secret Manager, check current inventory, record initial order state in Firestore 'customer_orders' (PENDING_PAYMENT -> QUEUED_IN_FACTORY), and publish order payload to Pub/Sub topic 'widget-orders-placed'.",
+    "acceptance_criteria": [
+     "Checkout validates mock payment token against Secret Manager",
+     "Order created in Firestore customer_orders collection",
+     "Order event published successfully to widget-orders-placed Pub/Sub topic"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-03",
+    "title": "Implement Factory Warehouse Worker Service and Async Fulfillment Logic",
+    "category": "CODE",
+    "target_files": [
+     "apps/warehouse-worker/main.py",
+     "apps/warehouse-worker/requirements.txt",
+     "apps/warehouse-worker/Procfile",
+     "apps/warehouse-worker/.python-version"
+    ],
+    "description": "Develop the asynchronous Factory Warehouse Worker under apps/warehouse-worker/. Expose POST /api/v1/factory/process-order to parse Pub/Sub push messages. Implement atomic transaction in Firestore to decrement stock in 'inventory_ledger', generate a digital invoice JSON/manifest stored in GCS (/invoices), and update the order state from QUEUED_IN_FACTORY to MANUFACTURING.",
+    "acceptance_criteria": [
+     "Endpoint POST /api/v1/factory/process-order handles decoded Pub/Sub push events",
+     "Atomic Firestore transaction decrements inventory stock safely",
+     "Digital invoice manifest uploaded to GCS invoice bucket",
+     "Order status transitioned to MANUFACTURING"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-04",
+    "title": "Implement Comprehensive Unit and Integration Test Suite",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_storefront.py",
+     "tests/test_warehouse_worker.py"
+    ],
+    "description": "Develop pytest test suite covering catalog listing, custom configurator price calculation, checkout payment validation, atomic inventory ledger decrements, out-of-stock rejections, and warehouse worker Pub/Sub payload ingestion.",
+    "acceptance_criteria": [
+     "All pytest unit tests pass with mock fixtures for Firestore, Pub/Sub, and Secret Manager",
+     "Out of stock checkout returns 400 Bad Request",
+     "Warehouse worker successfully validates payload and processes order"
+    ],
+    "depends_on": [
+     "CODE-02",
+     "CODE-03"
+    ],
+    "assigned_agent": "qa-reviewer",
+    "priority": "MEDIUM"
+   }
+  ],
+  "target_compute_services": [
+   "storefront",
+   "warehouse-worker"
+  ],
+  "compute_archetype": "cloudrun",
+  "service_topology": {
+   "services": [
+    {
+     "name": "storefront",
+     "kind": "cloudrun",
+     "purpose": "Public-facing Storefront and API Gateway with embedded Tailwind CSS and Alpine.js UI, catalog browsing, configurator, and checkout pipeline.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 10,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    },
+    {
+     "name": "warehouse-worker",
+     "kind": "cloudrun",
+     "purpose": "Internal asynchronous factory fulfillment worker consuming order events via Pub/Sub push subscription, updating inventory, and writing invoices.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 5,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    }
+   ],
+   "primary_service": "storefront",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_pubsub_topic",
+     "logical_name": "widget_orders_placed",
+     "purpose": "Messaging topic for placed customer widget orders",
+     "consumers": [
+      {
+       "service": "storefront",
+       "env_key": "ORDERS_TOPIC",
+       "attribute": "id"
+      }
+     ]
+    },
+    {
+     "type": "google_storage_bucket",
+     "logical_name": "widget_invoices",
+     "purpose": "Private bucket for storing digital order invoice manifests",
+     "consumers": [
+      {
+       "service": "warehouse-worker",
+       "env_key": "INVOICES_BUCKET_NAME",
+       "attribute": "name"
+      }
+     ]
+    },
+    {
+     "type": "google_secret_manager_secret",
+     "logical_name": "stripe_mock_key",
+     "purpose": "Secret holding mock payment gateway authorization key",
+     "consumers": [
+      {
+       "service": "storefront",
+       "env_key": "PAYMENT_KEY_SECRET_ID",
+       "attribute": "secret_id"
+      }
+     ]
+    }
+   ]
+  },
+  "bundle_id": "event-driven-microservice",
+  "iac_engine": "tofu",
+  "assigned_cidr_block": null
+ },
+ "prose_markers": [
+  {
+   "item": "infra_tasks[INFRA-03]",
+   "field": "description",
+   "contains": "roles/iam.serviceAccountTokenCreator"
+  }
+ ]
+}

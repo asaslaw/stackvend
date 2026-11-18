@@ -1,0 +1,120 @@
+{
+  "title": "Direct IAP app whose plan mandates \"the first user to sign in becomes SuperAdmin\": the app uses the platform's admin list instead, and the judge does not report the missing bootstrap as a missed directive",
+  "source": "red team of APP-ADMIN-IAP-CONTRACT (11-16), finding 1: a plan that asks for a first-user bootstrap would deadlock the lenses (security forbids it, adherence demands it)",
+  "mechanism": "APP-ADMIN-IAP-CONTRACT: the app administrator fact says a plan task asking for a first-user or bootstrap way of making the first administrator is met by the platform's administrator list; a judge that reads it withdraws the finding (without that clause the finding blocks every QA attempt and the repairs change nothing)",
+  "product_id": "admin-portal",
+  "trace": "trace-admin-portal-first-user",
+  "access": {
+    "mode": "PRIVATE_IAP",
+    "invoker_principals": [
+      "user:admin@example.com"
+    ]
+  },
+  "workload_record": {
+    "verified_submitter": {
+      "member": "user:admin@example.com",
+      "source": "submitter",
+      "verified_by": "control_center_auth"
+    }
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "admin-portal",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "admin-portal",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "admin HTTP service",
+      "target_files": [
+        "apps/admin-portal/main.py"
+      ]
+    },
+    {
+      "task_id": "CODE-02",
+      "title": "Viewer/SuperAdmin RBAC store: the first user to sign in becomes SuperAdmin",
+      "target_files": [
+        "apps/admin-portal/store.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\nimport store\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.get('/api/v1/roles/{email}')\ndef role(email: str):\n    return {'role': store.get_role(email)}\n",
+    "store_admins": "import json\nimport os\n\nVIEWER = 'Viewer'\nSUPER_ADMIN = 'SuperAdmin'\n_ROLES = {}\n\n\ndef app_admin_emails():\n    value = json.loads(os.environ['STACKVEND_APP_ADMIN_EMAILS'])\n    if not isinstance(value, list) or not all(isinstance(e, str) for e in value):\n        raise RuntimeError('STACKVEND_APP_ADMIN_EMAILS is not a JSON list of strings')\n    return value\n\n\ndef get_role(email):\n    if email.lower() in app_admin_emails():\n        return SUPER_ADMIN\n    return _ROLES.get(email.lower(), VIEWER)\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "test_main": "def test_health():\n    assert True\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/admin-portal/main.py": "@main",
+      "apps/admin-portal/store.py": "@store_admins",
+      "apps/admin-portal/requirements.txt": "@requirements",
+      "apps/admin-portal/Procfile": "@procfile",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "@test_main"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "repairs": [
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    },
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    },
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    },
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    },
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    },
+    {
+      "apps/admin-portal/store.py": "@store_admins"
+    }
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": [
+            {
+              "text": "CODE-02: the plan mandates that the first user to sign in becomes SuperAdmin; apps/admin-portal/store.py has no first-user bootstrap",
+              "task_id": "CODE-02",
+              "file": "apps/admin-portal/store.py",
+              "withdraw_if_facts_mention": "is met by the platform's administrator list"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1,
+      "max_generations": 1
+    }
+  }
+}

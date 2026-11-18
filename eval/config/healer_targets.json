@@ -1,0 +1,6706 @@
+{
+ "counts_by_kind": {
+  "apply_time": 107,
+  "function": 79,
+  "inline": 68,
+  "not_loaded": 21,
+  "out_of_scope": 72,
+  "unresolved": 7
+ },
+ "fragments": [
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-01",
+   "key": "HA-01@mcp-servers/terraform/service.py::5153-5163",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5153,
+     5163
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/terraform/service.py:deploy_workload:5153-5163",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-02",
+   "key": "HA-02@mcp-servers/terraform/service.py::5164-5168",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5164,
+     5168
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:5164-5168",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-02",
+   "key": "HA-02@mcp-servers/terraform/service.py::6378-6394",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6378,
+     6394
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":6378-6394",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-02",
+   "key": "HA-02@mcp-servers/terraform/service.py::3339-3355",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3339,
+     3355
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apply_plan:3339-3355",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-03",
+   "key": "HA-03@mcp-servers/terraform/service.py::2549-2557",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2549,
+     2557
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2549-2557",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "infra/modules/compute-cloudrun/main.tf",
+   "healer_id": "HA-03",
+   "key": "HA-03@infra/modules/compute-cloudrun/main.tf::30-30",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     30,
+     30
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "infra/modules/compute-cloudrun/main.tf:30",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-03",
+   "key": "HA-03@mcp-servers/terraform/service.py::6470-6522",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6470,
+     6522
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6470-6522",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-04",
+   "key": "HA-04@mcp-servers/terraform/service.py::2056-2160",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2056,
+     2160
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:purge_errored_child_stubs:2056-2160",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-04",
+   "key": "HA-04@mcp-servers/terraform/service.py::6157-6157",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6157,
+     6157
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":6157",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/applier.py",
+   "healer_id": "HA-04",
+   "key": "HA-04@mcp-servers/terraform/applier.py::84-84",
+   "kind": "apply_time",
+   "lines": [
+    [
+     84,
+     84
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "applier.py:84",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-04",
+   "key": "HA-04@mcp-servers/terraform/service.py::1987-1987",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1987,
+     1987
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "is_cloud_capacity_stockout:1987",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-05",
+   "key": "HA-05@mcp-servers/terraform/service.py::6340-6368",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6340,
+     6368
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:6340-6368",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-05",
+   "key": "HA-05@mcp-servers/terraform/service.py::6849-6864",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6849,
+     6864
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":6849-6864",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-06",
+   "key": "HA-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_duplicate_gke_clusters:2454-2561",
+   "kind": "function",
+   "lines": [
+    [
+     2454,
+     2561
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "sanitize_duplicate_gke_clusters",
+   "raw": "preflight_validator.py:sanitize_duplicate_gke_clusters:2454-2561",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "run_ast_preflight_check",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-06",
+   "key": "HA-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:run_ast_preflight_check:518-520",
+   "kind": "inline",
+   "lines": [
+    [
+     518,
+     520
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "run_ast_preflight_check",
+   "raw": "run_ast_preflight_check:518-520",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/sandbox-cleaner/cleaner.py",
+   "healer_id": "HA-07",
+   "key": "HA-07@apps/sandbox-cleaner/cleaner.py::167-167",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     167,
+     167
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/sandbox-cleaner/cleaner.py:clean_ephemeral_cloud_run_services:167",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HA-08",
+   "key": "HA-08@apps/project-vending/vending.py::1198-1299",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1198,
+     1299
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:decommission:1198-1299",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-09",
+   "key": "HA-09@mcp-servers/terraform/service.py::2862-2870",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2862,
+     2870
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2862-2870",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.generate_code_files",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-10",
+   "key": "HA-10@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1708-1823",
+   "kind": "inline",
+   "lines": [
+    [
+     1708,
+     1823
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent.generate_code_files",
+   "raw": "developer_agent/handler.py:generate_code_files:1708-1823",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-11",
+   "key": "HA-11@mcp-servers/terraform/service.py::6117-6141",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6117,
+     6141
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6117-6141",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@mcp-servers/terraform/service.py::6892-6962",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6892,
+     6962
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:6892-6962",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@shared/hcl_utils.py::573-603",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     573,
+     603
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.strip_hcl_resource_block:573-603",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@apps/orchestrator-gateway/shared/hcl_utils.py:strip_hcl_resource_block:573-603",
+   "kind": "function",
+   "lines": [
+    [
+     573,
+     603
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "strip_hcl_resource_block",
+   "raw": "hcl_utils.strip_hcl_resource_block:573-603",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@apps/orchestrator-gateway/developer_agent/hcl_utils.py:strip_hcl_resource_block:573-603",
+   "kind": "function",
+   "lines": [
+    [
+     573,
+     603
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "strip_hcl_resource_block",
+   "raw": "hcl_utils.strip_hcl_resource_block:573-603",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@mcp-servers/terraform/hcl_utils.py::573-603",
+   "kind": "apply_time",
+   "lines": [
+    [
+     573,
+     603
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.strip_hcl_resource_block:573-603",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-12",
+   "key": "HA-12@mcp-servers/terraform/shared/hcl_utils.py::573-603",
+   "kind": "apply_time",
+   "lines": [
+    [
+     573,
+     603
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.strip_hcl_resource_block:573-603",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@shared/hcl_utils.py::1165-1878",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1165,
+     1878
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@apps/orchestrator-gateway/shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "kind": "function",
+   "lines": [
+    [
+     1165,
+     1878
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "auto_wire_network_graph_dependencies",
+   "raw": "shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@apps/orchestrator-gateway/developer_agent/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "kind": "function",
+   "lines": [
+    [
+     1165,
+     1878
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "auto_wire_network_graph_dependencies",
+   "raw": "shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@mcp-servers/terraform/hcl_utils.py::1165-1878",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1165,
+     1878
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@mcp-servers/terraform/shared/hcl_utils.py::1165-1878",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1165,
+     1878
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1822-1822",
+   "kind": "inline",
+   "lines": [
+    [
+     1822,
+     1822
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": null,
+   "raw": "preflight_validator.py:1822",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-13",
+   "key": "HA-13@mcp-servers/terraform/service.py::3126-3126",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3126,
+     3126
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:3126",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@shared/hcl_utils.py::606-733",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     606,
+     733
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.deduplicate_semantic_hcl_resources:606-733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:deduplicate_semantic_hcl_resources:606-733",
+   "kind": "function",
+   "lines": [
+    [
+     606,
+     733
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "deduplicate_semantic_hcl_resources",
+   "raw": "hcl_utils.deduplicate_semantic_hcl_resources:606-733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:deduplicate_semantic_hcl_resources:606-733",
+   "kind": "function",
+   "lines": [
+    [
+     606,
+     733
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "deduplicate_semantic_hcl_resources",
+   "raw": "hcl_utils.deduplicate_semantic_hcl_resources:606-733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/hcl_utils.py::606-733",
+   "kind": "apply_time",
+   "lines": [
+    [
+     606,
+     733
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.deduplicate_semantic_hcl_resources:606-733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/shared/hcl_utils.py::606-733",
+   "kind": "apply_time",
+   "lines": [
+    [
+     606,
+     733
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.deduplicate_semantic_hcl_resources:606-733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@shared/hcl_utils.py::547-570",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     547,
+     570
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "_extract_resource_target_identifier:547-570",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:_extract_resource_target_identifier:547-570",
+   "kind": "function",
+   "lines": [
+    [
+     547,
+     570
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "_extract_resource_target_identifier",
+   "raw": "_extract_resource_target_identifier:547-570",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:_extract_resource_target_identifier:547-570",
+   "kind": "function",
+   "lines": [
+    [
+     547,
+     570
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "_extract_resource_target_identifier",
+   "raw": "_extract_resource_target_identifier:547-570",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/hcl_utils.py::547-570",
+   "kind": "apply_time",
+   "lines": [
+    [
+     547,
+     570
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "_extract_resource_target_identifier:547-570",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/shared/hcl_utils.py::547-570",
+   "kind": "apply_time",
+   "lines": [
+    [
+     547,
+     570
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "_extract_resource_target_identifier:547-570",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@shared/hcl_utils.py::1030-1122",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1030,
+     1122
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "deduplicate_semantic_hcl_blocks:1030-1122",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:deduplicate_semantic_hcl_blocks:1030-1122",
+   "kind": "function",
+   "lines": [
+    [
+     1030,
+     1122
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "deduplicate_semantic_hcl_blocks",
+   "raw": "deduplicate_semantic_hcl_blocks:1030-1122",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:deduplicate_semantic_hcl_blocks:1030-1122",
+   "kind": "function",
+   "lines": [
+    [
+     1030,
+     1122
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "deduplicate_semantic_hcl_blocks",
+   "raw": "deduplicate_semantic_hcl_blocks:1030-1122",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/hcl_utils.py::1030-1122",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1030,
+     1122
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "deduplicate_semantic_hcl_blocks:1030-1122",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@mcp-servers/terraform/shared/hcl_utils.py::1030-1122",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1030,
+     1122
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "deduplicate_semantic_hcl_blocks:1030-1122",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "deduplicate_semantic_hcl_resources",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-14",
+   "key": "HA-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:deduplicate_semantic_hcl_resources:893-1006",
+   "kind": "inline",
+   "lines": [
+    [
+     893,
+     1006
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": null,
+   "raw": "preflight_validator.py:893-1006",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@shared/hcl_utils.py::158-279",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     158,
+     279
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_wif:158-279",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@apps/orchestrator-gateway/shared/hcl_utils.py:sanitize_hcl_wif:158-279",
+   "kind": "function",
+   "lines": [
+    [
+     158,
+     279
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "sanitize_hcl_wif",
+   "raw": "hcl_utils.sanitize_hcl_wif:158-279",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@apps/orchestrator-gateway/developer_agent/hcl_utils.py:sanitize_hcl_wif:158-279",
+   "kind": "function",
+   "lines": [
+    [
+     158,
+     279
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "sanitize_hcl_wif",
+   "raw": "hcl_utils.sanitize_hcl_wif:158-279",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@mcp-servers/terraform/hcl_utils.py::158-279",
+   "kind": "apply_time",
+   "lines": [
+    [
+     158,
+     279
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_wif:158-279",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@mcp-servers/terraform/shared/hcl_utils.py::158-279",
+   "kind": "apply_time",
+   "lines": [
+    [
+     158,
+     279
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_wif:158-279",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": null,
+   "healer_id": "HA-15",
+   "key": "HA-15@None::",
+   "kind": "unresolved",
+   "lines": [],
+   "module": null,
+   "note": "ambiguous file: apps/orchestrator-gateway/architect_agent/handler.py, apps/orchestrator-gateway/compliance_agent/handler.py, apps/orchestrator-gateway/developer_agent/handler.py",
+   "qualname": null,
+   "raw": "handler.py:1055, 1784",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-15",
+   "key": "HA-15@mcp-servers/terraform/service.py::1156-1156",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1156,
+     1156
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1156",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": null,
+   "healer_id": "HA-16",
+   "key": "HA-16@None::",
+   "kind": "unresolved",
+   "lines": [],
+   "module": null,
+   "note": "ambiguous file: apps/orchestrator-gateway/architect_agent/__init__.py, apps/orchestrator-gateway/architect_agent/consensus_engine.py, apps/orchestrator-gateway/architect_agent/critic_schemas.py, apps/orchestrator-gateway/architect_agent/cycle_detector.py, apps/orchestrator-gateway/architect_agent/handler.py, apps/orchestrator-gateway/architect_agent/prompt.py",
+   "qualname": null,
+   "raw": "hcl_utils.is_valid_ipv4_cidr / sanitize_cidr_declarations:12-105",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-16",
+   "key": "HA-16@mcp-servers/terraform/service.py::6866-6891",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6866,
+     6891
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:6866-6891",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@shared/hcl_utils.py::773-919",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     773,
+     919
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_locals_invariants:773-919",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@apps/orchestrator-gateway/shared/hcl_utils.py:sanitize_hcl_locals_invariants:773-919",
+   "kind": "function",
+   "lines": [
+    [
+     773,
+     919
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "sanitize_hcl_locals_invariants",
+   "raw": "hcl_utils.sanitize_hcl_locals_invariants:773-919",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@apps/orchestrator-gateway/developer_agent/hcl_utils.py:sanitize_hcl_locals_invariants:773-919",
+   "kind": "function",
+   "lines": [
+    [
+     773,
+     919
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "sanitize_hcl_locals_invariants",
+   "raw": "hcl_utils.sanitize_hcl_locals_invariants:773-919",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@mcp-servers/terraform/hcl_utils.py::773-919",
+   "kind": "apply_time",
+   "lines": [
+    [
+     773,
+     919
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_locals_invariants:773-919",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@mcp-servers/terraform/shared/hcl_utils.py::773-919",
+   "kind": "apply_time",
+   "lines": [
+    [
+     773,
+     919
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.sanitize_hcl_locals_invariants:773-919",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-17",
+   "key": "HA-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1518-1563",
+   "kind": "inline",
+   "lines": [
+    [
+     1518,
+     1563
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "preflight_validator.self_correct_hcl:1518-1563",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HA-18",
+   "key": "HA-18@apps/orchestrator-gateway/developer_agent/preflight_validator.py:inject_gke_workload_identity_bindings:1375-1478",
+   "kind": "function",
+   "lines": [
+    [
+     1375,
+     1478
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "inject_gke_workload_identity_bindings",
+   "raw": "preflight_validator.py:inject_gke_workload_identity_bindings:1375-1478",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-18",
+   "key": "HA-18@mcp-servers/terraform/service.py::1733-1733",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1733,
+     1733
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1733",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "CallbackDeliveryClient._get_headers",
+   "file": "apps/orchestrator-gateway/shared/callbacks.py",
+   "healer_id": "HA-19",
+   "key": "HA-19@apps/orchestrator-gateway/shared/callbacks.py:CallbackDeliveryClient._get_headers:137-137",
+   "kind": "inline",
+   "lines": [
+    [
+     137,
+     137
+    ]
+   ],
+   "module": "shared.callbacks",
+   "note": null,
+   "qualname": "CallbackDeliveryClient._get_headers",
+   "raw": "shared/callbacks.py:_get_headers:137, 149",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "CallbackDeliveryClient._get_headers",
+   "file": "apps/orchestrator-gateway/shared/callbacks.py",
+   "healer_id": "HA-19",
+   "key": "HA-19@apps/orchestrator-gateway/shared/callbacks.py:CallbackDeliveryClient._get_headers:149-149",
+   "kind": "inline",
+   "lines": [
+    [
+     149,
+     149
+    ]
+   ],
+   "module": "shared.callbacks",
+   "note": null,
+   "qualname": "CallbackDeliveryClient._get_headers",
+   "raw": "shared/callbacks.py:_get_headers:137, 149",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/auth.py",
+   "healer_id": "HA-20",
+   "key": "HA-20@apps/control-center/auth.py::135-135",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     135,
+     135
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/auth.py:get_user_access_record:135",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/auth.py",
+   "healer_id": "HA-20",
+   "key": "HA-20@apps/control-center/auth.py::80-80",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     80,
+     80
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "extract_user_email:80",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "ComplianceAgentHandler.get_admin_and_creator_members",
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HA-21",
+   "key": "HA-21@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.get_admin_and_creator_members:105-105",
+   "kind": "inline",
+   "lines": [
+    [
+     105,
+     105
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "compliance_agent/handler.py:105",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.get_admin_and_creator_members",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-21",
+   "key": "HA-21@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.get_admin_and_creator_members:1264-1272",
+   "kind": "inline",
+   "lines": [
+    [
+     1264,
+     1272
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "developer_agent/handler.py:1264-1272",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HA-21",
+   "key": "HA-21@apps/project-vending/vending.py::329-329",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     329,
+     329
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:329",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "ComplianceAgentHandler.audit_and_enrich",
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HA-22",
+   "key": "HA-22@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.audit_and_enrich:576-584",
+   "kind": "inline",
+   "lines": [
+    [
+     576,
+     584
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "compliance_agent/handler.py:576-584",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.generate_code_files",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-22",
+   "key": "HA-22@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1692-1696",
+   "kind": "inline",
+   "lines": [
+    [
+     1692,
+     1696
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "developer_agent/handler.py:1692-1696, 2586",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent._generate_template_scaffold",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-22",
+   "key": "HA-22@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent._generate_template_scaffold:2586-2586",
+   "kind": "inline",
+   "lines": [
+    [
+     2586,
+     2586
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "developer_agent/handler.py:1692-1696, 2586",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent._generate_template_scaffold",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-23",
+   "key": "HA-23@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent._generate_template_scaffold:2087-2087",
+   "kind": "inline",
+   "lines": [
+    [
+     2087,
+     2087
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent._generate_template_scaffold",
+   "raw": "developer_agent/handler.py:_generate_template_scaffold:2087",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/finops.py",
+   "healer_id": "HA-24",
+   "key": "HA-24@apps/control-center/routes/finops.py::169-169",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     169,
+     169
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/routes/finops.py:169",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/finops-enforcer/main.py",
+   "healer_id": "HA-24",
+   "key": "HA-24@apps/finops-enforcer/main.py::156-160",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     156,
+     160
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/finops-enforcer/main.py:156-160",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "GitHubProvider.reconcile_automated_pull_requests",
+   "file": "apps/orchestrator-gateway/shared/providers/github_provider.py",
+   "healer_id": "HA-25",
+   "key": "HA-25@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.reconcile_automated_pull_requests:791-858",
+   "kind": "inline",
+   "lines": [
+    [
+     791,
+     858
+    ]
+   ],
+   "module": "shared.providers.github_provider",
+   "note": null,
+   "qualname": "GitHubProvider.reconcile_automated_pull_requests",
+   "raw": "shared/providers/github_provider.py:reconcile_automated_pull_requests:791-858",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.merge_pull_request",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-26",
+   "key": "HA-26@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.merge_pull_request:3145-3145",
+   "kind": "inline",
+   "lines": [
+    [
+     3145,
+     3145
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent.merge_pull_request",
+   "raw": "developer_agent/handler.py:merge_pull_request:3145, 3158",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.merge_pull_request",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HA-26",
+   "key": "HA-26@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.merge_pull_request:3158-3158",
+   "kind": "inline",
+   "lines": [
+    [
+     3158,
+     3158
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent.merge_pull_request",
+   "raw": "developer_agent/handler.py:merge_pull_request:3145, 3158",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": "GitHubProvider.merge_pull_request",
+   "file": "apps/orchestrator-gateway/shared/providers/github_provider.py",
+   "healer_id": "HA-26",
+   "key": "HA-26@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.merge_pull_request:921-940",
+   "kind": "inline",
+   "lines": [
+    [
+     921,
+     940
+    ]
+   ],
+   "module": "shared.providers.github_provider",
+   "note": null,
+   "qualname": "GitHubProvider.merge_pull_request",
+   "raw": "github_provider.merge_pull_request:921-940",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/approvals.py",
+   "healer_id": "HA-26",
+   "key": "HA-26@apps/control-center/routes/approvals.py::275-286",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     275,
+     286
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "control-center/routes/approvals.py:275-286",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HA-26",
+   "key": "HA-26@apps/orchestrator-gateway/main.py::1071-1071",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1071,
+     1071
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:release_promote:1071",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/gcloud/executor.py",
+   "healer_id": "HA-27",
+   "key": "HA-27@mcp-servers/gcloud/executor.py::46-68",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     46,
+     68
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/gcloud/executor.py:validate_command:46-68",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/apply.sh",
+   "healer_id": "HA-28",
+   "key": "HA-28@scripts/apply.sh::178-211",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     178,
+     211
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/apply.sh:reconcile_existing_resources:178-211",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/bootstrap.sh",
+   "healer_id": "HA-28",
+   "key": "HA-28@scripts/bootstrap.sh::505-535",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     505,
+     535
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/bootstrap.sh:505-535",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/apply.sh",
+   "healer_id": "HA-29",
+   "key": "HA-29@scripts/apply.sh::52-110",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     52,
+     110
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/apply.sh:52-110",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/apply.sh",
+   "healer_id": "HA-29",
+   "key": "HA-29@scripts/apply.sh::32-46",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     32,
+     46
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":32-46",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "bootstrap.sh",
+   "healer_id": "HA-29",
+   "key": "HA-29@bootstrap.sh::36-111",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     36,
+     111
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "bootstrap.sh:36-111",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/apply.sh",
+   "healer_id": "HA-30",
+   "key": "HA-30@scripts/apply.sh::228-228",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     228,
+     228
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/apply.sh:228",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/apply.sh",
+   "healer_id": "HA-30",
+   "key": "HA-30@scripts/apply.sh::160-166",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     160,
+     166
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":160-166",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-31",
+   "key": "HA-31@mcp-servers/terraform/service.py::3112-3150",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3112,
+     3150
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:3112-3150",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-31",
+   "key": "HA-31@mcp-servers/terraform/service.py::3031-3125",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3031,
+     3125
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":3031-3125",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-31",
+   "key": "HA-31@mcp-servers/terraform/service.py::5472-5487",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5472,
+     5487
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":5472-5487",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HA-32",
+   "key": "HA-32@mcp-servers/terraform/service.py::7003-7024",
+   "kind": "apply_time",
+   "lines": [
+    [
+     7003,
+     7024
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:7003-7024",
+   "tier": "A"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HB-01",
+   "key": "HB-01@apps/orchestrator-gateway/developer_agent/terraform_engine.py:reconcile_iac_reference_graph:743-909",
+   "kind": "function",
+   "lines": [
+    [
+     743,
+     909
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "reconcile_iac_reference_graph",
+   "raw": "terraform_engine.py:reconcile_iac_reference_graph:743-909",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HB-02",
+   "key": "HB-02@apps/orchestrator-gateway/developer_agent/terraform_engine.py:extract_hcl_blocks:367-425",
+   "kind": "function",
+   "lines": [
+    [
+     367,
+     425
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "extract_hcl_blocks",
+   "raw": "terraform_engine.py:extract_hcl_blocks:367-425",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HB-03",
+   "key": "HB-03@apps/orchestrator-gateway/developer_agent/terraform_engine.py:extract_bespoke_custom_resources:1953-2034",
+   "kind": "function",
+   "lines": [
+    [
+     1953,
+     2034
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "extract_bespoke_custom_resources",
+   "raw": "terraform_engine.py:extract_bespoke_custom_resources:1953-2034",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HB-04",
+   "key": "HB-04@apps/orchestrator-gateway/developer_agent/terraform_engine.py:reconcile_multi_service_declarations:428-740",
+   "kind": "function",
+   "lines": [
+    [
+     428,
+     740
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "reconcile_multi_service_declarations",
+   "raw": "terraform_engine.py:reconcile_multi_service_declarations:428-740",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HB-05",
+   "key": "HB-05@apps/orchestrator-gateway/developer_agent/terraform_engine.py:extract_custom_resource_env_vars:1194-1378",
+   "kind": "function",
+   "lines": [
+    [
+     1194,
+     1378
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "extract_custom_resource_env_vars",
+   "raw": "terraform_engine.py:extract_custom_resource_env_vars:1194-1378",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-05",
+   "key": "HB-05@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.reconcile_iac_environment_contracts:561-667",
+   "kind": "function",
+   "lines": [
+    [
+     561,
+     667
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.reconcile_iac_environment_contracts",
+   "raw": "verifier.py:reconcile_iac_environment_contracts:561-667",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-06",
+   "key": "HB-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_multiservice_compute_coverage:2564-2695",
+   "kind": "function",
+   "lines": [
+    [
+     2564,
+     2695
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "sanitize_multiservice_compute_coverage",
+   "raw": "preflight_validator.py:sanitize_multiservice_compute_coverage:2564-2695",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-07",
+   "key": "HB-07@apps/orchestrator-gateway/developer_agent/handler.py:sanitize_hcl_triggers:1007-1056",
+   "kind": "function",
+   "lines": [
+    [
+     1007,
+     1056
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "sanitize_hcl_triggers",
+   "raw": "developer_agent/handler.py:sanitize_hcl_triggers:1007-1056",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-07",
+   "key": "HB-07@mcp-servers/terraform/service.py::1107-1107",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1107,
+     1107
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_hcl_triggers:1107",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-08",
+   "key": "HB-08@mcp-servers/terraform/service.py::2563-2574",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2563,
+     2574
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:_ensure_default:2563-2574",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-09",
+   "key": "HB-09@mcp-servers/terraform/service.py::2560-2560",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2560,
+     2560
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2560",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-10",
+   "key": "HB-10@mcp-servers/terraform/service.py::1915-1915",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1915,
+     1915
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:strip_invalid_hcl_blocks:1915",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-10",
+   "key": "HB-10@mcp-servers/terraform/service.py::2878-2878",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2878,
+     2878
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":2878",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-10",
+   "key": "HB-10@mcp-servers/terraform/service.py::6050-6050",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6050,
+     6050
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":6050",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-11",
+   "key": "HB-11@mcp-servers/terraform/service.py::2546-2547",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2546,
+     2547
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2546-2547",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-12",
+   "key": "HB-12@mcp-servers/terraform/service.py::2658-2687",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2658,
+     2687
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2658-2687",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-13",
+   "key": "HB-13@mcp-servers/terraform/service.py::2884-2895",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2884,
+     2895
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2884-2895, 2931-2940, 6067-6073",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-13",
+   "key": "HB-13@mcp-servers/terraform/service.py::2931-2940",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2931,
+     2940
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2884-2895, 2931-2940, 6067-6073",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-13",
+   "key": "HB-13@mcp-servers/terraform/service.py::6067-6073",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6067,
+     6073
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2884-2895, 2931-2940, 6067-6073",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-14",
+   "key": "HB-14@mcp-servers/terraform/service.py::2961-2967",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2961,
+     2967
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2961-2967, 2983-2988, 2997-3022",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-14",
+   "key": "HB-14@mcp-servers/terraform/service.py::2983-2988",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2983,
+     2988
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2961-2967, 2983-2988, 2997-3022",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-14",
+   "key": "HB-14@mcp-servers/terraform/service.py::2997-3022",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2997,
+     3022
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2961-2967, 2983-2988, 2997-3022",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-15",
+   "key": "HB-15@mcp-servers/terraform/service.py::5184-5250",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5184,
+     5250
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:5184-5250, 5259, 5262-5345",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-15",
+   "key": "HB-15@mcp-servers/terraform/service.py::5259-5259",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5259,
+     5259
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:5184-5250, 5259, 5262-5345",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-15",
+   "key": "HB-15@mcp-servers/terraform/service.py::5262-5345",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5262,
+     5345
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:5184-5250, 5259, 5262-5345",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-16",
+   "key": "HB-16@mcp-servers/terraform/service.py::2752-2830",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2752,
+     2830
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2752-2830",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-17",
+   "key": "HB-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_gcp_naming_invariants:1192-1293",
+   "kind": "function",
+   "lines": [
+    [
+     1192,
+     1293
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "sanitize_gcp_naming_invariants",
+   "raw": "preflight_validator.py:sanitize_gcp_naming_invariants:1192-1293",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-17",
+   "key": "HB-17@mcp-servers/terraform/service.py::1429-1429",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1429,
+     1429
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1429",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-17",
+   "key": "HB-17@mcp-servers/terraform/service.py::2692-2692",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2692,
+     2692
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":2692",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-17",
+   "key": "HB-17@mcp-servers/terraform/service.py::5753-5753",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5753,
+     5753
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":5753",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-18",
+   "key": "HB-18@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_self_referential_hcl_blocks:1296-1372",
+   "kind": "function",
+   "lines": [
+    [
+     1296,
+     1372
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "sanitize_self_referential_hcl_blocks",
+   "raw": "preflight_validator.py:sanitize_self_referential_hcl_blocks:1296-1372",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-18",
+   "key": "HB-18@mcp-servers/terraform/service.py::1839-1839",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1839,
+     1839
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1839",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-18",
+   "key": "HB-18@mcp-servers/terraform/service.py::6438-6438",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6438,
+     6438
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":6438",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-19",
+   "key": "HB-19@apps/orchestrator-gateway/developer_agent/preflight_validator.py:inject_cloud_run_timeouts:2403-2451",
+   "kind": "function",
+   "lines": [
+    [
+     2403,
+     2451
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "inject_cloud_run_timeouts",
+   "raw": "preflight_validator.py:inject_cloud_run_timeouts:2403-2451",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-19",
+   "key": "HB-19@mcp-servers/terraform/service.py::1561-1561",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1561,
+     1561
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1561",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-20",
+   "key": "HB-20@mcp-servers/terraform/service.py::1612-1612",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1612,
+     1612
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:inject_subnet_lifecycle_ignore_changes:1612",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-21",
+   "key": "HB-21@mcp-servers/terraform/service.py::1684-1684",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1684,
+     1684
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:inject_kubernetes_deployment_timeouts:1684",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-22",
+   "key": "HB-22@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1641-1663",
+   "kind": "inline",
+   "lines": [
+    [
+     1641,
+     1663
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "preflight_validator.py:self_correct_hcl:1641-1663",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-22",
+   "key": "HB-22@mcp-servers/terraform/service.py::1526-1526",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1526,
+     1526
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_secret_manager_references:1526",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-23",
+   "key": "HB-23@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_service_account_ids:762-818",
+   "kind": "function",
+   "lines": [
+    [
+     762,
+     818
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.cure_service_account_ids",
+   "raw": "gatekeeper_agent/verifier.py:cure_service_account_ids:762-818",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HB-24",
+   "key": "HB-24@shared/hcl_utils.py::108-133",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     108,
+     133
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HB-24",
+   "key": "HB-24@apps/orchestrator-gateway/shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "kind": "function",
+   "lines": [
+    [
+     108,
+     133
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "heal_orphaned_resource_syntax",
+   "raw": "shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HB-24",
+   "key": "HB-24@apps/orchestrator-gateway/developer_agent/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "kind": "function",
+   "lines": [
+    [
+     108,
+     133
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "heal_orphaned_resource_syntax",
+   "raw": "shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HB-24",
+   "key": "HB-24@mcp-servers/terraform/hcl_utils.py::108-133",
+   "kind": "apply_time",
+   "lines": [
+    [
+     108,
+     133
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HB-24",
+   "key": "HB-24@mcp-servers/terraform/shared/hcl_utils.py::108-133",
+   "kind": "apply_time",
+   "lines": [
+    [
+     108,
+     133
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-25",
+   "key": "HB-25@apps/orchestrator-gateway/developer_agent/preflight_validator.py:hydrate_kubernetes_manifests:2698-2768",
+   "kind": "function",
+   "lines": [
+    [
+     2698,
+     2768
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "hydrate_kubernetes_manifests",
+   "raw": "preflight_validator.py:hydrate_kubernetes_manifests:2698-2768",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "SynthesisVerifierAgent.purge_shadowed_package_files",
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-26",
+   "key": "HB-26@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.purge_shadowed_package_files:221-248",
+   "kind": "inline",
+   "lines": [
+    [
+     221,
+     248
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.purge_shadowed_package_files",
+   "raw": "verifier.py:purge_shadowed_package_files:221-248",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "validate_and_heal_python_packages",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-26",
+   "key": "HB-26@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2354-2389",
+   "kind": "inline",
+   "lines": [
+    [
+     2354,
+     2389
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "validate_and_heal_python_packages",
+   "raw": "preflight_validator.py:validate_and_heal_python_packages:2354-2389",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "SynthesisVerifierAgent.purge_shadowed_package_files",
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-27",
+   "key": "HB-27@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.purge_shadowed_package_files:139-219",
+   "kind": "inline",
+   "lines": [
+    [
+     139,
+     219
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.purge_shadowed_package_files",
+   "raw": "verifier.py:purge_shadowed_package_files:139-219",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "validate_and_heal_python_packages",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-27",
+   "key": "HB-27@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2208-2297",
+   "kind": "inline",
+   "lines": [
+    [
+     2208,
+     2297
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": null,
+   "raw": "preflight_validator.py:2208-2297",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-28",
+   "key": "HB-28@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.reconcile_service_requirements:324-478",
+   "kind": "function",
+   "lines": [
+    [
+     324,
+     478
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.reconcile_service_requirements",
+   "raw": "verifier.py:reconcile_service_requirements:324-478",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-28",
+   "key": "HB-28@apps/orchestrator-gateway/developer_agent/handler.py:standardize_requirements:689-724",
+   "kind": "function",
+   "lines": [
+    [
+     689,
+     724
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "standardize_requirements",
+   "raw": "developer_agent/handler.py:standardize_requirements:689-724",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-29",
+   "key": "HB-29@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.enforce_container_contracts:509-559",
+   "kind": "function",
+   "lines": [
+    [
+     509,
+     559
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.enforce_container_contracts",
+   "raw": "verifier.py:enforce_container_contracts:509-559",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-29",
+   "key": "HB-29@apps/orchestrator-gateway/developer_agent/handler.py:ensure_health_check_endpoint:661-686",
+   "kind": "function",
+   "lines": [
+    [
+     661,
+     686
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "ensure_health_check_endpoint",
+   "raw": "handler.py:ensure_health_check_endpoint:661-686",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-29",
+   "key": "HB-29@apps/orchestrator-gateway/developer_agent/handler.py:enforce_container_contract:727-787",
+   "kind": "function",
+   "lines": [
+    [
+     727,
+     787
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "enforce_container_contract",
+   "raw": "handler.py:enforce_container_contract:727-787",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HB-30",
+   "key": "HB-30@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_gce_resource_uris:709-760",
+   "kind": "function",
+   "lines": [
+    [
+     709,
+     760
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.cure_gce_resource_uris",
+   "raw": "verifier.py:cure_gce_resource_uris:709-760",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py",
+   "healer_id": "HB-31",
+   "key": "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:pre_ast_normalize:74-116",
+   "kind": "function",
+   "lines": [
+    [
+     74,
+     116
+    ]
+   ],
+   "module": "gatekeeper_agent.ast_transformer",
+   "note": null,
+   "qualname": "pre_ast_normalize",
+   "raw": "gatekeeper_agent/ast_transformer.py:pre_ast_normalize:74-116",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py",
+   "healer_id": "HB-31",
+   "key": "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:heal_try_fallback_labels:56-71",
+   "kind": "function",
+   "lines": [
+    [
+     56,
+     71
+    ]
+   ],
+   "module": "gatekeeper_agent.ast_transformer",
+   "note": null,
+   "qualname": "heal_try_fallback_labels",
+   "raw": "heal_try_fallback_labels:56-71",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py",
+   "healer_id": "HB-31",
+   "key": "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:heal_multiline_with_statements:17-53",
+   "kind": "function",
+   "lines": [
+    [
+     17,
+     53
+    ]
+   ],
+   "module": "gatekeeper_agent.ast_transformer",
+   "note": null,
+   "qualname": "heal_multiline_with_statements",
+   "raw": "heal_multiline_with_statements:17-53",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "validate_and_heal_python_packages",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-32",
+   "key": "HB-32@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2299-2342",
+   "kind": "inline",
+   "lines": [
+    [
+     2299,
+     2342
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "validate_and_heal_python_packages",
+   "raw": "preflight_validator.py:validate_and_heal_python_packages:2299-2342",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HB-33",
+   "key": "HB-33@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_requirements:2070-2156",
+   "kind": "function",
+   "lines": [
+    [
+     2070,
+     2156
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "validate_and_heal_python_requirements",
+   "raw": "preflight_validator.py:validate_and_heal_python_requirements:2070-2156",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-34",
+   "key": "HB-34@mcp-servers/terraform/service.py::307-347",
+   "kind": "apply_time",
+   "lines": [
+    [
+     307,
+     347
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:inject_castor_runtime_compat:307-347",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-35",
+   "key": "HB-35@mcp-servers/terraform/service.py::350-443",
+   "kind": "apply_time",
+   "lines": [
+    [
+     350,
+     443
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:inject_castor_schema_bootstrap:350-443",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-36",
+   "key": "HB-36@mcp-servers/terraform/service.py::446-446",
+   "kind": "apply_time",
+   "lines": [
+    [
+     446,
+     446
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:synthesize_router_aggregator:446",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-36",
+   "key": "HB-36@mcp-servers/terraform/service.py::3954-3954",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3954,
+     3954
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":3954",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-36",
+   "key": "HB-36@mcp-servers/terraform/service.py::4333-4333",
+   "kind": "apply_time",
+   "lines": [
+    [
+     4333,
+     4333
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":4333",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-37",
+   "key": "HB-37@mcp-servers/terraform/service.py::531-531",
+   "kind": "apply_time",
+   "lines": [
+    [
+     531,
+     531
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:ensure_pydantic_orm_compatibility:531",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-38",
+   "key": "HB-38@mcp-servers/terraform/service.py::577-577",
+   "kind": "apply_time",
+   "lines": [
+    [
+     577,
+     577
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:heal_commented_contract_schemas:577",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-39",
+   "key": "HB-39@mcp-servers/terraform/service.py::682-682",
+   "kind": "apply_time",
+   "lines": [
+    [
+     682,
+     682
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_sqlalchemy_model_synonyms:682",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-40",
+   "key": "HB-40@mcp-servers/terraform/service.py::223-223",
+   "kind": "apply_time",
+   "lines": [
+    [
+     223,
+     223
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_wheel_requirements:223",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-41",
+   "key": "HB-41@mcp-servers/terraform/service.py::3776-3796",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3776,
+     3796
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:_build_and_push_container:3776-3796, 3871-3900",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-41",
+   "key": "HB-41@mcp-servers/terraform/service.py::3871-3900",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3871,
+     3900
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:_build_and_push_container:3776-3796, 3871-3900",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-42",
+   "key": "HB-42@apps/orchestrator-gateway/developer_agent/handler.py:sanitize_python_paths:562-615",
+   "kind": "function",
+   "lines": [
+    [
+     562,
+     615
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "sanitize_python_paths",
+   "raw": "handler.py:sanitize_python_paths:562-615",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-42",
+   "key": "HB-42@mcp-servers/terraform/service.py::1070-1070",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1070,
+     1070
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_python_paths:1070",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-43",
+   "key": "HB-43@mcp-servers/terraform/service.py::883-883",
+   "kind": "apply_time",
+   "lines": [
+    [
+     883,
+     883
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:sanitize_github_workflow:883",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "resolve_service_archetype",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-43",
+   "key": "HB-43@apps/orchestrator-gateway/developer_agent/handler.py:_deduplicate_env_block:850-850",
+   "kind": "inline",
+   "lines": [
+    [
+     850,
+     850
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "_deduplicate_env_block",
+   "raw": "_deduplicate_env_block:850",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": null,
+   "healer_id": "HB-43",
+   "key": "HB-43@None::",
+   "kind": "unresolved",
+   "lines": [],
+   "module": null,
+   "note": "ambiguous file: apps/orchestrator-gateway/architect_agent/handler.py, apps/orchestrator-gateway/compliance_agent/handler.py, apps/orchestrator-gateway/developer_agent/handler.py",
+   "qualname": null,
+   "raw": "handler.py:333-559",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/providers/github_provider.py",
+   "healer_id": "HB-44",
+   "key": "HB-44@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.sanitize_pipeline_content:965-1007",
+   "kind": "function",
+   "lines": [
+    [
+     965,
+     1007
+    ]
+   ],
+   "module": "shared.providers.github_provider",
+   "note": null,
+   "qualname": "GitHubProvider.sanitize_pipeline_content",
+   "raw": "shared/providers/github_provider.py:sanitize_pipeline_content:965-1007",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "PlatformSettings.__init__",
+   "file": "apps/orchestrator-gateway/shared/settings.py",
+   "healer_id": "HB-45",
+   "key": "HB-45@apps/orchestrator-gateway/shared/settings.py:PlatformSettings.__init__:420-433",
+   "kind": "inline",
+   "lines": [
+    [
+     420,
+     433
+    ]
+   ],
+   "module": "shared.settings",
+   "note": null,
+   "qualname": "PlatformSettings.__init__",
+   "raw": "shared/settings.py:PlatformSettings.__init__:420-433",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "get_platform_settings",
+   "file": "apps/orchestrator-gateway/shared/settings.py",
+   "healer_id": "HB-45",
+   "key": "HB-45@apps/orchestrator-gateway/shared/settings.py:get_platform_settings:495-504",
+   "kind": "inline",
+   "lines": [
+    [
+     495,
+     504
+    ]
+   ],
+   "module": "shared.settings",
+   "note": null,
+   "qualname": "get_platform_settings",
+   "raw": "get_platform_settings:495-504",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HB-46",
+   "key": "HB-46@apps/project-vending/vending.py::833-837",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     833,
+     837
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:fetch_github_app_credentials:833-837",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "GitHubTokenManager._get_credentials",
+   "file": "apps/orchestrator-gateway/shared/github_resilience.py",
+   "healer_id": "HB-46",
+   "key": "HB-46@apps/orchestrator-gateway/shared/github_resilience.py:GitHubTokenManager._get_credentials:240-272",
+   "kind": "inline",
+   "lines": [
+    [
+     240,
+     272
+    ]
+   ],
+   "module": "shared.github_resilience",
+   "note": null,
+   "qualname": "GitHubTokenManager._get_credentials",
+   "raw": "shared/github_resilience.py:_get_credentials:240-272",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/git-server/main.py",
+   "healer_id": "HB-47",
+   "key": "HB-47@apps/git-server/main.py::215-215",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     215,
+     215
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/git-server/main.py:commit_files_dulwich:215",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": null,
+   "healer_id": "HB-47",
+   "key": "HB-47@None::",
+   "kind": "unresolved",
+   "lines": [],
+   "module": null,
+   "note": "ambiguous file: apps/orchestrator-gateway/shared/providers/github_provider.py, apps/orchestrator-gateway/shared/providers/serverless_git_provider.py, apps/orchestrator-gateway/shared/vcs_provider.py",
+   "qualname": null,
+   "raw": "commit_files:884",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/deploy-services.sh",
+   "healer_id": "HB-48",
+   "key": "HB-48@scripts/deploy-services.sh::52-54",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     52,
+     54
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/deploy-services.sh:52-54",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HB-49",
+   "key": "HB-49@shared/hcl_utils.py::991-1027",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     991,
+     1027
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HB-49",
+   "key": "HB-49@apps/orchestrator-gateway/shared/hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "kind": "function",
+   "lines": [
+    [
+     991,
+     1027
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "coerce_hcl_metadata_maps",
+   "raw": "hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HB-49",
+   "key": "HB-49@apps/orchestrator-gateway/developer_agent/hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "kind": "function",
+   "lines": [
+    [
+     991,
+     1027
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "coerce_hcl_metadata_maps",
+   "raw": "hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HB-49",
+   "key": "HB-49@mcp-servers/terraform/hcl_utils.py::991-1027",
+   "kind": "apply_time",
+   "lines": [
+    [
+     991,
+     1027
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HB-49",
+   "key": "HB-49@mcp-servers/terraform/shared/hcl_utils.py::991-1027",
+   "kind": "apply_time",
+   "lines": [
+    [
+     991,
+     1027
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:coerce_hcl_metadata_maps:991-1027",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.generate_code_files",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HB-50",
+   "key": "HB-50@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1477-1492",
+   "kind": "inline",
+   "lines": [
+    [
+     1477,
+     1492
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent.generate_code_files",
+   "raw": "handler.py:generate_code_files:1477-1492",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-51",
+   "key": "HB-51@mcp-servers/terraform/service.py::2896-2929",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2896,
+     2929
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2896-2929",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HB-52",
+   "key": "HB-52@mcp-servers/terraform/service.py::3908-3915",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3908,
+     3915
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:_build_and_push_container:3908-3915",
+   "tier": "B"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-01",
+   "key": "HC-01@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1757-1785",
+   "kind": "inline",
+   "lines": [
+    [
+     1757,
+     1785
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "preflight_validator.py:self_correct_hcl:1757-1785",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-02",
+   "key": "HC-02@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1977-1997",
+   "kind": "inline",
+   "lines": [
+    [
+     1977,
+     1997
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1977-1997",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-03",
+   "key": "HC-03@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1999-2015",
+   "kind": "inline",
+   "lines": [
+    [
+     1999,
+     2015
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1999-2015",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-04",
+   "key": "HC-04@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1671-1755",
+   "kind": "inline",
+   "lines": [
+    [
+     1671,
+     1755
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1671-1755",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-05",
+   "key": "HC-05@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1567-1639",
+   "kind": "inline",
+   "lines": [
+    [
+     1567,
+     1639
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1567-1639",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-06",
+   "key": "HC-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1518-1563",
+   "kind": "inline",
+   "lines": [
+    [
+     1518,
+     1563
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1518-1563",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-07",
+   "key": "HC-07@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1788-1818",
+   "kind": "inline",
+   "lines": [
+    [
+     1788,
+     1818
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1788-1818",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-08",
+   "key": "HC-08@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1934-1956",
+   "kind": "inline",
+   "lines": [
+    [
+     1934,
+     1956
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:1934-1956",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-08",
+   "key": "HC-08@mcp-servers/terraform/service.py::1184-1184",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1184,
+     1184
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:strip_hcl_output:1184",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-08",
+   "key": "HC-08@mcp-servers/terraform/service.py::2700-2730",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2700,
+     2730
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":2700-2730",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-09",
+   "key": "HC-09@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:2022-2029",
+   "kind": "inline",
+   "lines": [
+    [
+     2022,
+     2029
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:2022-2029",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-10",
+   "key": "HC-10@mcp-servers/terraform/service.py::5960-6034",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5960,
+     6034
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:5960-6034",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-11",
+   "key": "HC-11@mcp-servers/terraform/service.py::6060-6115",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6060,
+     6115
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6060-6115",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-12",
+   "key": "HC-12@mcp-servers/terraform/service.py::6524-6848",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6524,
+     6848
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6524-6848",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-13",
+   "key": "HC-13@mcp-servers/terraform/service.py::6992-7001",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6992,
+     7001
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6992-7001",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@shared/hcl_utils.py::469-518",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     469,
+     518
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@apps/orchestrator-gateway/shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "kind": "function",
+   "lines": [
+    [
+     469,
+     518
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "self_correct_hcl_syntax",
+   "raw": "shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "kind": "function",
+   "lines": [
+    [
+     469,
+     518
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "self_correct_hcl_syntax",
+   "raw": "shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@mcp-servers/terraform/hcl_utils.py::469-518",
+   "kind": "apply_time",
+   "lines": [
+    [
+     469,
+     518
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@mcp-servers/terraform/shared/hcl_utils.py::469-518",
+   "kind": "apply_time",
+   "lines": [
+    [
+     469,
+     518
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:self_correct_hcl_syntax:469-518",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-14",
+   "key": "HC-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1490-1516",
+   "kind": "inline",
+   "lines": [
+    [
+     1490,
+     1516
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "preflight_validator.py:self_correct_hcl:1490-1516",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HC-15",
+   "key": "HC-15@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_syntax_errors:878-924",
+   "kind": "function",
+   "lines": [
+    [
+     878,
+     924
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.cure_syntax_errors",
+   "raw": "verifier.py:cure_syntax_errors:878-924",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "validate_and_heal_python_packages",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-16",
+   "key": "HC-16@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2344-2352",
+   "kind": "inline",
+   "lines": [
+    [
+     2344,
+     2352
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "validate_and_heal_python_packages",
+   "raw": "preflight_validator.py:validate_and_heal_python_packages:2344-2352",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": "self_correct_hcl",
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HC-17",
+   "key": "HC-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:2031-2062",
+   "kind": "inline",
+   "lines": [
+    [
+     2031,
+     2062
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "self_correct_hcl",
+   "raw": "self_correct_hcl:2031-2062",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-17",
+   "key": "HC-17@mcp-servers/terraform/service.py::2939-2940",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2939,
+     2940
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2939-2940",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HC-18",
+   "key": "HC-18@mcp-servers/terraform/service.py::6038-6058",
+   "kind": "apply_time",
+   "lines": [
+    [
+     6038,
+     6058
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:6038-6058",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HC-19",
+   "key": "HC-19@shared/hcl_utils.py::1125-1162",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1125,
+     1162
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HC-19",
+   "key": "HC-19@apps/orchestrator-gateway/shared/hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "kind": "function",
+   "lines": [
+    [
+     1125,
+     1162
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "_ensure_resource_depends_on",
+   "raw": "hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HC-19",
+   "key": "HC-19@apps/orchestrator-gateway/developer_agent/hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "kind": "function",
+   "lines": [
+    [
+     1125,
+     1162
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "_ensure_resource_depends_on",
+   "raw": "hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HC-19",
+   "key": "HC-19@mcp-servers/terraform/hcl_utils.py::1125-1162",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1125,
+     1162
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HC-19",
+   "key": "HC-19@mcp-servers/terraform/shared/hcl_utils.py::1125-1162",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1125,
+     1162
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "hcl_utils.py:_ensure_resource_depends_on:1125-1162",
+   "tier": "C"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-01",
+   "key": "HD-01@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_compute_archetype:59-139",
+   "kind": "function",
+   "lines": [
+    [
+     59,
+     139
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "detect_compute_archetype",
+   "raw": "terraform_engine.py:detect_compute_archetype:59-139",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-02",
+   "key": "HD-02@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_requested_service_count:147-191",
+   "kind": "function",
+   "lines": [
+    [
+     147,
+     191
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "detect_requested_service_count",
+   "raw": "terraform_engine.py:detect_requested_service_count:147-191",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-02",
+   "key": "HD-02@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_requested_service_names:210-364",
+   "kind": "function",
+   "lines": [
+    [
+     210,
+     364
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "detect_requested_service_names",
+   "raw": "detect_requested_service_names:210-364",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HD-03",
+   "key": "HD-03@apps/orchestrator-gateway/developer_agent/handler.py:resolve_service_archetype:797-860",
+   "kind": "function",
+   "lines": [
+    [
+     797,
+     860
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "resolve_service_archetype",
+   "raw": "handler.py:resolve_service_archetype:797-860",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-03",
+   "key": "HD-03@mcp-servers/terraform/service.py::5503-5517",
+   "kind": "apply_time",
+   "lines": [
+    [
+     5503,
+     5517
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:has_compute_module:5503-5517",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "generate_golden_main_tf",
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-04",
+   "key": "HD-04@apps/orchestrator-gateway/developer_agent/terraform_engine.py:generate_golden_main_tf:1493-1500",
+   "kind": "inline",
+   "lines": [
+    [
+     1493,
+     1500
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "generate_golden_main_tf",
+   "raw": "terraform_engine.py:generate_golden_main_tf:1493-1500",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/compliance/service.py",
+   "healer_id": "HD-05",
+   "key": "HD-05@mcp-servers/compliance/service.py::23-72",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     23,
+     72
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/compliance/service.py:detect_spec_compliance:23-72",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HD-05",
+   "key": "HD-05@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.detect_profile:28-34",
+   "kind": "function",
+   "lines": [
+    [
+     28,
+     34
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler.detect_profile",
+   "raw": "compliance_agent/handler.py:detect_profile:28-34, 137-144",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HD-05",
+   "key": "HD-05@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.detect_profile:137-144",
+   "kind": "function",
+   "lines": [
+    [
+     137,
+     144
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler.detect_profile",
+   "raw": "compliance_agent/handler.py:detect_profile:28-34, 137-144",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "ComplianceAgentHandler.audit_and_enrich",
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HD-06",
+   "key": "HD-06@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.audit_and_enrich:428-451",
+   "kind": "inline",
+   "lines": [
+    [
+     428,
+     451
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler.audit_and_enrich",
+   "raw": "compliance_agent/handler.py:audit_and_enrich:428-451",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.generate_code_files",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HD-06",
+   "key": "HD-06@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1585-1678",
+   "kind": "inline",
+   "lines": [
+    [
+     1585,
+     1678
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": null,
+   "raw": "developer_agent/handler.py:1585-1678",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HD-07",
+   "key": "HD-07@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.evaluate_policy_invariants:145-231",
+   "kind": "function",
+   "lines": [
+    [
+     145,
+     231
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler.evaluate_policy_invariants",
+   "raw": "compliance_agent/handler.py:evaluate_policy_invariants:145-231",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HD-07",
+   "key": "HD-07@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.remediate_conflicts:233-358",
+   "kind": "function",
+   "lines": [
+    [
+     233,
+     358
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler.remediate_conflicts",
+   "raw": "remediate_conflicts:233-358",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/compliance/service.py",
+   "healer_id": "HD-08",
+   "key": "HD-08@mcp-servers/compliance/service.py::384-398",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     384,
+     398
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/compliance/service.py:evaluate_hcl_compliance:384-398",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/compliance/service.py",
+   "healer_id": "HD-09",
+   "key": "HD-09@mcp-servers/compliance/service.py::150-236",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     150,
+     236
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/compliance/service.py:harvest_folder_policies:150-236",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/compliance/service.py",
+   "healer_id": "HD-09",
+   "key": "HD-09@mcp-servers/compliance/service.py::90-90",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     90,
+     90
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "inspect_parent_folder:90",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent.decompose",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HD-10",
+   "key": "HD-10@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent.decompose:295-329",
+   "kind": "inline",
+   "lines": [
+    [
+     295,
+     329
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent.decompose",
+   "raw": "architect_agent/handler.py:decompose:295-329",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent._generate_sequenced_build_plan",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HD-10",
+   "key": "HD-10@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent._generate_sequenced_build_plan:906-937",
+   "kind": "inline",
+   "lines": [
+    [
+     906,
+     937
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent._generate_sequenced_build_plan",
+   "raw": "_generate_sequenced_build_plan:906-937",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/architect_agent/spec_decomposer.py",
+   "healer_id": "HD-11",
+   "key": "HD-11@apps/orchestrator-gateway/architect_agent/spec_decomposer.py:ChunkedSpecDecomposer._fallback_domain_subplan:181-213",
+   "kind": "function",
+   "lines": [
+    [
+     181,
+     213
+    ]
+   ],
+   "module": "architect_agent.spec_decomposer",
+   "note": null,
+   "qualname": "ChunkedSpecDecomposer._fallback_domain_subplan",
+   "raw": "architect_agent/spec_decomposer.py:_fallback_domain_subplan:181-213",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/architect_agent/spec_decomposer.py",
+   "healer_id": "HD-11",
+   "key": "HD-11@apps/orchestrator-gateway/architect_agent/spec_decomposer.py:ChunkedSpecDecomposer.should_activate_map_reduce:59-67",
+   "kind": "function",
+   "lines": [
+    [
+     59,
+     67
+    ]
+   ],
+   "module": "architect_agent.spec_decomposer",
+   "note": null,
+   "qualname": "ChunkedSpecDecomposer.should_activate_map_reduce",
+   "raw": "should_activate_map_reduce:59-67",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/architect_agent/red_team_critic.py",
+   "healer_id": "HD-12",
+   "key": "HD-12@apps/orchestrator-gateway/architect_agent/red_team_critic.py:CANONICAL_GOLDEN_MODULES:53-79",
+   "kind": "unresolved",
+   "lines": [
+    [
+     53,
+     79
+    ]
+   ],
+   "module": "architect_agent.red_team_critic",
+   "note": "name is not a def at the inventory SHA (constant/data?)",
+   "qualname": "CANONICAL_GOLDEN_MODULES",
+   "raw": "architect_agent/red_team_critic.py:CANONICAL_GOLDEN_MODULES:53-79",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/architect_agent/red_team_critic.py",
+   "healer_id": "HD-12",
+   "key": "HD-12@apps/orchestrator-gateway/architect_agent/red_team_critic.py:RedTeamCritic._deterministic_fallback_critique:281-333",
+   "kind": "function",
+   "lines": [
+    [
+     281,
+     333
+    ]
+   ],
+   "module": "architect_agent.red_team_critic",
+   "note": null,
+   "qualname": "RedTeamCritic._deterministic_fallback_critique",
+   "raw": "_deterministic_fallback_critique:281-333",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent._single_turn_decompose",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HD-13",
+   "key": "HD-13@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent._fallback_plan:648-695",
+   "kind": "inline",
+   "lines": [
+    [
+     648,
+     695
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent._fallback_plan",
+   "raw": "architect_agent/handler.py:_fallback_plan:648-695, 1143-1190",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HD-13",
+   "key": "HD-13@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent._fallback_plan:1143-1190",
+   "kind": "function",
+   "lines": [
+    [
+     1143,
+     1190
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent._fallback_plan",
+   "raw": "architect_agent/handler.py:_fallback_plan:648-695, 1143-1190",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "SwarmDispatcher._call_gemini_with_backoff",
+   "file": "apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py",
+   "healer_id": "HD-13",
+   "key": "HD-13@apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py:SwarmDispatcher._call_gemini_with_backoff:245-247",
+   "kind": "inline",
+   "lines": [
+    [
+     245,
+     247
+    ]
+   ],
+   "module": "developer_agent.swarm_dispatcher",
+   "note": null,
+   "qualname": null,
+   "raw": "swarm_dispatcher.py:245-247, 325-345",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "SwarmDispatcher._generate_deterministic_junior_files",
+   "file": "apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py",
+   "healer_id": "HD-13",
+   "key": "HD-13@apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py:SwarmDispatcher._generate_deterministic_junior_files:325-345",
+   "kind": "inline",
+   "lines": [
+    [
+     325,
+     345
+    ]
+   ],
+   "module": "developer_agent.swarm_dispatcher",
+   "note": null,
+   "qualname": null,
+   "raw": "swarm_dispatcher.py:245-247, 325-345",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": null,
+   "healer_id": "HD-13",
+   "key": "HD-13@None::",
+   "kind": "unresolved",
+   "lines": [],
+   "module": null,
+   "note": "ambiguous file: apps/orchestrator-gateway/architect_agent/handler.py, apps/orchestrator-gateway/compliance_agent/handler.py, apps/orchestrator-gateway/developer_agent/handler.py",
+   "qualname": null,
+   "raw": "handler.py:1620-1627",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HD-14",
+   "key": "HD-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:generate_rfc1123_variable_default:1069-1189",
+   "kind": "function",
+   "lines": [
+    [
+     1069,
+     1189
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "generate_rfc1123_variable_default",
+   "raw": "preflight_validator.py:generate_rfc1123_variable_default:1069-1189",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-14",
+   "key": "HD-14@mcp-servers/terraform/service.py::1279-1279",
+   "kind": "apply_time",
+   "lines": [
+    [
+     1279,
+     1279
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:1279",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HD-15",
+   "key": "HD-15@apps/orchestrator-gateway/developer_agent/preflight_validator.py:_get_declared_compute_outputs:143-187",
+   "kind": "function",
+   "lines": [
+    [
+     143,
+     187
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "_get_declared_compute_outputs",
+   "raw": "preflight_validator.py:_get_declared_compute_outputs:143-187",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/preflight_validator.py",
+   "healer_id": "HD-15",
+   "key": "HD-15@apps/orchestrator-gateway/developer_agent/preflight_validator.py:run_ast_preflight_check:431-690",
+   "kind": "function",
+   "lines": [
+    [
+     431,
+     690
+    ]
+   ],
+   "module": "developer_agent.preflight_validator",
+   "note": null,
+   "qualname": "run_ast_preflight_check",
+   "raw": "run_ast_preflight_check:431-690",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-16",
+   "key": "HD-16@apps/orchestrator-gateway/main.py::446-470",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     446,
+     470
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:compliance_audit:446-470",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-17",
+   "key": "HD-17@apps/orchestrator-gateway/main.py::653-672",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     653,
+     672
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:653-672",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-17",
+   "key": "HD-17@apps/orchestrator-gateway/main.py::846-849",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     846,
+     849
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": ":846-849",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-17",
+   "key": "HD-17@apps/orchestrator-gateway/main.py::920-923",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     920,
+     923
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": ":920-923",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/qa-runner/runner.py",
+   "healer_id": "HD-18",
+   "key": "HD-18@apps/qa-runner/runner.py::104-111",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     104,
+     111
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/qa-runner/runner.py:_run_cmd:104-111",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/qa-runner/runner.py",
+   "healer_id": "HD-18",
+   "key": "HD-18@apps/qa-runner/runner.py::384-414",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     384,
+     414
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": ":384-414",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-19",
+   "key": "HD-19@apps/orchestrator-gateway/main.py::989-991",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     989,
+     991
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:release_promote:989-991",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "evaluate_release_decision",
+   "file": "apps/orchestrator-gateway/release_gatekeeper.py",
+   "healer_id": "HD-19",
+   "key": "HD-19@apps/orchestrator-gateway/release_gatekeeper.py:evaluate_release_decision:69-69",
+   "kind": "inline",
+   "lines": [
+    [
+     69,
+     69
+    ]
+   ],
+   "module": "release_gatekeeper",
+   "note": null,
+   "qualname": null,
+   "raw": "release_gatekeeper.py:69, 88",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "evaluate_release_decision",
+   "file": "apps/orchestrator-gateway/release_gatekeeper.py",
+   "healer_id": "HD-19",
+   "key": "HD-19@apps/orchestrator-gateway/release_gatekeeper.py:evaluate_release_decision:88-88",
+   "kind": "inline",
+   "lines": [
+    [
+     88,
+     88
+    ]
+   ],
+   "module": "release_gatekeeper",
+   "note": null,
+   "qualname": null,
+   "raw": "release_gatekeeper.py:69, 88",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "DualLensAuditorCoordinator.evaluate_stage_two",
+   "file": "apps/orchestrator-gateway/qa_auditor/coordinator.py",
+   "healer_id": "HD-19",
+   "key": "HD-19@apps/orchestrator-gateway/qa_auditor/coordinator.py:DualLensAuditorCoordinator.evaluate_stage_two:62-115",
+   "kind": "inline",
+   "lines": [
+    [
+     62,
+     115
+    ]
+   ],
+   "module": "qa_auditor.coordinator",
+   "note": null,
+   "qualname": null,
+   "raw": "qa_auditor/coordinator.py:62-115",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "workflows/main_orchestrator.yaml",
+   "healer_id": "HD-20",
+   "key": "HD-20@workflows/main_orchestrator.yaml::302-302",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     302,
+     302
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "workflows/main_orchestrator.yaml:assign_finops_fallback:302",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/infracost/calculator.py",
+   "healer_id": "HD-20",
+   "key": "HD-20@mcp-servers/infracost/calculator.py::111-140",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     111,
+     140
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/infracost/calculator.py:evaluate_infra_plan:111-140",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/qa-runner/runner.py",
+   "healer_id": "HD-21",
+   "key": "HD-21@apps/qa-runner/runner.py::122-128",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     122,
+     128
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/qa-runner/runner.py:run_pytest:122-128",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/qa-runner/runner.py",
+   "healer_id": "HD-21",
+   "key": "HD-21@apps/qa-runner/runner.py::181-187",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     181,
+     187
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "run_hcl_syntax_validation:181-187",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "evaluate_security_lens",
+   "file": "apps/orchestrator-gateway/qa_auditor/security_lens.py",
+   "healer_id": "HD-22",
+   "key": "HD-22@apps/orchestrator-gateway/qa_auditor/security_lens.py:evaluate_security_lens:136-191",
+   "kind": "inline",
+   "lines": [
+    [
+     136,
+     191
+    ]
+   ],
+   "module": "qa_auditor.security_lens",
+   "note": null,
+   "qualname": null,
+   "raw": "qa_auditor/security_lens.py:136-191",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "_deterministic_adherence_heuristic",
+   "file": "apps/orchestrator-gateway/qa_auditor/adherence_lens.py",
+   "healer_id": "HD-22",
+   "key": "HD-22@apps/orchestrator-gateway/qa_auditor/adherence_lens.py:_deterministic_adherence_heuristic:154-217",
+   "kind": "inline",
+   "lines": [
+    [
+     154,
+     217
+    ]
+   ],
+   "module": "qa_auditor.adherence_lens",
+   "note": null,
+   "qualname": null,
+   "raw": "adherence_lens.py:154-217",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "guaranteed_callback_scope",
+   "file": "apps/orchestrator-gateway/shared/callbacks.py",
+   "healer_id": "HD-23",
+   "key": "HD-23@apps/orchestrator-gateway/shared/callbacks.py:guaranteed_callback_scope:36-56",
+   "kind": "inline",
+   "lines": [
+    [
+     36,
+     56
+    ]
+   ],
+   "module": "shared.callbacks",
+   "note": null,
+   "qualname": "guaranteed_callback_scope",
+   "raw": "shared/callbacks.py:guaranteed_callback_scope:36-56",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-24",
+   "key": "HD-24@mcp-servers/terraform/service.py::7062-7063",
+   "kind": "apply_time",
+   "lines": [
+    [
+     7062,
+     7063
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:deploy_workload:7062-7063",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-24",
+   "key": "HD-24@apps/project-vending/vending.py::1411-1429",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1411,
+     1429
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:1411-1429",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-25",
+   "key": "HD-25@apps/project-vending/vending.py::1048-1053",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1048,
+     1053
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:1048-1053, 243-299, 384-689",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-25",
+   "key": "HD-25@apps/project-vending/vending.py::243-299",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     243,
+     299
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:1048-1053, 243-299, 384-689",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-25",
+   "key": "HD-25@apps/project-vending/vending.py::384-689",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     384,
+     689
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:1048-1053, 243-299, 384-689",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "DeveloperAgent.commit_and_open_pr",
+   "file": "apps/orchestrator-gateway/developer_agent/handler.py",
+   "healer_id": "HD-26",
+   "key": "HD-26@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.commit_and_open_pr:2731-2739",
+   "kind": "inline",
+   "lines": [
+    [
+     2731,
+     2739
+    ]
+   ],
+   "module": "developer_agent.handler",
+   "note": null,
+   "qualname": "DeveloperAgent.commit_and_open_pr",
+   "raw": "developer_agent/handler.py:commit_and_open_pr:2731-2739",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/sre-digest/digest.py",
+   "healer_id": "HD-27",
+   "key": "HD-27@apps/sre-digest/digest.py::111-131",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     111,
+     131
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/sre-digest/digest.py:111-131",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/infra-rollback/rollback.py",
+   "healer_id": "HD-27",
+   "key": "HD-27@apps/infra-rollback/rollback.py::58-161",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     58,
+     161
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/infra-rollback/rollback.py:58-161",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-28",
+   "key": "HD-28@apps/orchestrator-gateway/main.py::1404-1404",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1404,
+     1404
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:handle_workflow_status_update:1404, 1442-1462",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-28",
+   "key": "HD-28@apps/orchestrator-gateway/main.py::1442-1462",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     1442,
+     1462
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:handle_workflow_status_update:1404, 1442-1462",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/main.py",
+   "healer_id": "HD-29",
+   "key": "HD-29@apps/orchestrator-gateway/main.py::214-214",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     214,
+     214
+    ]
+   ],
+   "module": "main",
+   "note": null,
+   "qualname": null,
+   "raw": "orchestrator-gateway/main.py:PlanApprovalRequest.parse_cost_delta:214",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/spec-ingestion/poller.py",
+   "healer_id": "HD-30",
+   "key": "HD-30@apps/spec-ingestion/poller.py::228-240",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     228,
+     240
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/spec-ingestion/poller.py:resolve_target_folder:228-240",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/spec-ingestion/poller.py",
+   "healer_id": "HD-30",
+   "key": "HD-30@apps/spec-ingestion/poller.py::104-106",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     104,
+     106
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "extract_product_id:104-106",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/log-sre-sentinel/sentinel.py",
+   "healer_id": "HD-31",
+   "key": "HD-31@apps/log-sre-sentinel/sentinel.py::149-149",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     149,
+     149
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/log-sre-sentinel/sentinel.py:check_auto_healing_policy:149, 158",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/log-sre-sentinel/sentinel.py",
+   "healer_id": "HD-31",
+   "key": "HD-31@apps/log-sre-sentinel/sentinel.py::158-158",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     158,
+     158
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/log-sre-sentinel/sentinel.py:check_auto_healing_policy:149, 158",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/log-sre-sentinel/sentinel.py",
+   "healer_id": "HD-31",
+   "key": "HD-31@apps/log-sre-sentinel/sentinel.py::90-126",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     90,
+     126
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "perform_rca:90-126",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/sandbox_detection.py",
+   "healer_id": "HD-32",
+   "key": "HD-32@apps/orchestrator-gateway/shared/sandbox_detection.py:detect_sandbox_intent:13-88",
+   "kind": "function",
+   "lines": [
+    [
+     13,
+     88
+    ]
+   ],
+   "module": "shared.sandbox_detection",
+   "note": null,
+   "qualname": "detect_sandbox_intent",
+   "raw": "shared/sandbox_detection.py:detect_sandbox_intent:13-88",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/cooldown_manager.py",
+   "healer_id": "HD-33",
+   "key": "HD-33@apps/orchestrator-gateway/shared/cooldown_manager.py:is_transient_error:43-67",
+   "kind": "unresolved",
+   "lines": [
+    [
+     43,
+     67
+    ]
+   ],
+   "module": "shared.cooldown_manager",
+   "note": "name is not a def at the inventory SHA (constant/data?)",
+   "qualname": "is_transient_error",
+   "raw": "shared/cooldown_manager.py:is_transient_error:43-67",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "is_rate_limit_error",
+   "file": "apps/orchestrator-gateway/shared/cooldown_manager.py",
+   "healer_id": "HD-33",
+   "key": "HD-33@apps/orchestrator-gateway/shared/cooldown_manager.py:is_rate_limit_error:85-97",
+   "kind": "inline",
+   "lines": [
+    [
+     85,
+     97
+    ]
+   ],
+   "module": "shared.cooldown_manager",
+   "note": null,
+   "qualname": "is_rate_limit_error",
+   "raw": "is_rate_limit_error:85-97",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/cooldown_manager.py",
+   "healer_id": "HD-33",
+   "key": "HD-33@apps/orchestrator-gateway/shared/cooldown_manager.py:is_model_deprecated_error:",
+   "kind": "function",
+   "lines": [],
+   "module": "shared.cooldown_manager",
+   "note": null,
+   "qualname": "is_model_deprecated_error",
+   "raw": "is_model_deprecated_error",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/github_resilience.py",
+   "healer_id": "HD-34",
+   "key": "HD-34@apps/orchestrator-gateway/shared/github_resilience.py:is_rate_limit_or_transient:61-93",
+   "kind": "function",
+   "lines": [
+    [
+     61,
+     93
+    ]
+   ],
+   "module": "shared.github_resilience",
+   "note": null,
+   "qualname": "is_rate_limit_or_transient",
+   "raw": "shared/github_resilience.py:is_rate_limit_or_transient:61-93",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-35",
+   "key": "HD-35@apps/project-vending/vending.py::233-234",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     233,
+     234
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:_retry_api_call:233-234",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-35",
+   "key": "HD-35@apps/project-vending/vending.py::1097-1097",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1097,
+     1097
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "vend_all:1097",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HD-35",
+   "key": "HD-35@apps/project-vending/vending.py::854-858",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     854,
+     858
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "fetch_github_app_credentials:854-858",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-35",
+   "key": "HD-35@mcp-servers/terraform/service.py::3650-3672",
+   "kind": "apply_time",
+   "lines": [
+    [
+     3650,
+     3672
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/terraform/service.py:_fetch_repo_files:3650-3672",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/settings.py",
+   "healer_id": "HD-36",
+   "key": "HD-36@apps/control-center/routes/settings.py::675-677",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     675,
+     677
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/routes/settings.py:get_vending_service_url:675-677",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/settings.py",
+   "healer_id": "HD-36",
+   "key": "HD-36@apps/control-center/routes/settings.py::725-727",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     725,
+     727
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "get_terraform_service_url:725-727",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/deploy-services.sh",
+   "healer_id": "HD-37",
+   "key": "HD-37@scripts/deploy-services.sh::420-447",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     420,
+     447
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/deploy-services.sh:420-447",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/bootstrap.sh",
+   "healer_id": "HD-37",
+   "key": "HD-37@scripts/bootstrap.sh::336-336",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     336,
+     336
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/bootstrap.sh:336, 348, 423-425",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/bootstrap.sh",
+   "healer_id": "HD-37",
+   "key": "HD-37@scripts/bootstrap.sh::348-348",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     348,
+     348
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/bootstrap.sh:336, 348, 423-425",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/bootstrap.sh",
+   "healer_id": "HD-37",
+   "key": "HD-37@scripts/bootstrap.sh::423-425",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     423,
+     425
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/bootstrap.sh:336, 348, 423-425",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "infra/platform/main.tf",
+   "healer_id": "HD-38",
+   "key": "HD-38@infra/platform/main.tf::554-554",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     554,
+     554
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "infra/platform/main.tf:554, 561, 664",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "infra/platform/main.tf",
+   "healer_id": "HD-38",
+   "key": "HD-38@infra/platform/main.tf::561-561",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     561,
+     561
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "infra/platform/main.tf:554, 561, 664",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "infra/platform/main.tf",
+   "healer_id": "HD-38",
+   "key": "HD-38@infra/platform/main.tf::664-664",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     664,
+     664
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "infra/platform/main.tf:554, 561, 664",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/shared/iac_upgrade_engine.py",
+   "healer_id": "HD-39",
+   "key": "HD-39@apps/control-center/shared/iac_upgrade_engine.py::731-731",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     731,
+     731
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/shared/iac_upgrade_engine.py:inspect_workload_iac_drift:731",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HD-39",
+   "key": "HD-39@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.reconcile_iac_module_vendoring:669-707",
+   "kind": "function",
+   "lines": [
+    [
+     669,
+     707
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.reconcile_iac_module_vendoring",
+   "raw": "verifier.py:reconcile_iac_module_vendoring:669-707",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-39",
+   "key": "HD-39@apps/orchestrator-gateway/developer_agent/terraform_engine.py:vendor_terraform_modules:1025-1119",
+   "kind": "function",
+   "lines": [
+    [
+     1025,
+     1119
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "vendor_terraform_modules",
+   "raw": "terraform_engine.py:vendor_terraform_modules:1025-1119",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/agent-builder/validator.py",
+   "healer_id": "HD-40",
+   "key": "HD-40@mcp-servers/agent-builder/validator.py::38-149",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     38,
+     149
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "mcp-servers/agent-builder/validator.py:38-149",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-40",
+   "key": "HD-40@mcp-servers/terraform/service.py::44-44",
+   "kind": "apply_time",
+   "lines": [
+    [
+     44,
+     44
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:44, 61-69, 270, 339",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-40",
+   "key": "HD-40@mcp-servers/terraform/service.py::61-69",
+   "kind": "apply_time",
+   "lines": [
+    [
+     61,
+     69
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:44, 61-69, 270, 339",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-40",
+   "key": "HD-40@mcp-servers/terraform/service.py::270-270",
+   "kind": "apply_time",
+   "lines": [
+    [
+     270,
+     270
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:44, 61-69, 270, 339",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-40",
+   "key": "HD-40@mcp-servers/terraform/service.py::339-339",
+   "kind": "apply_time",
+   "lines": [
+    [
+     339,
+     339
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:44, 61-69, 270, 339",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/telemetry.py",
+   "healer_id": "HD-41",
+   "key": "HD-41@apps/control-center/routes/telemetry.py::1040-1135",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1040,
+     1135
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/routes/telemetry.py:harvest_self_healing_markers:1040-1135",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/assistant.py",
+   "healer_id": "HD-42",
+   "key": "HD-42@apps/control-center/assistant.py::477-496",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     477,
+     496
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/assistant.py:handle_chat_message:477-496",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/workflow_validator.py",
+   "healer_id": "HD-43",
+   "key": "HD-43@apps/orchestrator-gateway/shared/workflow_validator.py:validate_github_workflow_yaml:37-130",
+   "kind": "function",
+   "lines": [
+    [
+     37,
+     130
+    ]
+   ],
+   "module": "shared.workflow_validator",
+   "note": null,
+   "qualname": "validate_github_workflow_yaml",
+   "raw": "shared/workflow_validator.py:validate_github_workflow_yaml:37-130",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/git-server/main.py",
+   "healer_id": "HD-44",
+   "key": "HD-44@apps/git-server/main.py::346-346",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     346,
+     346
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/git-server/main.py:get_repo_path:346, 430",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/git-server/main.py",
+   "healer_id": "HD-44",
+   "key": "HD-44@apps/git-server/main.py::430-430",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     430,
+     430
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/git-server/main.py:get_repo_path:346, 430",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/git-server/main.py",
+   "healer_id": "HD-44",
+   "key": "HD-44@apps/git-server/main.py::458-458",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     458,
+     458
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "git_http_backend_proxy:458",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-45",
+   "key": "HD-45@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_cloudrun_scaling_parameters:1122-1190",
+   "kind": "function",
+   "lines": [
+    [
+     1122,
+     1190
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "detect_cloudrun_scaling_parameters",
+   "raw": "terraform_engine.py:detect_cloudrun_scaling_parameters:1122-1190",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HD-46",
+   "key": "HD-46@mcp-servers/terraform/service.py::174-174",
+   "kind": "apply_time",
+   "lines": [
+    [
+     174,
+     174
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:extract_apis_from_hcl:174",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/terraform_engine.py",
+   "healer_id": "HD-46",
+   "key": "HD-46@apps/orchestrator-gateway/developer_agent/terraform_engine.py:infer_additional_apis_from_custom_tf:1381-1410",
+   "kind": "function",
+   "lines": [
+    [
+     1381,
+     1410
+    ]
+   ],
+   "module": "developer_agent.terraform_engine",
+   "note": null,
+   "qualname": "infer_additional_apis_from_custom_tf",
+   "raw": "terraform_engine.py:infer_additional_apis_from_custom_tf:1381-1410",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/agent_evals.py",
+   "healer_id": "HD-47",
+   "key": "HD-47@apps/control-center/routes/agent_evals.py::813-813",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     813,
+     813
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/control-center/routes/agent_evals.py:_load_base_prompt_text:813",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/control-center/routes/workloads.py",
+   "healer_id": "HD-47",
+   "key": "HD-47@apps/control-center/routes/workloads.py::656-657",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     656,
+     657
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "routes/workloads.py:derive_slug_and_title_from_text:656-657",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent.generate_implementation_plan_markdown",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HD-47",
+   "key": "HD-47@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent.generate_implementation_plan_markdown:718-733",
+   "kind": "inline",
+   "lines": [
+    [
+     718,
+     733
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent.generate_implementation_plan_markdown",
+   "raw": "architect_agent/handler.py:generate_implementation_plan_markdown:718-733",
+   "tier": "D"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "shared/hcl_utils.py",
+   "healer_id": "HE-01",
+   "key": "HE-01@shared/hcl_utils.py::282-466",
+   "kind": "not_loaded",
+   "lines": [
+    [
+     282,
+     466
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/hcl_utils.py",
+   "healer_id": "HE-01",
+   "key": "HE-01@apps/orchestrator-gateway/shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "kind": "function",
+   "lines": [
+    [
+     282,
+     466
+    ]
+   ],
+   "module": "shared.hcl_utils",
+   "note": null,
+   "qualname": "validate_hcl_syntax_tree",
+   "raw": "shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/developer_agent/hcl_utils.py",
+   "healer_id": "HE-01",
+   "key": "HE-01@apps/orchestrator-gateway/developer_agent/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "kind": "function",
+   "lines": [
+    [
+     282,
+     466
+    ]
+   ],
+   "module": "developer_agent.hcl_utils",
+   "note": null,
+   "qualname": "validate_hcl_syntax_tree",
+   "raw": "shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/hcl_utils.py",
+   "healer_id": "HE-01",
+   "key": "HE-01@mcp-servers/terraform/hcl_utils.py::282-466",
+   "kind": "apply_time",
+   "lines": [
+    [
+     282,
+     466
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/shared/hcl_utils.py",
+   "healer_id": "HE-01",
+   "key": "HE-01@mcp-servers/terraform/shared/hcl_utils.py::282-466",
+   "kind": "apply_time",
+   "lines": [
+    [
+     282,
+     466
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "shared/hcl_utils.py:validate_hcl_syntax_tree:282-466",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "ContainerImportTransformer.transform",
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py",
+   "healer_id": "HE-02",
+   "key": "HE-02@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:ContainerImportTransformer.transform:153-180",
+   "kind": "inline",
+   "lines": [
+    [
+     153,
+     180
+    ]
+   ],
+   "module": "gatekeeper_agent.ast_transformer",
+   "note": null,
+   "qualname": "ContainerImportTransformer.transform",
+   "raw": "gatekeeper_agent/ast_transformer.py:ContainerImportTransformer.transform:153-180",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/verifier.py",
+   "healer_id": "HE-03",
+   "key": "HE-03@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.extract_ast_dependencies:277-322",
+   "kind": "function",
+   "lines": [
+    [
+     277,
+     322
+    ]
+   ],
+   "module": "gatekeeper_agent.verifier",
+   "note": null,
+   "qualname": "SynthesisVerifierAgent.extract_ast_dependencies",
+   "raw": "verifier.py:extract_ast_dependencies:277-322",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/gatekeeper_agent/pypi_catalog.py",
+   "healer_id": "HE-03",
+   "key": "HE-03@apps/orchestrator-gateway/gatekeeper_agent/pypi_catalog.py:resolve_import_to_pypi:",
+   "kind": "function",
+   "lines": [],
+   "module": "gatekeeper_agent.pypi_catalog",
+   "note": null,
+   "qualname": "resolve_import_to_pypi",
+   "raw": "pypi_catalog.resolve_import_to_pypi",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent._single_turn_decompose",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HE-04",
+   "key": "HE-04@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent._single_turn_decompose:599-599",
+   "kind": "inline",
+   "lines": [
+    [
+     599,
+     599
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent._single_turn_decompose",
+   "raw": "architect_agent/handler.py:_single_turn_decompose:599, 671",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "ArchitectAgent._single_turn_decompose",
+   "file": "apps/orchestrator-gateway/architect_agent/handler.py",
+   "healer_id": "HE-04",
+   "key": "HE-04@apps/orchestrator-gateway/architect_agent/handler.py:ArchitectAgent._single_turn_decompose:671-671",
+   "kind": "inline",
+   "lines": [
+    [
+     671,
+     671
+    ]
+   ],
+   "module": "architect_agent.handler",
+   "note": null,
+   "qualname": "ArchitectAgent._single_turn_decompose",
+   "raw": "architect_agent/handler.py:_single_turn_decompose:599, 671",
+   "tier": "E"
+  },
+  {
+   "approx": true,
+   "enclosing": "SwarmDispatcher._call_gemini_with_backoff",
+   "file": "apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py",
+   "healer_id": "HE-05",
+   "key": "HE-05@apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py:SwarmDispatcher._call_gemini_with_backoff:300-300",
+   "kind": "inline",
+   "lines": [
+    [
+     300,
+     300
+    ]
+   ],
+   "module": "developer_agent.swarm_dispatcher",
+   "note": null,
+   "qualname": null,
+   "raw": "swarm_dispatcher.py:~300",
+   "tier": "E"
+  },
+  {
+   "approx": true,
+   "enclosing": "LeadDeveloperOrchestrator.decompose_specification",
+   "file": "apps/orchestrator-gateway/developer_agent/lead_orchestrator.py",
+   "healer_id": "HE-05",
+   "key": "HE-05@apps/orchestrator-gateway/developer_agent/lead_orchestrator.py:LeadDeveloperOrchestrator.decompose_specification:272-272",
+   "kind": "inline",
+   "lines": [
+    [
+     272,
+     272
+    ]
+   ],
+   "module": "developer_agent.lead_orchestrator",
+   "note": null,
+   "qualname": null,
+   "raw": "lead_orchestrator.py:~272",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "qa_auditor/*_lens.py",
+   "healer_id": "HE-05",
+   "key": "HE-05@qa_auditor/*_lens.py::113-139",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     113,
+     139
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "qa_auditor/*_lens.py:113-139",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "ChunkedSpecDecomposer.map_domain_subplan",
+   "file": "apps/orchestrator-gateway/architect_agent/spec_decomposer.py",
+   "healer_id": "HE-05",
+   "key": "HE-05@apps/orchestrator-gateway/architect_agent/spec_decomposer.py:ChunkedSpecDecomposer.map_domain_subplan:173-174",
+   "kind": "inline",
+   "lines": [
+    [
+     173,
+     174
+    ]
+   ],
+   "module": "architect_agent.spec_decomposer",
+   "note": null,
+   "qualname": null,
+   "raw": "spec_decomposer.py:173-174",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "SharedContractRegistry.extract_and_generate_contracts",
+   "file": "apps/orchestrator-gateway/developer_agent/contract_registry.py",
+   "healer_id": "HE-06",
+   "key": "HE-06@apps/orchestrator-gateway/developer_agent/contract_registry.py:SharedContractRegistry.extract_and_generate_contracts:89-104",
+   "kind": "inline",
+   "lines": [
+    [
+     89,
+     104
+    ]
+   ],
+   "module": "developer_agent.contract_registry",
+   "note": null,
+   "qualname": null,
+   "raw": "developer_agent/contract_registry.py:89-104",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/log-sre-sentinel/sentinel.py",
+   "healer_id": "HE-07",
+   "key": "HE-07@apps/log-sre-sentinel/sentinel.py::39-42",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     39,
+     42
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/log-sre-sentinel/sentinel.py:compute_stack_fingerprint:39-42",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/sre-digest/digest.py",
+   "healer_id": "HE-07",
+   "key": "HE-07@apps/sre-digest/digest.py::49-50",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     49,
+     50
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/sre-digest/digest.py:cluster_warning_logs:49-50",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "infra/platform/main.tf",
+   "healer_id": "HE-08",
+   "key": "HE-08@infra/platform/main.tf::498-562",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     498,
+     562
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "infra/platform/main.tf:folder_*:498-562",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "scripts/bootstrap.sh",
+   "healer_id": "HE-09",
+   "key": "HE-09@scripts/bootstrap.sh::186-186",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     186,
+     186
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "scripts/bootstrap.sh:186",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HE-10",
+   "key": "HE-10@apps/project-vending/vending.py::183-183",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     183,
+     183
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:generate_project_id:183, 449",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HE-10",
+   "key": "HE-10@apps/project-vending/vending.py::449-449",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     449,
+     449
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:generate_project_id:183, 449",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HE-10",
+   "key": "HE-10@apps/project-vending/vending.py::1378-1378",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     1378,
+     1378
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "redeploy_workload:1378",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/project-vending/vending.py",
+   "healer_id": "HE-11",
+   "key": "HE-11@apps/project-vending/vending.py::432-432",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     432,
+     432
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/project-vending/vending.py:vend_gcp_project:432",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/github_identity.py",
+   "healer_id": "HE-12",
+   "key": "HE-12@apps/orchestrator-gateway/shared/github_identity.py:resolve_repo_identity:30-103",
+   "kind": "function",
+   "lines": [
+    [
+     30,
+     103
+    ]
+   ],
+   "module": "shared.github_identity",
+   "note": null,
+   "qualname": "resolve_repo_identity",
+   "raw": "shared/github_identity.py:resolve_repo_identity:30-103",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/orchestrator-gateway/shared/module_inspector.py",
+   "healer_id": "HE-13",
+   "key": "HE-13@apps/orchestrator-gateway/shared/module_inspector.py:_strip_hcl_comments:15-28",
+   "kind": "function",
+   "lines": [
+    [
+     15,
+     28
+    ]
+   ],
+   "module": "shared.module_inspector",
+   "note": null,
+   "qualname": "_strip_hcl_comments",
+   "raw": "shared/module_inspector.py:_strip_hcl_comments:15-28",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "_extract_blocks",
+   "file": "apps/orchestrator-gateway/shared/module_inspector.py",
+   "healer_id": "HE-13",
+   "key": "HE-13@apps/orchestrator-gateway/shared/module_inspector.py:_extract_blocks:37-213",
+   "kind": "inline",
+   "lines": [
+    [
+     37,
+     213
+    ]
+   ],
+   "module": "shared.module_inspector",
+   "note": null,
+   "qualname": null,
+   "raw": ":37-213, 359, 478",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "fetch_and_inspect_git_bundle",
+   "file": "apps/orchestrator-gateway/shared/module_inspector.py",
+   "healer_id": "HE-13",
+   "key": "HE-13@apps/orchestrator-gateway/shared/module_inspector.py:fetch_and_inspect_git_bundle:359-359",
+   "kind": "inline",
+   "lines": [
+    [
+     359,
+     359
+    ]
+   ],
+   "module": "shared.module_inspector",
+   "note": null,
+   "qualname": null,
+   "raw": ":37-213, 359, 478",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "scan_repository_git_bundles",
+   "file": "apps/orchestrator-gateway/shared/module_inspector.py",
+   "healer_id": "HE-13",
+   "key": "HE-13@apps/orchestrator-gateway/shared/module_inspector.py:scan_repository_git_bundles:478-478",
+   "kind": "inline",
+   "lines": [
+    [
+     478,
+     478
+    ]
+   ],
+   "module": "shared.module_inspector",
+   "note": null,
+   "qualname": null,
+   "raw": ":37-213, 359, 478",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "apps/refactor-scanner/scanner.py",
+   "healer_id": "HE-14",
+   "key": "HE-14@apps/refactor-scanner/scanner.py::107-107",
+   "kind": "out_of_scope",
+   "lines": [
+    [
+     107,
+     107
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "apps/refactor-scanner/scanner.py:scan_workspace_ast:107",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": null,
+   "file": "mcp-servers/terraform/service.py",
+   "healer_id": "HE-15",
+   "key": "HE-15@mcp-servers/terraform/service.py::2990-2993",
+   "kind": "apply_time",
+   "lines": [
+    [
+     2990,
+     2993
+    ]
+   ],
+   "module": null,
+   "note": null,
+   "qualname": null,
+   "raw": "service.py:prepare_workspace:2990-2993",
+   "tier": "E"
+  },
+  {
+   "approx": false,
+   "enclosing": "ComplianceAgentHandler._enrich_plan_markdown",
+   "file": "apps/orchestrator-gateway/compliance_agent/handler.py",
+   "healer_id": "HE-16",
+   "key": "HE-16@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler._enrich_plan_markdown:740-745",
+   "kind": "inline",
+   "lines": [
+    [
+     740,
+     745
+    ]
+   ],
+   "module": "compliance_agent.handler",
+   "note": null,
+   "qualname": "ComplianceAgentHandler._enrich_plan_markdown",
+   "raw": "compliance_agent/handler.py:_enrich_plan_markdown:740-745",
+   "tier": "E"
+  }
+ ],
+ "healer_rows": 166,
+ "inventory_sha": "6cd83b0",
+ "source": "docs/planning/review/HEALERS.md"
+}

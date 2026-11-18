@@ -1,0 +1,15 @@
+# Harness outputs and local-only material (see eval/README.md "Never commit").
+results/*
+!results/.keep
+cassettes/
+.tofu-cache/
+.tofu-mirror/
+.deps/
+__pycache__/
+*.pyc
+# S1-0: the same local-only material when it is a symlink (a trailing-slash pattern matches directories only),
+# plus the production engine/provider column built by the owner-approved download (integration plan S.6 step 0).
+.deps
+.tofu-mirror
+.tofu-mirror-prod
+.tools/

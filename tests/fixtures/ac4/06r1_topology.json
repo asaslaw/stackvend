@@ -1,0 +1,195 @@
+{
+ "context": {
+  "architecture_overview": "The architecture comprises two serverless Cloud Run microservices: a public-facing Storefront & API Gateway and an internal Factory Warehouse Fulfillment Worker. The Storefront serves the product catalog, interactive customizer, and cart, and exposes POST /api/v1/orders/checkout. Checkout validates mock payments against Secret Manager and publishes events to a Pub/Sub topic ('widget-orders-placed'). The Factory Fulfillment Worker receives push messages from Pub/Sub to atomically decrement inventory in Firestore ('inventory_ledger'), write invoice manifests to Cloud Storage ('invoices'), and transition order states in 'customer_orders'. Customer order tracking is queried via GET /track/{order_id}. To ensure topological validity, the Pub/Sub push subscription is provisioned after the fulfillment worker Cloud Run service is established.",
+  "bundle_id": "event-driven-microservice",
+  "compute_archetype": "cloudrun",
+  "product_id": "test-06-widget-factory-ecommerce",
+  "summary": "Full-stack serverless e-commerce platform for an industrial custom widget factory, featuring a FastAPI + Tailwind/Alpine.js storefront, dynamic configurator, Firestore ledger, Secret Manager payment validation, and an asynchronous factory fulfillment Cloud Run worker driven by Pub/Sub.",
+  "target_compute_services": [
+   "storefront",
+   "factory-worker"
+  ]
+ },
+ "draft": {
+  "edges": [
+   {
+    "callee": "factory-worker",
+    "caller": "storefront",
+    "env_key_base": "ORDERS",
+    "protocol": "pubsub"
+   }
+  ],
+  "primary_service": "storefront",
+  "resources": [
+   {
+    "consumers": [
+     {
+      "env_key": "FIRESTORE_DATABASE_ID",
+      "service": "storefront"
+     },
+     {
+      "env_key": "FIRESTORE_DATABASE_ID",
+      "service": "factory-worker"
+     }
+    ],
+    "logical_name": "default",
+    "purpose": "Native Firestore database storing widgets, inventory ledger, and customer orders.",
+    "type": "google_firestore_database"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "MEDIA_BUCKET_NAME",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "media_bucket",
+    "purpose": "Public Cloud Storage bucket for product diagrams and CAD thumbnails.",
+    "type": "google_storage_bucket"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "INVOICES_BUCKET_NAME",
+      "service": "factory-worker"
+     }
+    ],
+    "logical_name": "invoices_bucket",
+    "purpose": "Private Cloud Storage bucket for generated order invoices with 30-day retention.",
+    "type": "google_storage_bucket"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "PAYMENT_SECRET_ID",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "stripe_mock_key",
+    "purpose": "Payment validation secret for mock credit card authorization.",
+    "type": "google_secret_manager_secret"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "ORDERS_TOPIC",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "widget_orders_placed",
+    "purpose": "Pub/Sub topic for broadcasting placed widget orders to factory fulfillment.",
+    "type": "google_pubsub_topic"
+   }
+  ],
+  "services": [
+   {
+    "kind": "cloudrun",
+    "name": "storefront",
+    "purpose": "Public-facing Storefront and API Gateway providing catalog browsing, custom widget configurator, checkout API, and order tracking portal.",
+    "scaling": {
+     "cpu_always_allocated": false
+    }
+   },
+   {
+    "kind": "cloudrun",
+    "name": "factory-worker",
+    "purpose": "Internal asynchronous fulfillment service handling Pub/Sub push events to decrement inventory and generate invoice manifests.",
+    "scaling": {
+     "cpu_always_allocated": false
+    }
+   }
+  ]
+ },
+ "recorded_prompt": "Your previous architecture plan's `service_topology` failed deterministic validation. Return ONLY a corrected `service_topology` JSON object. Change only what the diagnostics require; keep every valid service, kind, edge and resource as it was. `primary_service`'s kind must equal the plan's `compute_archetype`.\n\n--- PLAN SUMMARY (typed fields of your plan) ---\n{\n \"architecture_overview\": \"The architecture comprises two serverless Cloud Run microservices: a public-facing Storefront & API Gateway and an internal Factory Warehouse Fulfillment Worker. The Storefront serves the product catalog, interactive customizer, and cart, and exposes POST /api/v1/orders/checkout. Checkout validates mock payments against Secret Manager and publishes events to a Pub/Sub topic ('widget-orders-placed'). The Factory Fulfillment Worker receives push messages from Pub/Sub to atomically decrement inventory in Firestore ('inventory_ledger'), write invoice manifests to Cloud Storage ('invoices'), and transition order states in 'customer_orders'. Customer order tracking is queried via GET /track/{order_id}. To ensure topological validity, the Pub/Sub push subscription is provisioned after the fulfillment worker Cloud Run service is established.\",\n \"bundle_id\": \"event-driven-microservice\",\n \"compute_archetype\": \"cloudrun\",\n \"product_id\": \"test-06-widget-factory-ecommerce\",\n \"summary\": \"Full-stack serverless e-commerce platform for an industrial custom widget factory, featuring a FastAPI + Tailwind/Alpine.js storefront, dynamic configurator, Firestore ledger, Secret Manager payment validation, and an asynchronous factory fulfillment Cloud Run worker driven by Pub/Sub.\",\n \"target_compute_services\": [\n  \"storefront\",\n  \"factory-worker\"\n ]\n}\n--- PREVIOUS service_topology ---\n{\n \"edges\": [\n  {\n   \"callee\": \"factory-worker\",\n   \"caller\": \"storefront\",\n   \"env_key_base\": \"ORDERS\",\n   \"protocol\": \"pubsub\"\n  }\n ],\n \"primary_service\": \"storefront\",\n \"resources\": [\n  {\n   \"consumers\": [\n    {\n     \"env_key\": \"FIRESTORE_DATABASE_ID\",\n     \"service\": \"storefront\"\n    },\n    {\n     \"env_key\": \"FIRESTORE_DATABASE_ID\",\n     \"service\": \"factory-worker\"\n    }\n   ],\n   \"logical_name\": \"default\",\n   \"purpose\": \"Native Firestore database storing widgets, inventory ledger, and customer orders.\",\n   \"type\": \"google_firestore_database\"\n  },\n  {\n   \"consumers\": [\n    {\n     \"env_key\": \"MEDIA_BUCKET_NAME\",\n     \"service\": \"storefront\"\n    }\n   ],\n   \"logical_name\": \"media_bucket\",\n   \"purpose\": \"Public Cloud Storage bucket for product diagrams and CAD thumbnails.\",\n   \"type\": \"google_storage_bucket\"\n  },\n  {\n   \"consumers\": [\n    {\n     \"env_key\": \"INVOICES_BUCKET_NAME\",\n     \"service\": \"factory-worker\"\n    }\n   ],\n   \"logical_name\": \"invoices_bucket\",\n   \"purpose\": \"Private Cloud Storage bucket for generated order invoices with 30-day retention.\",\n   \"type\": \"google_storage_bucket\"\n  },\n  {\n   \"consumers\": [\n    {\n     \"env_key\": \"PAYMENT_SECRET_ID\",\n     \"service\": \"storefront\"\n    }\n   ],\n   \"logical_name\": \"stripe_mock_key\",\n   \"purpose\": \"Payment validation secret for mock credit card authorization.\",\n   \"type\": \"google_secret_manager_secret\"\n  },\n  {\n   \"consumers\": [\n    {\n     \"env_key\": \"ORDERS_TOPIC\",\n     \"service\": \"storefront\"\n    }\n   ],\n   \"logical_name\": \"widget_orders_placed\",\n   \"purpose\": \"Pub/Sub topic for broadcasting placed widget orders to factory fulfillment.\",\n   \"type\": \"google_pubsub_topic\"\n  }\n ],\n \"services\": [\n  {\n   \"kind\": \"cloudrun\",\n   \"name\": \"storefront\",\n   \"purpose\": \"Public-facing Storefront and API Gateway providing catalog browsing, custom widget configurator, checkout API, and order tracking portal.\",\n   \"scaling\": {\n    \"cpu_always_allocated\": false\n   }\n  },\n  {\n   \"kind\": \"cloudrun\",\n   \"name\": \"factory-worker\",\n   \"purpose\": \"Internal asynchronous fulfillment service handling Pub/Sub push events to decrement inventory and generate invoice manifests.\",\n   \"scaling\": {\n    \"cpu_always_allocated\": false\n   }\n  }\n ]\n}\n--- DIAGNOSTICS ---\n[\n {\n  \"code\": \"TOPOLOGY.EDGE_CALLEE_UNSUPPORTED\",\n  \"detail\": null,\n  \"hint\": null,\n  \"message\": \"a 'pubsub' edge cannot target 'factory-worker' (kind 'cloudrun'); http edges target cloudrun services, pubsub edges target the event-worker, launch edges target a gce-worker\",\n  \"path\": \"edges[0].callee\"\n }\n]\n--- END ---",
+ "recorded_system": "### SERVICE TOPOLOGY (`service_topology`, always set)\nDescribe the workload's compute as typed data. The platform renders all compute and all service-to-service wiring from it; it never reads the specification text for this.\n   - `services`: every compute service the specification asks the platform to deploy, each with `name` (lower-case letters, digits and '-', starts with a letter, at most 40 characters), `kind` and a one-line `purpose`. Add `scaling` only when the specification states instance counts. `[]` means no compute (foundation-only).\n   - Kinds:\n     * `cloudrun`: primary or secondary; any number; callee of http edges; can call others (has env vars); can launch gce-workers.\n     * `event-worker`: primary or secondary; at most 1 per workload; callee of pubsub edges; cannot call others (no env vars).\n     * `gke-autopilot`: primary only; at most 1 per workload; never an edge callee; cannot call others (no env vars).\n     * `gce-bastion`: primary only; at most 1 per workload; never an edge callee; cannot call others (no env vars).\n     * `gce-worker`: secondary only; any number; callee of launch edges; can call others (has env vars).\n   - `primary_service`: the service deployed on module \"compute\"; its kind MUST equal `compute_archetype`; null only when `services` is []. `target_compute_services` lists the same names, primary first.\n   - `edges`: one entry per caller -> callee call (`protocol` `http` to a cloudrun callee, `pubsub` to the event-worker). The caller receives `<BASE>_URL` and `<BASE>_AUDIENCE` (http) or `<BASE>_TOPIC` (pubsub); `<BASE>` is `env_key_base` or the callee name upper-cased with '-' as '_'. Edges MUST be acyclic: never A -> B and B -> A; route one direction through Pub/Sub or invert the call. GKE and gce-bastion workloads are reached through their own networking, never through an edge.\n   - VM workers the app starts on demand (e.g. ephemeral Spot VMs running a batch script): one `gce-worker` service each (never the primary; add `vm` {machine_type, spot, disk_size_gb} only when the specification states the VM shape) and a `launch` edge from the cloudrun service that starts it; that caller receives `<BASE>_INSTANCE_TEMPLATE`, `<BASE>_ZONE` and `<BASE>_NAME_PREFIX`. A worker reads resources like a service but is never an edge caller; worker names must not be prefixes of each other.\n   - `resources`: only these types: `google_storage_bucket` (name), `google_pubsub_topic` (name/id), `google_pubsub_subscription` (name), `google_secret_manager_secret` (secret_id/id), `google_redis_instance` (host/port), `google_sql_database_instance` (connection_name/private_ip_address), `google_firestore_database` (name), `google_bigquery_dataset` (dataset_id). Give each the Terraform `logical_name` the IaC will use and, per service that reads it, `consumers` with the exact environment variable name (`env_key`). Anything else is described in a service's `purpose`. Resources are never services.\n   - Single-service default: one `cloudrun` service named after `product_id`, no edges.\n",
+ "repair_answer": {
+  "edges": [
+   {
+    "callee": "factory-worker",
+    "caller": "storefront",
+    "env_key_base": "ORDERS",
+    "protocol": "pubsub"
+   }
+  ],
+  "primary_service": "storefront",
+  "resources": [
+   {
+    "consumers": [
+     {
+      "env_key": "FIRESTORE_DATABASE_ID",
+      "service": "storefront"
+     },
+     {
+      "env_key": "FIRESTORE_DATABASE_ID",
+      "service": "factory-worker"
+     }
+    ],
+    "logical_name": "default",
+    "purpose": "Native Firestore database storing widgets, inventory ledger, and customer orders.",
+    "type": "google_firestore_database"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "MEDIA_BUCKET_NAME",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "media_bucket",
+    "purpose": "Public Cloud Storage bucket for product diagrams and CAD thumbnails.",
+    "type": "google_storage_bucket"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "INVOICES_BUCKET_NAME",
+      "service": "factory-worker"
+     }
+    ],
+    "logical_name": "invoices_bucket",
+    "purpose": "Private Cloud Storage bucket for generated order invoices with 30-day retention.",
+    "type": "google_storage_bucket"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "PAYMENT_SECRET_ID",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "stripe_mock_key",
+    "purpose": "Payment validation secret for mock credit card authorization.",
+    "type": "google_secret_manager_secret"
+   },
+   {
+    "consumers": [
+     {
+      "env_key": "ORDERS_TOPIC",
+      "service": "storefront"
+     }
+    ],
+    "logical_name": "widget_orders_placed",
+    "purpose": "Pub/Sub topic for broadcasting placed widget orders to factory fulfillment.",
+    "type": "google_pubsub_topic"
+   }
+  ],
+  "services": [
+   {
+    "kind": "cloudrun",
+    "name": "storefront",
+    "purpose": "Public-facing Storefront and API Gateway providing catalog browsing, custom widget configurator, checkout API, and order tracking portal.",
+    "scaling": {
+     "cpu_always_allocated": false
+    }
+   },
+   {
+    "kind": "event-worker",
+    "name": "factory-worker",
+    "purpose": "Internal asynchronous fulfillment service handling Pub/Sub push events to decrement inventory and generate invoice manifests.",
+    "scaling": {
+     "cpu_always_allocated": false
+    }
+   }
+  ]
+ }
+}

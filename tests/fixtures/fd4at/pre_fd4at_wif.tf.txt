@@ -1,0 +1,51 @@
+# ==============================================================================
+# PROJECT CASTOR: WORKLOAD FOUNDATION - WORKLOAD IDENTITY FEDERATION (WIF)
+# ==============================================================================
+# Provisions keyless OIDC authentication for GitHub Actions CI/CD workflows.
+# Dynamically binds GitHub repository to the deployer service account.
+# ==============================================================================
+
+resource "google_iam_workload_identity_pool" "github_pool" {
+  project                   = var.project_id
+  workload_identity_pool_id = "castor-gh-pool"
+  display_name              = "Castor GitHub Pool"
+  description               = "Workload Identity Pool for GitHub Actions keyless authentication"
+  disabled                  = false
+  depends_on                = [google_project_service.apis]
+}
+
+resource "google_iam_workload_identity_pool_provider" "github_provider" {
+  project                            = var.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-provider"
+  display_name                       = "GitHub Actions Provider"
+  description                        = "OIDC Provider for GitHub Actions"
+  disabled                           = false
+
+  attribute_mapping = {
+    "google.subject"             = "assertion.sub"
+    "attribute.actor"            = "assertion.actor"
+    "attribute.repository"       = "assertion.repository"
+    "attribute.repository_owner" = "assertion.repository_owner"
+  }
+
+  # Lock authentication strictly to this specific workload repository
+  attribute_condition = "assertion.repository == '${var.github_repo_full_name}'"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+resource "google_service_account" "github_deployer" {
+  project      = var.project_id
+  account_id   = "sa-gh-deployer"
+  display_name = "GitHub Actions Workload Deployer"
+  depends_on   = [google_project_service.apis]
+}
+
+resource "google_service_account_iam_member" "github_wif_binding" {
+  service_account_id = google_service_account.github_deployer.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/${var.github_repo_full_name}"
+}

@@ -1,0 +1,113 @@
+{
+  "title": "The plan's CI task demands a cloudbuild.yaml the platform removes; a judge that reads the platform facts does not report it missing",
+  "source": "example 01 live run on a fresh install, 11-16 (docs/handoff/ex01-g13-cloudbuild-plan-task-diagnosis.md): the architect's INFRA-05 named cloudbuild.yaml and the platform deploy workflow; the developer wrote cloudbuild.yaml, the developer handler removed it (the platform owns every CI and build file), QA ran 100% tests, and the adherence judge's 'cloudbuild.yaml is missing' finding (no file named) went to the task's one committed target, the platform-rendered deploy workflow, and stopped the run as PLATFORM_DEFECT",
+  "mechanism": "IMAGE-BUILD-PLATFORM-FACT: the facet IMAGE_BUILD is handled (SATISFIED) for a commit whose root module calls a golden compute module of a container kind; its PLATFORM FACTS line says the platform builds every image itself with Buildpacks and removes AI-written CI or build files, so a plan's build file is met by the platform (before the fix: no such fact, the finding blocks, is routed to the platform-rendered deploy workflow and the run stops PLATFORM_DEFECT)",
+  "trace": "trace-cloudbuild-fact",
+  "product_id": "event-router",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "event-router",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "event-router",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "category": "CODE",
+      "title": "webhook ingestion service",
+      "target_files": [
+        "apps/event-router/main.py",
+        "apps/event-router/requirements.txt",
+        "apps/event-router/Procfile"
+      ]
+    },
+    {
+      "task_id": "INFRA-05",
+      "category": "INFRA",
+      "title": "Configure Cloud Native Buildpacks CI/CD Pipeline (Zero Dockerfiles)",
+      "description": "Create cloudbuild.yaml and GitHub Actions workflow using Google Cloud Native Buildpacks (pack build or gcloud builds submit --pack) to build apps/event-router without any Dockerfile and deploy to Cloud Run.",
+      "acceptance_criteria": [
+        "CI/CD pipeline builds container strictly via Google Cloud Native Buildpacks (pack build or gcloud builds submit --pack)",
+        "Zero Dockerfiles and zero docker build commands exist in cloudbuild.yaml or workflows"
+      ],
+      "target_files": [
+        "cloudbuild.yaml",
+        ".github/workflows/deploy-event-router.yml"
+      ]
+    },
+    {
+      "task_id": "CODE-03",
+      "category": "TEST",
+      "title": "pytest suite",
+      "target_files": [
+        "tests/test_main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "main_events": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.post('/api/v1/events')\ndef ingest(event: dict):\n    return {'accepted': bool(event)}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "cloudbuild": "steps:\n  - name: gcr.io/k8s-skaffold/pack\n    args: ['build', 'event-router', '--builder=gcr.io/buildpacks/builder', '--path=apps/event-router']\n",
+    "test_main": "def test_health():\n    assert True\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/event-router/main.py": "@main",
+      "apps/event-router/requirements.txt": "@requirements",
+      "apps/event-router/Procfile": "@procfile",
+      "cloudbuild.yaml": "@cloudbuild",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "@test_main"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 12,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.94,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "cloudbuild.yaml is missing from the repository; INFRA-05 requires cloudbuild.yaml to build the container strictly via Google Cloud Native Buildpacks (pack / --pack)",
+              "task_id": "INFRA-05",
+              "withdraw_if_facts_mention": "(facet IMAGE_BUILD)"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1,
+      "max_generations": 1
+    },
+    "never_seed_files": [
+      ".github/workflows/deploy-event-router.yml",
+      "cloudbuild.yaml"
+    ]
+  }
+}

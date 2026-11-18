@@ -1,0 +1,5 @@
+{
+  "_comment": "Lane 14 PR-8 / I10: the Helm CLI baked into mcp-kubernetes-server at build time. Owner fills BOTH fields from the official release (https://github.com/helm/helm/releases: version tag, and the linux-amd64 .tar.gz SHA-256 from https://get.helm.sh/helm-<version>-linux-amd64.tar.gz.sha256sum). Empty = no Helm in the image: every Helm tool answers HELM_UNAVAILABLE (never a mock). Read by infra/platform (Cloud Build trigger step) and scripts/deploy-services.sh (staging).",
+  "version": "",
+  "linux_amd64_sha256": ""
+}

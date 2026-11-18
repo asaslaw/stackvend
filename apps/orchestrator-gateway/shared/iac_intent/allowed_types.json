@@ -1,0 +1,73 @@
+{
+  "_comment": "Typed IaC intent v1 allow-list (docs/planning/typed-iac-intent-plan.md §2.4, amended by its Fable RT F5-F8). DATA, not code: shared/iac_intent.py interprets every key. A type is allowed only when it is listed under `types` AND the owner question it is gated on is answered `yes` in `owner_answers`; a different owner answer is a one-line data edit. Additions by PR + test only (Q-TI-3). Owner answers are PROVISIONAL (recorded 2026-10-18 while the owner was away; the plan RT agreed with every recommendation).",
+  "schema": "iac_intent_allowed_types/v1",
+  "owner_answers": {
+    "Q-TI-3": {"answer": "yes", "status": "provisional", "text": "Approve the 17-type allow-list (16 google types + kubernetes_manifest), additions by PR + test only."},
+    "Q-TI-4": {"answer": "yes", "status": "provisional", "text": "Allow random_id / random_password (random 3.7.1 is in the production mirror)."},
+    "Q-TI-5": {"answer": "yes", "status": "provisional", "text": "Allow typed kubernetes_manifest in v1. Caveat (RT F8): `manifest` is cty `dynamic` in kubernetes 2.36.0, so only exact-path rules apply below it (no schema walk)."},
+    "Q-TI-7": {"answer": "yes", "status": "provisional", "text": "An unknown type fails closed with IAC.TYPE_NOT_ALLOWED (the type is counted for a PR); no permissive mode."},
+    "Q-TI-9": {"answer": "yes", "status": "provisional", "text": "Composite bundles stay out of intent v1 (they embed compute the topology owns)."}
+  },
+  "unknown_type_policy": {
+    "question": "Q-TI-7",
+    "if_yes": "fail_closed",
+    "if_no": "fail_closed"
+  },
+  "bundles_in_v1": {
+    "question": "Q-TI-9",
+    "if_yes": false,
+    "if_no": true
+  },
+  "functions": {
+    "_comment": "Call v1 set (plan §2.2 + RT F7). Pure functions only; try/can/regex/file*/templatefile/env/uuid/timestamp/provider::* stay out.",
+    "allowed": ["base64encode", "coalesce", "concat", "format", "join", "jsonencode", "length", "lower", "merge", "replace", "tostring", "trimprefix", "trimsuffix", "upper"]
+  },
+  "fact_attributes": {
+    "_comment": "Resource arguments with these exact names (at any depth outside a `dynamic` attribute) take only a FactRef from the listed facts: projects, regions and locations are never literals (plan §2.2).",
+    "project": ["project_id"],
+    "region": ["region"],
+    "location": ["region"]
+  },
+  "types": {
+    "google_pubsub_topic": {"question": "Q-TI-3", "provider": "google", "target_ref_only": {"kms_key_name": [["module_output", "security-kms", "crypto_key_name"]]}, "refused_blocks": ["ingestion_data_source_settings"]},
+    "google_pubsub_subscription": {"question": "Q-TI-3", "provider": "google", "service_ref_only": ["push_config.push_endpoint"], "target_ref_only": {"topic": [["resource_attr", "google_pubsub_topic", "name"], ["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_name"], ["module_output", "messaging-pubsub", "topic_id"]], "dead_letter_policy.dead_letter_topic": [["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_id"], ["module_output", "messaging-pubsub", "dead_letter_topic_id"]], "cloud_storage_config.bucket": [["resource_attr", "google_storage_bucket", "name"], ["module_output", "storage-bucket", "bucket_name"]], "cloud_storage_config.service_account_email": [["fact", "workload_sa_email"], ["resource_attr", "google_service_account", "email"]], "push_config.oidc_token.service_account_email": [["fact", "workload_sa_email"], ["resource_attr", "google_service_account", "email"]]}, "refused_blocks": ["bigquery_config"]},
+    "google_storage_bucket": {"question": "Q-TI-3", "provider": "google", "forced": {"uniform_bucket_level_access": true}, "target_ref_only": {"logging.log_bucket": [["resource_attr", "google_storage_bucket", "name"], ["module_output", "storage-bucket", "bucket_name"]], "encryption.default_kms_key_name": [["module_output", "security-kms", "crypto_key_name"]]}},
+    "google_storage_notification": {"question": "Q-TI-3", "provider": "google", "target_ref_only": {"bucket": [["resource_attr", "google_storage_bucket", "name"], ["module_output", "storage-bucket", "bucket_name"]], "topic": [["resource_attr", "google_pubsub_topic", "name"], ["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_name"], ["module_output", "messaging-pubsub", "topic_id"]]}},
+    "google_secret_manager_secret": {"question": "Q-TI-3", "provider": "google", "target_ref_only": {"topics.name": [["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_id"], ["module_output", "messaging-pubsub", "dead_letter_topic_id"]], "replication.auto.customer_managed_encryption.kms_key_name": [["module_output", "security-kms", "crypto_key_name"]], "replication.user_managed.replicas.customer_managed_encryption.kms_key_name": [["module_output", "security-kms", "crypto_key_name"]]}},
+    "google_secret_manager_secret_version": {"question": "Q-TI-3", "provider": "google", "random_password_only": ["secret_data"], "target_ref_only": {"secret": [["resource_attr", "google_secret_manager_secret", "id"], ["resource_attr", "google_secret_manager_secret", "name"], ["module_output", "security-secret", "secret_name"]]}, "refused_attributes": ["secret_data_wo", "secret_data_wo_version"]},
+    "google_service_account": {"question": "Q-TI-3", "provider": "google", "patterns": {"account_id": "^[a-z]([-a-z0-9]{4,28}[a-z0-9])$"}},
+    "google_service_account_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_service_account_iam_member"}, "target_ref_only": {"service_account_id": [["resource_attr", "google_service_account", "name"], ["resource_attr", "google_service_account", "id"]]}},
+    "google_project_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_project_iam_member"}},
+    "google_pubsub_topic_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_pubsub_topic_iam_member"}, "target_ref_only": {"topic": [["resource_attr", "google_pubsub_topic", "name"], ["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_name"], ["module_output", "messaging-pubsub", "topic_id"]]}},
+    "google_pubsub_subscription_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_pubsub_subscription_iam_member"}, "target_ref_only": {"subscription": [["resource_attr", "google_pubsub_subscription", "name"], ["resource_attr", "google_pubsub_subscription", "id"], ["module_output", "messaging-pubsub", "subscription_name"], ["module_output", "messaging-pubsub", "subscription_id"]]}},
+    "google_secret_manager_secret_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_secret_manager_secret_iam_member"}, "target_ref_only": {"secret_id": [["resource_attr", "google_secret_manager_secret", "secret_id"], ["resource_attr", "google_secret_manager_secret", "id"], ["module_output", "security-secret", "secret_id"], ["module_output", "security-secret", "secret_name"]]}},
+    "google_storage_bucket_iam_member": {"question": "Q-TI-3", "provider": "google", "iam": {"role_table": "google_storage_bucket_iam_member"}, "target_ref_only": {"bucket": [["resource_attr", "google_storage_bucket", "name"], ["module_output", "storage-bucket", "bucket_name"]]}},
+    "google_cloud_scheduler_job": {"question": "Q-TI-3", "provider": "google", "service_ref_only": ["http_target.uri"], "target_ref_only": {"pubsub_target.topic_name": [["resource_attr", "google_pubsub_topic", "id"], ["module_output", "messaging-pubsub", "topic_id"], ["module_output", "messaging-pubsub", "dead_letter_topic_id"]], "http_target.oidc_token.service_account_email": [["fact", "workload_sa_email"], ["resource_attr", "google_service_account", "email"]], "http_target.oauth_token.service_account_email": [["fact", "workload_sa_email"], ["resource_attr", "google_service_account", "email"]]}},
+    "google_sql_database": {"question": "Q-TI-3", "provider": "google", "module_output_ref": {"instance": [["database-cloudsql", "instance_name"]]}},
+    "google_sql_user": {"question": "Q-TI-3", "provider": "google", "module_output_ref": {"instance": [["database-cloudsql", "instance_name"]]}, "random_password_only": ["password"], "refused_attributes": ["password_wo", "password_wo_version"]},
+    "kubernetes_manifest": {"question": "Q-TI-5", "provider": "kubernetes", "dynamic_attributes": ["manifest"], "fact_only_paths": {"manifest.metadata.namespace": ["kubernetes_namespace"], "manifest.spec.containers[*].image": ["container_image"], "manifest.spec.template.spec.containers[*].image": ["container_image"], "manifest.spec.jobTemplate.spec.template.spec.containers[*].image": ["container_image"]}},
+    "random_id": {"question": "Q-TI-4", "provider": "random"},
+    "random_password": {"question": "Q-TI-4", "provider": "random"}
+  },
+  "role_allow": {
+    "_comment": "Non-privileged predefined roles per IAM type. Never a PRIVILEGED_ROLES member, never a PLATFORM_OWNED_BINDINGS pair, never roles/run.invoker (invoker grants are topology-owned, rendered per edge) (validators/policy_tables.py; test_typed_iac_ti2_tables.py).",
+    "google_project_iam_member": ["roles/aiplatform.user", "roles/bigquery.dataEditor", "roles/bigquery.dataViewer", "roles/bigquery.jobUser", "roles/bigtable.user", "roles/cloudkms.cryptoKeyEncrypterDecrypter", "roles/cloudsql.client", "roles/cloudsql.instanceUser", "roles/cloudtasks.enqueuer", "roles/cloudtrace.agent", "roles/datastore.user", "roles/datastore.viewer", "roles/errorreporting.writer", "roles/eventarc.eventReceiver", "roles/logging.logWriter", "roles/monitoring.metricWriter", "roles/monitoring.viewer", "roles/pubsub.publisher", "roles/pubsub.subscriber", "roles/pubsub.viewer", "roles/redis.viewer", "roles/spanner.databaseUser", "roles/storage.objectAdmin", "roles/storage.objectCreator", "roles/storage.objectUser", "roles/storage.objectViewer", "roles/workflows.invoker"],
+    "google_pubsub_topic_iam_member": ["roles/pubsub.publisher", "roles/pubsub.subscriber", "roles/pubsub.viewer"],
+    "google_pubsub_subscription_iam_member": ["roles/pubsub.subscriber", "roles/pubsub.viewer"],
+    "google_secret_manager_secret_iam_member": ["roles/secretmanager.secretAccessor", "roles/secretmanager.secretVersionAdder", "roles/secretmanager.viewer"],
+    "google_storage_bucket_iam_member": ["roles/storage.objectAdmin", "roles/storage.objectCreator", "roles/storage.objectUser", "roles/storage.objectViewer"],
+    "google_service_account_iam_member": ["roles/iam.serviceAccountUser"]
+  },
+  "not_expressible": {
+    "_comment": "Exact types (and exact IAM type + role pairs) that are never in an intent, with the owner of each (plan §2.4). Counted separately from IAC.TYPE_NOT_ALLOWED in the TI-2 expressibility gate. Bindings: the IAP service agent role (policy_tables PLATFORM_OWNED_BINDINGS), GKE Workload Identity bindings with any member (GKE-WI-INTENT: the one expressible form is the typed gke_service_account member on google_service_account_iam_member, a gate rule in shared/iac_intent.py, never this allow-list), project-level invoker / IAP accessor grants (the compute module's per-edge invokers and authorized_invoker_members; the gce-worker launch edge grants instance admin to its launcher). GKE workload objects (kubernetes_deployment / _service / _hpa / _namespace / _service_account) are app manifests (k8s/*.yaml, LLM_AUTHORED, plan §2.1) or the typed kubernetes_manifest, never raw IaC.",
+    "platform_owned": ["google_artifact_registry_repository", "google_artifact_registry_repository_iam_member", "google_firestore_database", "google_project_service"],
+    "forbidden": ["google_billing_budget", "google_cloudbuild_trigger", "google_cloudbuildv2_connection", "google_cloudbuildv2_repository", "google_iam_workload_identity_pool", "google_iam_workload_identity_pool_provider", "google_identity_platform_config", "google_identity_platform_default_supported_idp_config", "google_project_iam_audit_config", "google_service_account_key"],
+    "forbidden_type_suffixes": ["_iam_binding", "_iam_policy"],
+    "topology_owned": ["google_cloud_run_service", "google_cloud_run_service_iam_member", "google_cloud_run_v2_job", "google_cloud_run_v2_service", "google_cloud_run_v2_service_iam_member", "google_compute_instance", "google_compute_instance_group_manager", "google_compute_instance_template", "google_compute_region_instance_group_manager", "google_container_cluster", "google_container_node_pool", "google_iap_web_iam_member", "google_iap_web_type_app_engine_iam_member", "kubernetes_deployment", "kubernetes_deployment_v1", "kubernetes_horizontal_pod_autoscaler", "kubernetes_horizontal_pod_autoscaler_v2", "kubernetes_namespace", "kubernetes_namespace_v1", "kubernetes_service", "kubernetes_service_account", "kubernetes_service_account_v1", "kubernetes_service_v1"],
+    "platform_owned_bindings": [["google_project_iam_member", "roles/iap.serviceAgent"], ["google_service_account_iam_member", "roles/iam.workloadIdentityUser"]],
+    "topology_owned_bindings": [["google_project_iam_member", "roles/compute.instanceAdmin.v1"], ["google_project_iam_member", "roles/iap.httpsResourceAccessor"], ["google_project_iam_member", "roles/run.invoker"]],
+    "lane11_owned": ["google_compute_firewall", "google_compute_global_address", "google_compute_network", "google_compute_router", "google_compute_router_nat", "google_compute_subnetwork", "google_service_networking_connection", "google_vpc_access_connector"]
+  },
+  "_comment_target_ref_only": "RT TI-2 F1/F2 (TI-2b): IAM targets, data destinations, token identities and encryption keys take ONLY a reference of one of the listed shapes: [resource_attr, <type>, <attr>] of a resource this intent declares, [module_output, <catalog module>, <output>] of a module instance this intent declares, [fact, <fact>], or an `existing` user-owned address of a listed resource type. A literal is IAC.TARGET_REF_REQUIRED; a refused_blocks block is IAC.BLOCK_NOT_ALLOWED.",
+  "_comment_refused_attributes": "RT TI-2b R2 (TI-2c): exact attribute paths that are never expressible (IAC.ATTRIBUTE_NOT_ALLOWED): the write-only twins of secret attributes, which would otherwise take a literal secret. A generated secret is written to secret_data / password (random_password_only). Any attribute the slice marks write_only is refused too."
+}

@@ -1,0 +1,391 @@
+{
+ "id": "ex04-g13-live-control",
+ "summary": "Live run ex04-g13 (example 04, passed end to end): k8s manifests and the platform deploy workflow in typed targets. Valid control: must pass unchanged.",
+ "source": {
+  "kind": "live",
+  "run_label": "ex04-g13",
+  "record": "architect stage trace agent_output (typed post-consensus plan, raw model JSON)",
+  "model": "gemini-4-carbon"
+ },
+ "anonymized": "workload id ex04-g13 -> ex04-live (also in paths); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block (a live IPAM allocation) nulled. Nothing else changed.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": []
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "ex04-live",
+  "project_tier": 3,
+  "summary": "Provision a private GKE Autopilot stream processing workload in us-central1 with Workload Identity Federation, Artifact Registry, Pub/Sub pull subscription, Firestore Native database, and a Python asyncio streaming worker performing 1-minute tumbling window aggregations.",
+  "architecture_overview": "The workload runs on a private GKE Autopilot cluster in us-central1 (complying with VM External IP prohibition via private nodes and Cloud NAT outbound egress). Workload Identity Federation binds Kubernetes Service Account 'sa-stream-worker' in namespace 'stream-apps' to a dedicated GCP IAM Service Account granted roles/pubsub.subscriber and roles/datastore.user without static keys. A Python asyncio worker packaged with Cloud Native Buildpacks pulls batches of up to 50 messages concurrently from Pub/Sub subscription 'stream-gke-sub', aggregates throughput and message latency over 1-minute tumbling windows, persists metrics to the 'stream_metrics' collection in Firestore, exposes HTTP liveness/readiness probes, and scales via HorizontalPodAutoscaler (1 to 2 replicas at 80% CPU utilization).",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable GCP APIs, VPC Network, Cloud NAT, Pub/Sub, Firestore, and Artifact Registry",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf"
+    ],
+    "description": "Enable container.googleapis.com, pubsub.googleapis.com, firestore.googleapis.com, artifactregistry.googleapis.com, compute.googleapis.com, cloudbuild.googleapis.com, and iam.googleapis.com. Provision private VPC subnet with Private Google Access and Cloud Router/NAT in us-central1 (required so private GKE Autopilot nodes comply with organizational policy prohibiting VM external IPs). Provision Artifact Registry Docker repository, Firestore Native database, Pub/Sub topic, and pull subscription 'stream-gke-sub'.",
+    "acceptance_criteria": [
+     "All required APIs enabled with disable_on_destroy = false",
+     "Private VPC subnet and Cloud NAT configured in us-central1 with zero external VM IPs",
+     "Pub/Sub topic and pull subscription stream-gke-sub declared",
+     "Firestore Native database and Artifact Registry Docker repository declared"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Private GKE Autopilot Cluster and Workload Identity IAM Bindings",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Provision GKE Autopilot cluster in us-central1 with private_cluster_config (enable_private_nodes = true) to satisfy no-external-IP org policy. Create dedicated GCP Service Account with roles/pubsub.subscriber and roles/datastore.user, and bind roles/iam.workloadIdentityUser for principal serviceAccount:<PROJECT_ID>.svc.id.goog[stream-apps/sa-stream-worker].",
+    "acceptance_criteria": [
+     "Private GKE Autopilot cluster configured in us-central1 with Workload Identity enabled",
+     "GCP IAM Service Account granted roles/pubsub.subscriber and roles/datastore.user",
+     "Workload Identity binding maps stream-apps/sa-stream-worker with zero static keys"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Author Kubernetes Manifests and GitHub Actions CI/CD Pipeline",
+    "category": "INFRA",
+    "target_files": [
+     "k8s/namespace.yaml",
+     "k8s/serviceaccount.yaml",
+     "k8s/deployment.yaml",
+     "k8s/hpa.yaml",
+     ".github/workflows/deploy-ex04-live.yml"
+    ],
+    "description": "Create Kubernetes manifests for namespace 'stream-apps', ServiceAccount 'sa-stream-worker' annotated with iam.gke.io/gcp-service-account, Deployment (1 replica, cpu: 250m, memory: 512Mi, HTTP liveness/readiness probes on /healthz and /readyz, env vars for PUBSUB_SUBSCRIPTION_ID and FIRESTORE_DATABASE), and HorizontalPodAutoscaler (minReplicas: 1, maxReplicas: 2, targetCPUUtilizationPercentage: 80). Configure GitHub Actions workflow using WIF to build via Cloud Native Buildpacks (pack/gcloud builds submit --pack), push to Artifact Registry, and apply manifests to GKE.",
+    "acceptance_criteria": [
+     "Namespace stream-apps and annotated ServiceAccount sa-stream-worker defined",
+     "Deployment sets 1 replica, 250m CPU, 512Mi memory, and HTTP liveness/readiness probes",
+     "HorizontalPodAutoscaler configured for 1-2 replicas at 80% average CPU utilization",
+     "GitHub Actions workflow builds via Buildpacks and deploys to GKE with path filtering on apps/ex04-live/** and k8s/**"
+    ],
+    "depends_on": [
+     "INFRA-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement Asyncio Pub/Sub Tumbling Window Stream Worker and Health Server",
+    "category": "CODE",
+    "target_files": [
+     "apps/ex04-live/main.py",
+     "apps/ex04-live/window_aggregator.py",
+     "apps/ex04-live/requirements.txt",
+     "apps/ex04-live/Procfile"
+    ],
+    "description": "Implement a Python asyncio streaming worker under apps/ex04-live/ packaged via Cloud Native Buildpacks. Subscribe to Pub/Sub pull subscription 'stream-gke-sub' (configurable via env), pull and process streaming batches of up to 50 events concurrently using asyncio semaphore/tasks, compute throughput (events/min, events/sec) and message latency aggregates (min, max, avg, count) over 1-minute tumbling windows, and write time-series metric documents to Firestore collection 'stream_metrics'. Run an embedded async HTTP server (FastAPI/uvicorn or aiohttp) serving /healthz and /readyz probes.",
+    "acceptance_criteria": [
+     "Worker concurrently processes batches up to 50 Pub/Sub messages via asyncio",
+     "1-minute tumbling window computes throughput and latency metrics accurately",
+     "Window metrics are persisted to Firestore collection stream_metrics and messages acknowledged",
+     "HTTP /healthz and /readyz endpoints respond 200 OK and Procfile configures Buildpacks entrypoint"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Implement Unit Tests for Tumbling Window Aggregator, Worker Batching, and Health Probes",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_stream_worker.py",
+     "README.md"
+    ],
+    "description": "Create pytest asyncio unit tests verifying 1-minute tumbling window aggregation math (throughput and latency statistics), concurrent batch processing up to 50 messages with mocked Pub/Sub subscriber and Firestore AsyncClient, HTTP liveness/readiness endpoints, and K8s manifest validation. Document architecture and deployment instructions in README.md.",
+    "acceptance_criteria": [
+     "All pytest unit tests pass using mocked GCP Pub/Sub and Firestore clients",
+     "Tests cover 50-event batch concurrency, 1-minute tumbling window flush to stream_metrics, and health endpoints",
+     "README.md documents GKE Autopilot Workload Identity and stream worker design"
+    ],
+    "depends_on": [
+     "CODE-01",
+     "INFRA-03"
+    ],
+    "assigned_agent": "qa-reviewer",
+    "priority": "MEDIUM"
+   }
+  ],
+  "target_compute_services": [
+   "ex04-live"
+  ],
+  "compute_archetype": "gke-autopilot",
+  "service_topology": {
+   "services": [
+    {
+     "name": "ex04-live",
+     "kind": "gke-autopilot",
+     "purpose": "Python asyncio GKE Autopilot worker pulling batches of up to 50 events from Pub/Sub stream-gke-sub, computing 1-minute tumbling window throughput and latency metrics, writing to Firestore stream_metrics, and serving HTTP health probes.",
+     "scaling": null,
+     "vm": null
+    }
+   ],
+   "primary_service": "ex04-live",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_pubsub_topic",
+     "logical_name": "stream_events",
+     "purpose": "Upstream Pub/Sub topic feeding streaming events into subscription stream-gke-sub.",
+     "consumers": [
+      {
+       "service": "ex04-live",
+       "env_key": "PUBSUB_TOPIC_NAME",
+       "attribute": "name"
+      }
+     ]
+    },
+    {
+     "type": "google_pubsub_subscription",
+     "logical_name": "stream_gke_sub",
+     "purpose": "Pub/Sub pull subscription stream-gke-sub consumed in batches of up to 50 events by the GKE worker.",
+     "consumers": [
+      {
+       "service": "ex04-live",
+       "env_key": "PUBSUB_SUBSCRIPTION_ID",
+       "attribute": "name"
+      }
+     ]
+    },
+    {
+     "type": "google_firestore_database",
+     "logical_name": "default",
+     "purpose": "Firestore Native database storing 1-minute tumbling window metrics in the stream_metrics collection.",
+     "consumers": [
+      {
+       "service": "ex04-live",
+       "env_key": "FIRESTORE_DATABASE",
+       "attribute": "name"
+      }
+     ]
+    }
+   ],
+   "pushes": []
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "ex04-live",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "GKE Autopilot Asyncio Pub/Sub Stream Worker with Firestore Metrics",
+   "summary": "Sequenced build plan to deploy private GKE Autopilot cluster in us-central1, Workload Identity IAM, Pub/Sub pull subscription, Firestore Native DB, Buildpacks-packaged Python asyncio worker, K8s Deployment/HPA manifests, CI/CD, and tests.",
+   "created_at": null,
+   "total_steps": 7,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "container.googleapis.com",
+    "compute.googleapis.com",
+    "pubsub.googleapis.com",
+    "firestore.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-APIS",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Google Cloud Service APIs",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Enable container, compute, pubsub, firestore, artifactregistry, cloudbuild, iam, and cloudresourcemanager APIs.",
+     "acceptance_criteria": [
+      "All required GCP APIs declared with disable_on_destroy = false"
+     ],
+     "depends_on": [],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-02-DATA-REGISTRY",
+     "step_index": 2,
+     "category": "DATABASE",
+     "title": "Provision Private VPC/NAT, Firestore DB, Pub/Sub Subscription, and Artifact Registry",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf"
+     ],
+     "description": "Provision VPC with private subnet and Cloud NAT in us-central1, Artifact Registry Docker repository, Firestore Native database, and Pub/Sub topic with pull subscription stream-gke-sub.",
+     "acceptance_criteria": [
+      "Firestore Native DB and Pub/Sub pull subscription stream-gke-sub declared",
+      "Artifact Registry Docker repository and private VPC with Cloud NAT declared"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-03-IAM",
+     "step_index": 3,
+     "category": "IAM",
+     "title": "Provision Workload Service Account and Workload Identity Bindings",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create GCP IAM Service Account with roles/pubsub.subscriber and roles/datastore.user, and bind roles/iam.workloadIdentityUser for stream-apps/sa-stream-worker.",
+     "acceptance_criteria": [
+      "GCP SA granted roles/pubsub.subscriber and roles/datastore.user",
+      "Workload Identity IAM binding maps KSA sa-stream-worker in namespace stream-apps with zero static keys"
+     ],
+     "depends_on": [
+      "STEP-02-DATA-REGISTRY"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-04-APP-CODE",
+     "step_index": 4,
+     "category": "APP_CODE",
+     "title": "Implement Asyncio Stream Worker and Kubernetes Manifests",
+     "target_files": [
+      "apps/ex04-live/main.py",
+      "apps/ex04-live/window_aggregator.py",
+      "apps/ex04-live/requirements.txt",
+      "apps/ex04-live/Procfile",
+      "k8s/namespace.yaml",
+      "k8s/serviceaccount.yaml",
+      "k8s/deployment.yaml",
+      "k8s/hpa.yaml"
+     ],
+     "description": "Implement Python asyncio streaming worker subscribing to stream-gke-sub (batches up to 50 events concurrently), computing 1-minute tumbling window throughput/latency aggregates, writing to Firestore stream_metrics, and serving HTTP health probes. Define K8s Namespace, annotated ServiceAccount, Deployment (1 replica, 250m CPU, 512Mi memory), and HPA (max 2 pods at 80% CPU).",
+     "acceptance_criteria": [
+      "Asyncio worker implements 50-message batching, 1-minute tumbling windows, Firestore persistence, and HTTP probes",
+      "Procfile configured for Cloud Native Buildpacks",
+      "K8s Deployment and HPA manifests match exact CPU/memory/replica specifications"
+     ],
+     "depends_on": [
+      "STEP-03-IAM"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-05-CICD",
+     "step_index": 5,
+     "category": "CICD",
+     "title": "Configure GitHub Actions Buildpacks and GKE Deployment Pipeline",
+     "target_files": [
+      ".github/workflows/deploy-ex04-live.yml"
+     ],
+     "description": "Create GitHub Actions workflow using Workload Identity Federation to package apps/ex04-live via Cloud Native Buildpacks, push to Artifact Registry, and deploy K8s manifests to GKE Autopilot.",
+     "acceptance_criteria": [
+      "Workflow builds container image via Buildpacks without static keys and applies k8s manifests with path filtering"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-06-COMPUTE",
+     "step_index": 6,
+     "category": "COMPUTE",
+     "title": "Provision Private GKE Autopilot Cluster in us-central1",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Provision private GKE Autopilot cluster in us-central1 with private nodes enabled (no external VM IPs) and Workload Identity Federation enabled.",
+     "acceptance_criteria": [
+      "GKE Autopilot cluster configured in us-central1 with enable_private_nodes = true",
+      "Cluster outputs exposed in outputs.tf"
+     ],
+     "depends_on": [
+      "STEP-03-IAM",
+      "STEP-05-CICD"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-07-TESTS",
+     "step_index": 7,
+     "category": "TEST",
+     "title": "Implement Automated Unit Test Suite and Documentation",
+     "target_files": [
+      "tests/test_stream_worker.py",
+      "README.md"
+     ],
+     "description": "Write pytest asyncio tests for tumbling window throughput/latency aggregation, 50-message concurrent batching, Firestore writes, HTTP probes, and manifest specifications.",
+     "acceptance_criteria": [
+      "All unit tests pass with mocked Pub/Sub and Firestore clients",
+      "Architecture and runbook documented in README.md"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    }
+   ]
+  },
+  "estimated_complexity": "HIGH",
+  "requires_human_approval": true,
+  "risk_assessment": "GKE Autopilot cluster management fee (~$73/mo) exceeds Tier 2 autonomous cost ceiling ($40/mo), classifying this build as Tier 3 requiring human approval. GKE Autopilot provisions underlying Compute Engine node VMs, so private_cluster_config (enable_private_nodes = true) with Cloud NAT in us-central1 [HEALTHY] is enforced to strictly satisfy the organizational policy prohibiting VM external IPs.",
+  "requires_vpc": true,
+  "network_purpose": "WORKLOAD_SUBNET",
+  "assigned_cidr_block": null,
+  "bundle_id": "private-gke-microservices",
+  "iac_engine": "tofu"
+ }
+}

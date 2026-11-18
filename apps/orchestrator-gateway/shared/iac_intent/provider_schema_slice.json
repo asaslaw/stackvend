@@ -1,0 +1,4202 @@
+{
+ "engine": {
+  "name": "opentofu",
+  "version": "1.9.0"
+ },
+ "providers": {
+  "hashicorp/google": "6.35.0",
+  "hashicorp/google-beta": "6.35.0",
+  "hashicorp/kubernetes": "2.36.0",
+  "hashicorp/random": "3.7.1"
+ },
+ "resource_schemas": {
+  "google_cloud_scheduler_job": {
+   "block": {
+    "attributes": {
+     "attempt_deadline": {
+      "computed": false,
+      "description": "The deadline for job attempts. If the request handler does not respond by this deadline then the request is cancelled and the attempt is marked as a DEADLINE_E\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "description": {
+      "computed": false,
+      "description": "A human-readable description for the job. This string must not contain more than 500 characters.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "The name of the job.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "paused": {
+      "computed": true,
+      "description": "Sets the job to a paused state. Jobs default to being enabled when this property is not set.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "region": {
+      "computed": true,
+      "description": "Region where the scheduler job resides. If it is not provided, Terraform will use the provider default.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "schedule": {
+      "computed": false,
+      "description": "Describes the schedule on which the job will be executed.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "state": {
+      "computed": true,
+      "description": "State of the job.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "time_zone": {
+      "computed": false,
+      "description": "Specifies the time zone to be used in interpreting schedule. The value of this field must be a time zone name from the tz database.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "app_engine_http_target": {
+      "block": {
+       "attributes": {
+        "body": {
+         "computed": false,
+         "description": "HTTP request body. A request body is allowed only if the HTTP method is POST or PUT. It will result in invalid argument error to set a body on a job with an in\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "headers": {
+         "computed": false,
+         "description": "HTTP request headers. This map contains the header field names and values. Headers can be set when the job is created.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "map",
+          "string"
+         ],
+         "write_only": false
+        },
+        "http_method": {
+         "computed": false,
+         "description": "Which HTTP method to use for the request.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "relative_uri": {
+         "computed": false,
+         "description": "The relative URI. The relative URL must begin with \"/\" and must be a valid HTTP relative URL. It can contain a path, query string arguments, and \\# fragments. \u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {
+        "app_engine_routing": {
+         "block": {
+          "attributes": {
+           "instance": {
+            "computed": false,
+            "description": "App instance. By default, the job is sent to an instance which is available when the job is attempted.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "service": {
+            "computed": false,
+            "description": "App service. By default, the job is sent to the service which is the default service when the job is attempted.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "version": {
+            "computed": false,
+            "description": "App version. By default, the job is sent to the version which is the default version when the job is attempted.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "http_target": {
+      "block": {
+       "attributes": {
+        "body": {
+         "computed": false,
+         "description": "HTTP request body. A request body is allowed only if the HTTP method is POST, PUT, or PATCH. It is an error to set body on a job with an incompatible HttpMetho\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "headers": {
+         "computed": false,
+         "description": "This map contains the header field names and values. Repeated headers are not supported, but a header value can contain commas.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "map",
+          "string"
+         ],
+         "write_only": false
+        },
+        "http_method": {
+         "computed": false,
+         "description": "Which HTTP method to use for the request.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "uri": {
+         "computed": false,
+         "description": "The full URI path that the request will be sent to.",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {
+        "oauth_token": {
+         "block": {
+          "attributes": {
+           "scope": {
+            "computed": false,
+            "description": "OAuth scope to be used for generating OAuth access token. If not specified, \"https://www.googleapis.com/auth/cloud-platform\" will be used.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "service_account_email": {
+            "computed": false,
+            "description": "Service account email to be used for generating OAuth token. The service account must be within the same project as the job.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "oidc_token": {
+         "block": {
+          "attributes": {
+           "audience": {
+            "computed": false,
+            "description": "Audience to be used when generating OIDC token. If not specified, the URI specified in target will be used.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "service_account_email": {
+            "computed": false,
+            "description": "Service account email to be used for generating OAuth token. The service account must be within the same project as the job.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "pubsub_target": {
+      "block": {
+       "attributes": {
+        "attributes": {
+         "computed": false,
+         "description": "Attributes for PubsubMessage. Pubsub message must contain either non-empty data, or at least one attribute.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "map",
+          "string"
+         ],
+         "write_only": false
+        },
+        "data": {
+         "computed": false,
+         "description": "The message payload for PubsubMessage. Pubsub message must contain either non-empty data, or at least one attribute. A base64-encoded string.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "topic_name": {
+         "computed": false,
+         "description": "The full resource name for the Cloud Pub/Sub topic to which messages will be published when a job is delivered. ~>**NOTE:** The topic name must be in the same \u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "retry_config": {
+      "block": {
+       "attributes": {
+        "max_backoff_duration": {
+         "computed": true,
+         "description": "The maximum amount of time to wait before retrying a job after it fails. A duration in seconds with up to nine fractional digits, terminated by 's'.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "max_doublings": {
+         "computed": true,
+         "description": "The time between retries will double maxDoublings times. A job's retry interval starts at minBackoffDuration, then doubles maxDoublings times, then increases l\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        },
+        "max_retry_duration": {
+         "computed": true,
+         "description": "The time limit for retrying a failed job, measured from time when an execution was first attempted. If specified with retryCount, the job will be retried until\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "min_backoff_duration": {
+         "computed": true,
+         "description": "The minimum amount of time to wait before retrying a job after it fails. A duration in seconds with up to nine fractional digits, terminated by 's'.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "retry_count": {
+         "computed": true,
+         "description": "The number of attempts that the system will make to run a job using the exponential backoff procedure described by maxDoublings. Values greater than 5 and nega\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_project_iam_member": {
+   "block": {
+    "attributes": {
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_pubsub_subscription": {
+   "block": {
+    "attributes": {
+     "ack_deadline_seconds": {
+      "computed": true,
+      "description": "This value is the maximum time after a subscriber receives a message before the subscriber should acknowledge the message. After message delivery but before th\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "effective_labels": {
+      "computed": true,
+      "description": "All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "enable_exactly_once_delivery": {
+      "computed": false,
+      "description": "If 'true', Pub/Sub provides the following guarantees for the delivery of a message with a given value of messageId on this Subscriptions': - The message sent t\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "enable_message_ordering": {
+      "computed": false,
+      "description": "If 'true', messages published with the same orderingKey in PubsubMessage will be delivered to the subscribers in the order in which they are received by the Pu\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "filter": {
+      "computed": false,
+      "description": "The subscription only delivers the messages that match the filter. Pub/Sub automatically acknowledges the messages that don't match the filter. You can filter \u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "labels": {
+      "computed": false,
+      "description": "A set of key/value label pairs to assign to this Subscription. **Note**: This field is non-authoritative, and will only manage the labels present in your confi\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "message_retention_duration": {
+      "computed": false,
+      "description": "How long to retain unacknowledged messages in the subscription's backlog, from the moment a message is published. If retain_acked_messages is true, then this a\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "Name of the subscription.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "retain_acked_messages": {
+      "computed": false,
+      "description": "Indicates whether to retain acknowledged messages. If 'true', then messages are not expunged from the subscription's backlog, even if they are acknowledged, un\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "terraform_labels": {
+      "computed": true,
+      "description": "The combination of labels configured directly on the resource and default labels configured on the provider.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "topic": {
+      "computed": false,
+      "description": "A reference to a Topic resource, of the form projects/{project}/topics/{{name}} (as in the id property of a google_pubsub_topic), or just a topic name if the t\u2026",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "bigquery_config": {
+      "block": {
+       "attributes": {
+        "drop_unknown_fields": {
+         "computed": false,
+         "description": "When true and use_topic_schema or use_table_schema is true, any fields that are a part of the topic schema or message schema that are not part of the BigQuery \u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "service_account_email": {
+         "computed": false,
+         "description": "The service account to use to write to BigQuery. If not specified, the Pub/Sub [service agent](https://cloud.google.com/iam/docs/service-agents), service-{proj\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "table": {
+         "computed": false,
+         "description": "The name of the table to which to write data, of the form {projectId}.{datasetId}.{tableId}",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "use_table_schema": {
+         "computed": false,
+         "description": "When true, use the BigQuery table's schema as the columns to write to in BigQuery. Messages must be published in JSON format. Only one of use_topic_schema and \u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "use_topic_schema": {
+         "computed": false,
+         "description": "When true, use the topic's schema as the columns to write to in BigQuery, if it exists. Only one of use_topic_schema and use_table_schema can be set.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "write_metadata": {
+         "computed": false,
+         "description": "When true, write the subscription name, messageId, publishTime, attributes, and orderingKey to additional columns in the table. The subscription name, messageI\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "cloud_storage_config": {
+      "block": {
+       "attributes": {
+        "bucket": {
+         "computed": false,
+         "description": "User-provided name for the Cloud Storage bucket. The bucket must be created by the user. The bucket name must be without any prefix like \"gs://\".",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "filename_datetime_format": {
+         "computed": false,
+         "description": "User-provided format string specifying how to represent datetimes in Cloud Storage filenames.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "filename_prefix": {
+         "computed": false,
+         "description": "User-provided prefix for Cloud Storage filename.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "filename_suffix": {
+         "computed": false,
+         "description": "User-provided suffix for Cloud Storage filename. Must not end in \"/\".",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "max_bytes": {
+         "computed": false,
+         "description": "The maximum bytes that can be written to a Cloud Storage file before a new file is created. Min 1 KB, max 10 GiB. The maxBytes limit may be exceeded in cases w\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        },
+        "max_duration": {
+         "computed": false,
+         "description": "The maximum duration that can elapse before a new Cloud Storage file is created. Min 1 minute, max 10 minutes, default 5 minutes. May not exceed the subscripti\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "max_messages": {
+         "computed": false,
+         "description": "The maximum messages that can be written to a Cloud Storage file before a new file is created. Min 1000 messages.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        },
+        "service_account_email": {
+         "computed": false,
+         "description": "The service account to use to write to Cloud Storage. If not specified, the Pub/Sub [service agent](https://cloud.google.com/iam/docs/service-agents), service-\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "state": {
+         "computed": true,
+         "description": "An output-only field that indicates whether or not the subscription can receive messages.",
+         "optional": false,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {
+        "avro_config": {
+         "block": {
+          "attributes": {
+           "use_topic_schema": {
+            "computed": false,
+            "description": "When true, the output Cloud Storage file will be serialized using the topic schema, if it exists.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           },
+           "write_metadata": {
+            "computed": false,
+            "description": "When true, write the subscription name, messageId, publishTime, attributes, and orderingKey as additional fields in the output.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "dead_letter_policy": {
+      "block": {
+       "attributes": {
+        "dead_letter_topic": {
+         "computed": false,
+         "description": "The name of the topic to which dead letter messages should be published. Format is 'projects/{project}/topics/{topic}'. The Cloud Pub/Sub service account assoc\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "max_delivery_attempts": {
+         "computed": false,
+         "description": "The maximum number of delivery attempts for any message. The value must be between 5 and 100. The number of delivery attempts is defined as 1 + (the sum of num\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "expiration_policy": {
+      "block": {
+       "attributes": {
+        "ttl": {
+         "computed": false,
+         "description": "Specifies the \"time-to-live\" duration for an associated resource. The resource expires if it is not active for a period of ttl. If ttl is set to \"\", the associ\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "push_config": {
+      "block": {
+       "attributes": {
+        "attributes": {
+         "computed": false,
+         "description": "Endpoint configuration attributes. Every endpoint has a set of API supported attributes that can be used to control different aspects of the message delivery. \u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "map",
+          "string"
+         ],
+         "write_only": false
+        },
+        "push_endpoint": {
+         "computed": false,
+         "description": "A URL locating the endpoint to which messages should be pushed. For example, a Webhook endpoint might use \"https://example.com/push\".",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {
+        "no_wrapper": {
+         "block": {
+          "attributes": {
+           "write_metadata": {
+            "computed": false,
+            "description": "When true, writes the Pub/Sub message metadata to 'x-goog-pubsub-<KEY>:<VAL>' headers of the HTTP request. Writes the Pub/Sub message attributes to '<KEY>:<VAL\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "oidc_token": {
+         "block": {
+          "attributes": {
+           "audience": {
+            "computed": false,
+            "description": "Audience to be used when generating OIDC token. The audience claim identifies the recipients that the JWT is intended for. The audience value is a single case-\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "service_account_email": {
+            "computed": false,
+            "description": "Service account email to be used for generating the OIDC token. The caller (for subscriptions.create, subscriptions.patch, and subscriptions.modifyPushConfig R\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "retry_policy": {
+      "block": {
+       "attributes": {
+        "maximum_backoff": {
+         "computed": true,
+         "description": "The maximum delay between consecutive deliveries of a given message. Value should be between 0 and 600 seconds. Defaults to 600 seconds. A duration in seconds \u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "minimum_backoff": {
+         "computed": true,
+         "description": "The minimum delay between consecutive deliveries of a given message. Value should be between 0 and 600 seconds. Defaults to 10 seconds. A duration in seconds w\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_pubsub_subscription_iam_member": {
+   "block": {
+    "attributes": {
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "subscription": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_pubsub_topic": {
+   "block": {
+    "attributes": {
+     "effective_labels": {
+      "computed": true,
+      "description": "All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "kms_key_name": {
+      "computed": false,
+      "description": "The resource name of the Cloud KMS CryptoKey to be used to protect access to messages published on this topic. Your project's PubSub service account ('service-\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "labels": {
+      "computed": false,
+      "description": "A set of key/value label pairs to assign to this Topic. **Note**: This field is non-authoritative, and will only manage the labels present in your configuratio\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "message_retention_duration": {
+      "computed": false,
+      "description": "Indicates the minimum duration to retain a message after it is published to the topic. If this field is set, messages published to the topic in the last messag\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "Name of the topic.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "terraform_labels": {
+      "computed": true,
+      "description": "The combination of labels configured directly on the resource and default labels configured on the provider.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "ingestion_data_source_settings": {
+      "block": {
+       "attributes": {},
+       "block_types": {
+        "aws_kinesis": {
+         "block": {
+          "attributes": {
+           "aws_role_arn": {
+            "computed": false,
+            "description": "AWS role ARN to be used for Federated Identity authentication with Kinesis. Check the Pub/Sub docs for how to set up this role and the required permissions tha\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "consumer_arn": {
+            "computed": false,
+            "description": "The Kinesis consumer ARN to used for ingestion in Enhanced Fan-Out mode. The consumer must be already created and ready to be used.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "gcp_service_account": {
+            "computed": false,
+            "description": "The GCP service account to be used for Federated Identity authentication with Kinesis (via a 'AssumeRoleWithWebIdentity' call for the provided role). The 'awsR\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "stream_arn": {
+            "computed": false,
+            "description": "The Kinesis stream ARN to ingest data from.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "aws_msk": {
+         "block": {
+          "attributes": {
+           "aws_role_arn": {
+            "computed": false,
+            "description": "AWS role ARN to be used for Federated Identity authentication with MSK. Check the Pub/Sub docs for how to set up this role and the required permissions that ne\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "cluster_arn": {
+            "computed": false,
+            "description": "ARN that uniquely identifies the MSK cluster.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "gcp_service_account": {
+            "computed": false,
+            "description": "The GCP service account to be used for Federated Identity authentication with MSK (via a 'AssumeRoleWithWebIdentity' call for the provided role). The 'awsRoleA\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "topic": {
+            "computed": false,
+            "description": "The name of the MSK topic that Pub/Sub will import from.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "azure_event_hubs": {
+         "block": {
+          "attributes": {
+           "client_id": {
+            "computed": false,
+            "description": "The Azure event hub client ID to use for ingestion.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "event_hub": {
+            "computed": false,
+            "description": "The Azure event hub to ingest data from.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "gcp_service_account": {
+            "computed": false,
+            "description": "The GCP service account to be used for Federated Identity authentication with Azure (via a 'AssumeRoleWithWebIdentity' call for the provided role).",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "namespace": {
+            "computed": false,
+            "description": "The Azure event hub namespace to ingest data from.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "resource_group": {
+            "computed": false,
+            "description": "The name of the resource group within an Azure subscription.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "subscription_id": {
+            "computed": false,
+            "description": "The Azure event hub subscription ID to use for ingestion.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "tenant_id": {
+            "computed": false,
+            "description": "The Azure event hub tenant ID to use for ingestion.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "cloud_storage": {
+         "block": {
+          "attributes": {
+           "bucket": {
+            "computed": false,
+            "description": "Cloud Storage bucket. The bucket name must be without any prefix like \"gs://\". See the bucket naming requirements: https://cloud.google.com/storage/docs/bucket\u2026",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "match_glob": {
+            "computed": false,
+            "description": "Glob pattern used to match objects that will be ingested. If unset, all objects will be ingested. See the supported patterns: https://cloud.google.com/storage/\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "minimum_object_create_time": {
+            "computed": false,
+            "description": "The timestamp set in RFC3339 text format. If set, only objects with a larger or equal timestamp will be ingested. Unset by default, meaning all objects will be\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {
+           "avro_format": {
+            "block": {
+             "attributes": {},
+             "block_types": {}
+            },
+            "max_items": 1,
+            "min_items": 0,
+            "nesting_mode": "list"
+           },
+           "pubsub_avro_format": {
+            "block": {
+             "attributes": {},
+             "block_types": {}
+            },
+            "max_items": 1,
+            "min_items": 0,
+            "nesting_mode": "list"
+           },
+           "text_format": {
+            "block": {
+             "attributes": {
+              "delimiter": {
+               "computed": false,
+               "description": "The delimiter to use when using the 'text' format. Each line of text as specified by the delimiter will be set to the 'data' field of a Pub/Sub message. When u\u2026",
+               "optional": true,
+               "required": false,
+               "sensitive": false,
+               "type": "string",
+               "write_only": false
+              }
+             },
+             "block_types": {}
+            },
+            "max_items": 1,
+            "min_items": 0,
+            "nesting_mode": "list"
+           }
+          }
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "confluent_cloud": {
+         "block": {
+          "attributes": {
+           "bootstrap_server": {
+            "computed": false,
+            "description": "The Confluent Cloud bootstrap server. The format is url:port.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "cluster_id": {
+            "computed": false,
+            "description": "The Confluent Cloud cluster ID.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "gcp_service_account": {
+            "computed": false,
+            "description": "The GCP service account to be used for Federated Identity authentication with Confluent Cloud.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "identity_pool_id": {
+            "computed": false,
+            "description": "Identity pool ID to be used for Federated Identity authentication with Confluent Cloud.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "topic": {
+            "computed": false,
+            "description": "Name of the Confluent Cloud topic that Pub/Sub will import from.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "platform_logs_settings": {
+         "block": {
+          "attributes": {
+           "severity": {
+            "computed": false,
+            "description": "The minimum severity level of Platform Logs that will be written. If unspecified, no Platform Logs will be written. Default value: \"SEVERITY_UNSPECIFIED\" Possi\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "message_storage_policy": {
+      "block": {
+       "attributes": {
+        "allowed_persistence_regions": {
+         "computed": false,
+         "description": "A list of IDs of GCP regions where messages that are published to the topic may be persisted in storage. Messages published by publishers running in non-allowe\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": [
+          "set",
+          "string"
+         ],
+         "write_only": false
+        },
+        "enforce_in_transit": {
+         "computed": false,
+         "description": "If true, 'allowedPersistenceRegions' is also used to enforce in-transit guarantees for messages. That is, Pub/Sub will fail topics.publish operations on this t\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "schema_settings": {
+      "block": {
+       "attributes": {
+        "encoding": {
+         "computed": false,
+         "description": "The encoding of messages validated against schema. Default value: \"ENCODING_UNSPECIFIED\" Possible values: [\"ENCODING_UNSPECIFIED\", \"JSON\", \"BINARY\"]",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "schema": {
+         "computed": false,
+         "description": "The name of the schema that messages published should be validated against. Format is projects/{project}/schemas/{schema}. The value of this field will be _del\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_pubsub_topic_iam_member": {
+   "block": {
+    "attributes": {
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "topic": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_secret_manager_secret": {
+   "block": {
+    "attributes": {
+     "annotations": {
+      "computed": false,
+      "description": "Custom metadata about the secret. Annotations are distinct from various forms of labels. Annotations exist to allow client tools to store their own state infor\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "create_time": {
+      "computed": true,
+      "description": "The time at which the Secret was created.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "effective_annotations": {
+      "computed": true,
+      "description": "All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "effective_labels": {
+      "computed": true,
+      "description": "All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "expire_time": {
+      "computed": true,
+      "description": "Timestamp in UTC when the Secret is scheduled to expire. This is always provided on output, regardless of what was sent on input. A timestamp in RFC3339 UTC \"Z\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "labels": {
+      "computed": false,
+      "description": "The labels assigned to this Secret. Label keys must be between 1 and 63 characters long, have a UTF-8 encoding of maximum 128 bytes, and must conform to the fo\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "name": {
+      "computed": true,
+      "description": "The resource name of the Secret. Format: 'projects/{{project}}/secrets/{{secret_id}}'",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "secret_id": {
+      "computed": false,
+      "description": "This must be unique within the project.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "terraform_labels": {
+      "computed": true,
+      "description": "The combination of labels configured directly on the resource and default labels configured on the provider.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "ttl": {
+      "computed": false,
+      "description": "The TTL for the Secret. A duration in seconds with up to nine fractional digits, terminated by 's'. Example: \"3.5s\". Only one of 'ttl' or 'expire_time' can be \u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "version_aliases": {
+      "computed": false,
+      "description": "Mapping from version alias to version name. A version alias is a string with a maximum length of 63 characters and can contain uppercase and lowercase letters,\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "version_destroy_ttl": {
+      "computed": false,
+      "description": "Secret Version TTL after destruction request. This is a part of the delayed delete feature on Secret Version. For secret with versionDestroyTtl>0, version dest\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "replication": {
+      "block": {
+       "attributes": {},
+       "block_types": {
+        "auto": {
+         "block": {
+          "attributes": {},
+          "block_types": {
+           "customer_managed_encryption": {
+            "block": {
+             "attributes": {
+              "kms_key_name": {
+               "computed": false,
+               "description": "The resource name of the Cloud KMS CryptoKey used to encrypt secret payloads.",
+               "optional": false,
+               "required": true,
+               "sensitive": false,
+               "type": "string",
+               "write_only": false
+              }
+             },
+             "block_types": {}
+            },
+            "max_items": 1,
+            "min_items": 0,
+            "nesting_mode": "list"
+           }
+          }
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        },
+        "user_managed": {
+         "block": {
+          "attributes": {},
+          "block_types": {
+           "replicas": {
+            "block": {
+             "attributes": {
+              "location": {
+               "computed": false,
+               "description": "The canonical IDs of the location to replicate data. For example: \"us-east1\".",
+               "optional": false,
+               "required": true,
+               "sensitive": false,
+               "type": "string",
+               "write_only": false
+              }
+             },
+             "block_types": {
+              "customer_managed_encryption": {
+               "block": {
+                "attributes": {
+                 "kms_key_name": {
+                  "computed": false,
+                  "description": "Describes the Cloud KMS encryption key that will be used to protect destination secret.",
+                  "optional": false,
+                  "required": true,
+                  "sensitive": false,
+                  "type": "string",
+                  "write_only": false
+                 }
+                },
+                "block_types": {}
+               },
+               "max_items": 1,
+               "min_items": 0,
+               "nesting_mode": "list"
+              }
+             }
+            },
+            "max_items": 0,
+            "min_items": 1,
+            "nesting_mode": "list"
+           }
+          }
+         },
+         "max_items": 1,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 1,
+      "nesting_mode": "list"
+     },
+     "rotation": {
+      "block": {
+       "attributes": {
+        "next_rotation_time": {
+         "computed": false,
+         "description": "Timestamp in UTC at which the Secret is scheduled to rotate. A timestamp in RFC3339 UTC \"Zulu\" format, with nanosecond resolution and up to nine fractional dig\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "rotation_period": {
+         "computed": false,
+         "description": "The Duration between rotation notifications. Must be in seconds and at least 3600s (1h) and at most 3153600000s (100 years). If rotationPeriod is set, 'next_ro\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     },
+     "topics": {
+      "block": {
+       "attributes": {
+        "name": {
+         "computed": false,
+         "description": "The resource name of the Pub/Sub topic that will be published to, in the following format: projects/*/topics/*. For publication to succeed, the Secret Manager \u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_secret_manager_secret_iam_member": {
+   "block": {
+    "attributes": {
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "secret_id": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_secret_manager_secret_version": {
+   "block": {
+    "attributes": {
+     "create_time": {
+      "computed": true,
+      "description": "The time at which the Secret was created.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "deletion_policy": {
+      "computed": false,
+      "description": "The deletion policy for the secret version. Setting 'ABANDON' allows the resource to be abandoned rather than deleted. Setting 'DISABLE' allows the resource to\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "destroy_time": {
+      "computed": true,
+      "description": "The time at which the Secret was destroyed. Only present if state is DESTROYED.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "enabled": {
+      "computed": false,
+      "description": "The current state of the SecretVersion.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "is_secret_data_base64": {
+      "computed": false,
+      "description": "If set to 'true', the secret data is expected to be base64-encoded string and would be sent as is.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "name": {
+      "computed": true,
+      "description": "The resource name of the SecretVersion. Format: 'projects/{{project}}/secrets/{{secret_id}}/versions/{{version}}'",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "secret": {
+      "computed": false,
+      "description": "Secret Manager secret resource",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "secret_data": {
+      "computed": false,
+      "description": "The secret data. Must be no larger than 64KiB.",
+      "optional": true,
+      "required": false,
+      "sensitive": true,
+      "type": "string",
+      "write_only": false
+     },
+     "secret_data_wo": {
+      "computed": false,
+      "description": "The secret data. Must be no larger than 64KiB. For more info see [updating write-only attributes](/docs/providers/google/guides/using_write_only_attributes.htm\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "secret_data_wo_version": {
+      "computed": false,
+      "description": "Triggers update of secret data write-only. For more info see [updating write-only attributes](/docs/providers/google/guides/using_write_only_attributes.html#up\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "version": {
+      "computed": true,
+      "description": "The version of the Secret.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_service_account": {
+   "block": {
+    "attributes": {
+     "account_id": {
+      "computed": false,
+      "description": "The account id that is used to generate the service account email address and a stable unique id. It is unique within a project, must be 6-30 characters long, \u2026",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "create_ignore_already_exists": {
+      "computed": false,
+      "description": "If set to true, skip service account creation if a service account with the same email already exists.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "description": {
+      "computed": false,
+      "description": "A text description of the service account. Must be less than or equal to 256 UTF-8 bytes.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "disabled": {
+      "computed": false,
+      "description": "Whether the service account is disabled. Defaults to false",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "display_name": {
+      "computed": false,
+      "description": "The display name for the service account. Can be updated without creating a new resource.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "email": {
+      "computed": true,
+      "description": "The e-mail address of the service account. This value should be referenced from any google_iam_policy data sources that would grant the service account privile\u2026",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": true,
+      "description": "The Identity of the service account in the form 'serviceAccount:{email}'. This value is often used to refer to the service account in order to grant IAM permis\u2026",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": true,
+      "description": "The fully-qualified name of the service account.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "The ID of the project that the service account will be created in. Defaults to the provider project configuration.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "unique_id": {
+      "computed": true,
+      "description": "The unique id of the service account.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_service_account_iam_member": {
+   "block": {
+    "attributes": {
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "service_account_id": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_sql_database": {
+   "block": {
+    "attributes": {
+     "charset": {
+      "computed": true,
+      "description": "The charset value. See MySQL's [Supported Character Sets and Collations](https://dev.mysql.com/doc/refman/5.7/en/charset-charsets.html) and Postgres' [Characte\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "collation": {
+      "computed": true,
+      "description": "The collation value. See MySQL's [Supported Character Sets and Collations](https://dev.mysql.com/doc/refman/5.7/en/charset-charsets.html) and Postgres' [Collat\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "deletion_policy": {
+      "computed": false,
+      "description": "The deletion policy for the database. Setting ABANDON allows the resource to be abandoned rather than deleted. This is useful for Postgres, where databases can\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "instance": {
+      "computed": false,
+      "description": "The name of the Cloud SQL instance. This does not include the project ID.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "The name of the database in the Cloud SQL instance. This does not include the project ID or instance name.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "self_link": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_sql_user": {
+   "block": {
+    "attributes": {
+     "deletion_policy": {
+      "computed": false,
+      "description": "The deletion policy for the user. Setting ABANDON allows the resource to be abandoned rather than deleted. This is useful for Postgres, where users cannot be d\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "host": {
+      "computed": true,
+      "description": "The host the user can connect from. This is only supported for MySQL instances. Don't set this field for PostgreSQL instances. Can be an IP address. Changing t\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "instance": {
+      "computed": false,
+      "description": "The name of the Cloud SQL instance. Changing this forces a new resource to be created.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "The name of the user. Changing this forces a new resource to be created.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "password": {
+      "computed": false,
+      "description": "The password for the user. Can be updated. For Postgres instances this is a Required field, unless type is set to either CLOUD_IAM_USER or CLOUD_IAM_SERVICE_AC\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": true,
+      "type": "string",
+      "write_only": false
+     },
+     "password_wo": {
+      "computed": false,
+      "description": "The password for the user. Can be updated. For Postgres instances this is a Required field, unless type is set to either CLOUD_IAM_USER or CLOUD_IAM_SERVICE_AC\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "password_wo_version": {
+      "computed": false,
+      "description": "The version of the password_wo.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "sql_server_user_details": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "list",
+       [
+        "object",
+        {
+         "disabled": "bool",
+         "server_roles": [
+          "list",
+          "string"
+         ]
+        }
+       ]
+      ],
+      "write_only": false
+     },
+     "type": {
+      "computed": false,
+      "description": "The user type. It determines the method to authenticate the user during login. The default is the database's built-in user type.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "password_policy": {
+      "block": {
+       "attributes": {
+        "allowed_failed_attempts": {
+         "computed": false,
+         "description": "Number of failed attempts allowed before the user get locked.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        },
+        "enable_failed_attempts_check": {
+         "computed": false,
+         "description": "If true, the check that will lock user after too many failed login attempts will be enabled.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "enable_password_verification": {
+         "computed": false,
+         "description": "If true, the user must specify the current password before changing the password. This flag is supported only for MySQL.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "password_expiration_duration": {
+         "computed": false,
+         "description": "Password expiration duration with one week grace period.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "status": {
+         "computed": true,
+         "description": "",
+         "optional": false,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "list",
+          [
+           "object",
+           {
+            "locked": "bool",
+            "password_expiration_time": "string"
+           }
+          ]
+         ],
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 1
+  },
+  "google_storage_bucket": {
+   "block": {
+    "attributes": {
+     "default_event_based_hold": {
+      "computed": false,
+      "description": "Whether or not to automatically apply an eventBasedHold to new objects added to the bucket.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "effective_labels": {
+      "computed": true,
+      "description": "All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "enable_object_retention": {
+      "computed": false,
+      "description": "Enables each object in the bucket to have its own retention policy, which prevents deletion until stored for a specific length of time.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "force_destroy": {
+      "computed": false,
+      "description": "When deleting a bucket, this boolean option will delete all contained objects, or anywhereCaches (if any). If you try to delete a bucket that contains objects \u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "labels": {
+      "computed": false,
+      "description": "A set of key/value label pairs to assign to the bucket.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "location": {
+      "computed": false,
+      "description": "The Google Cloud Storage location or region.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "name": {
+      "computed": false,
+      "description": "The name of the bucket.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project": {
+      "computed": true,
+      "description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "project_number": {
+      "computed": true,
+      "description": "The project number of the project in which the resource belongs.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "public_access_prevention": {
+      "computed": true,
+      "description": "Prevents public access to a bucket.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "requester_pays": {
+      "computed": false,
+      "description": "Enables Requester Pays on a storage bucket.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "rpo": {
+      "computed": true,
+      "description": "Specifies the RPO setting of bucket. If set 'ASYNC_TURBO', The Turbo Replication will be enabled for the dual-region bucket. Value 'DEFAULT' will set RPO setti\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "self_link": {
+      "computed": true,
+      "description": "The URI of the created resource.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "storage_class": {
+      "computed": false,
+      "description": "The Storage Class of the new bucket. Supported values include: STANDARD, MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, ARCHIVE.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "terraform_labels": {
+      "computed": true,
+      "description": "The combination of labels configured directly on the resource and default labels configured on the provider.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "time_created": {
+      "computed": true,
+      "description": "The creation time of the bucket in RFC 3339 format.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "uniform_bucket_level_access": {
+      "computed": true,
+      "description": "Enables uniform bucket-level access on a bucket.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "updated": {
+      "computed": true,
+      "description": "The time at which the bucket's metadata or IAM policy was last updated, in RFC 3339 format.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "url": {
+      "computed": true,
+      "description": "The base URL of the bucket, in the format gs://<bucket-name>.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "autoclass": {
+      "block": {
+       "attributes": {
+        "enabled": {
+         "computed": false,
+         "description": "While set to true, autoclass automatically transitions objects in your bucket to appropriate storage classes based on each object's access pattern.",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "terminal_storage_class": {
+         "computed": true,
+         "description": "The storage class that objects in the bucket eventually transition to if they are not read for a certain length of time. Supported values include: NEARLINE, AR\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "cors": {
+      "block": {
+       "attributes": {
+        "max_age_seconds": {
+         "computed": false,
+         "description": "The value, in seconds, to return in the Access-Control-Max-Age header used in preflight responses.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        },
+        "method": {
+         "computed": false,
+         "description": "The list of HTTP methods on which to include CORS response headers, (GET, OPTIONS, POST, etc) Note: \"*\" is permitted in the list of methods, and means \"any met\u2026",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "list",
+          "string"
+         ],
+         "write_only": false
+        },
+        "origin": {
+         "computed": false,
+         "description": "The list of Origins eligible to receive CORS response headers. Note: \"*\" is permitted in the list of origins, and means \"any Origin\".",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "list",
+          "string"
+         ],
+         "write_only": false
+        },
+        "response_header": {
+         "computed": false,
+         "description": "The list of HTTP headers other than the simple response headers to give permission for the user-agent to share across domains.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "list",
+          "string"
+         ],
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "custom_placement_config": {
+      "block": {
+       "attributes": {
+        "data_locations": {
+         "computed": false,
+         "description": "The list of individual regions that comprise a dual-region bucket. See the docs for a list of acceptable regions. Note: If any of the data_locations changes, i\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": [
+          "set",
+          "string"
+         ],
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "encryption": {
+      "block": {
+       "attributes": {
+        "default_kms_key_name": {
+         "computed": false,
+         "description": "A Cloud KMS key that will be used to encrypt objects inserted into this bucket, if no encryption method is specified. You must pay attention to whether the cry\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "hierarchical_namespace": {
+      "block": {
+       "attributes": {
+        "enabled": {
+         "computed": false,
+         "description": "Set this field true to organize bucket with logical file system structure.",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "lifecycle_rule": {
+      "block": {
+       "attributes": {},
+       "block_types": {
+        "action": {
+         "block": {
+          "attributes": {
+           "storage_class": {
+            "computed": false,
+            "description": "The target Storage Class of objects affected by this Lifecycle Rule. Supported values include: MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, ARCHIVE.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "type": {
+            "computed": false,
+            "description": "The type of the action of this Lifecycle Rule. Supported values include: Delete, SetStorageClass and AbortIncompleteMultipartUpload.",
+            "optional": false,
+            "required": true,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 1,
+         "nesting_mode": "set"
+        },
+        "condition": {
+         "block": {
+          "attributes": {
+           "age": {
+            "computed": false,
+            "description": "Minimum age of an object in days to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "number",
+            "write_only": false
+           },
+           "created_before": {
+            "computed": false,
+            "description": "Creation date of an object in RFC 3339 (e.g. 2017-06-13) to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "custom_time_before": {
+            "computed": false,
+            "description": "Creation date of an object in RFC 3339 (e.g. 2017-06-13) to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "days_since_custom_time": {
+            "computed": false,
+            "description": "Number of days elapsed since the user-specified timestamp set on an object.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "number",
+            "write_only": false
+           },
+           "days_since_noncurrent_time": {
+            "computed": false,
+            "description": "Number of days elapsed since the noncurrent timestamp of an object. This condition is relevant only for versioned objects.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "number",
+            "write_only": false
+           },
+           "matches_prefix": {
+            "computed": false,
+            "description": "One or more matching name prefixes to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": [
+             "list",
+             "string"
+            ],
+            "write_only": false
+           },
+           "matches_storage_class": {
+            "computed": false,
+            "description": "Storage Class of objects to satisfy this condition. Supported values include: MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, ARCHIVE, STANDARD, DURABLE_REDUCED_\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": [
+             "list",
+             "string"
+            ],
+            "write_only": false
+           },
+           "matches_suffix": {
+            "computed": false,
+            "description": "One or more matching name suffixes to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": [
+             "list",
+             "string"
+            ],
+            "write_only": false
+           },
+           "noncurrent_time_before": {
+            "computed": false,
+            "description": "Creation date of an object in RFC 3339 (e.g. 2017-06-13) to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "num_newer_versions": {
+            "computed": false,
+            "description": "Relevant only for versioned objects. The number of newer versions of an object to satisfy this condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "number",
+            "write_only": false
+           },
+           "send_age_if_zero": {
+            "computed": false,
+            "description": "While set true, age value will be sent in the request even for zero value of the field. This field is only useful for setting 0 value to the age field. It can \u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           },
+           "send_days_since_custom_time_if_zero": {
+            "computed": false,
+            "description": "While set true, days_since_custom_time value will be sent in the request even for zero value of the field. This field is only useful for setting 0 value to the\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           },
+           "send_days_since_noncurrent_time_if_zero": {
+            "computed": false,
+            "description": "While set true, days_since_noncurrent_time value will be sent in the request even for zero value of the field. This field is only useful for setting 0 value to\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           },
+           "send_num_newer_versions_if_zero": {
+            "computed": false,
+            "description": "While set true, num_newer_versions value will be sent in the request even for zero value of the field. This field is only useful for setting 0 value to the num\u2026",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "bool",
+            "write_only": false
+           },
+           "with_state": {
+            "computed": true,
+            "description": "Match to live and/or archived objects. Unversioned buckets have only live objects. Supported values include: \"LIVE\", \"ARCHIVED\", \"ANY\".",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 1,
+         "min_items": 1,
+         "nesting_mode": "set"
+        }
+       }
+      },
+      "max_items": 100,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "logging": {
+      "block": {
+       "attributes": {
+        "log_bucket": {
+         "computed": false,
+         "description": "The bucket that will receive log objects.",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "log_object_prefix": {
+         "computed": true,
+         "description": "The object prefix for log objects. If it's not provided, by default Google Cloud Storage sets this to this bucket's name.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "retention_policy": {
+      "block": {
+       "attributes": {
+        "is_locked": {
+         "computed": false,
+         "description": "If set to true, the bucket will be locked and permanently restrict edits to the bucket's retention policy. Caution: Locking a bucket is an irreversible action.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "retention_period": {
+         "computed": false,
+         "description": "The period of time, in seconds, that objects in the bucket must be retained and cannot be deleted, overwritten, or archived. The value must be less than 3,155,\u2026",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "soft_delete_policy": {
+      "block": {
+       "attributes": {
+        "effective_time": {
+         "computed": true,
+         "description": "Server-determined value that indicates the time from which the policy, or one with a greater retention, was effective. This value is in RFC 3339 format.",
+         "optional": false,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "retention_duration_seconds": {
+         "computed": false,
+         "description": "The duration in seconds that soft-deleted objects in the bucket will be retained and cannot be permanently deleted. Default value is 604800.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "number",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "read": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 0,
+      "min_items": 0,
+      "nesting_mode": "single"
+     },
+     "versioning": {
+      "block": {
+       "attributes": {
+        "enabled": {
+         "computed": false,
+         "description": "While set to true, versioning is fully enabled for this bucket.",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "website": {
+      "block": {
+       "attributes": {
+        "main_page_suffix": {
+         "computed": false,
+         "description": "Behaves as the bucket's directory index where missing objects are treated as potential directories.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "not_found_page": {
+         "computed": false,
+         "description": "The custom object to return when a requested resource is not found.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 3
+  },
+  "google_storage_bucket_iam_member": {
+   "block": {
+    "attributes": {
+     "bucket": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "etag": {
+      "computed": true,
+      "description": "",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "member": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "role": {
+      "computed": false,
+      "description": "",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "condition": {
+      "block": {
+       "attributes": {
+        "description": {
+         "computed": false,
+         "description": "",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "expression": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "title": {
+         "computed": false,
+         "description": "",
+         "optional": false,
+         "required": true,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "google_storage_notification": {
+   "block": {
+    "attributes": {
+     "bucket": {
+      "computed": false,
+      "description": "The name of the bucket.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "custom_attributes": {
+      "computed": false,
+      "description": "A set of key/value attribute pairs to attach to each Cloud Pub/Sub message published for this notification subscription",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "event_types": {
+      "computed": false,
+      "description": "List of event type filters for this notification config. If not specified, Cloud Storage will send notifications for all event types. The valid types are: \"OBJ\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "set",
+       "string"
+      ],
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "notification_id": {
+      "computed": true,
+      "description": "The ID of the created notification.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "object_name_prefix": {
+      "computed": false,
+      "description": "Specifies a prefix path filter for this notification config. Cloud Storage will only send notifications for objects in this bucket whose names begin with the s\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "payload_format": {
+      "computed": false,
+      "description": "The desired content of the Payload. One of \"JSON_API_V1\" or \"NONE\".",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "self_link": {
+      "computed": true,
+      "description": "The URI of the created resource.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "topic": {
+      "computed": false,
+      "description": "The Cloud Pub/Sub topic to which this subscription publishes. Expects either the topic name, assumed to belong to the default GCP provider project, or the proj\u2026",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {}
+   },
+   "provider": "hashicorp/google",
+   "version": 0
+  },
+  "kubernetes_manifest": {
+   "block": {
+    "attributes": {
+     "computed_fields": {
+      "computed": false,
+      "description": "List of manifest fields whose values can be altered by the API server during 'apply'. Defaults to: [\"metadata.annotations\", \"metadata.labels\"]",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "list",
+       "string"
+      ],
+      "write_only": false
+     },
+     "manifest": {
+      "computed": false,
+      "description": "A Kubernetes manifest describing the desired state of the resource in HCL format.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "dynamic",
+      "write_only": false
+     },
+     "object": {
+      "computed": true,
+      "description": "The resulting resource state, as returned by the API server after applying the desired state from `manifest`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "dynamic",
+      "write_only": false
+     },
+     "wait_for": {
+      "computed": false,
+      "description": "A map of attribute paths and desired patterns to be matched. After each apply the provider will wait for all attributes listed here to reach a value that match\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "object",
+       {
+        "fields": [
+         "map",
+         "string"
+        ]
+       }
+      ],
+      "write_only": false
+     }
+    },
+    "block_types": {
+     "field_manager": {
+      "block": {
+       "attributes": {
+        "force_conflicts": {
+         "computed": false,
+         "description": "Force changes against conflicts.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        },
+        "name": {
+         "computed": false,
+         "description": "The name to use for the field manager when creating and updating the resource.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "timeouts": {
+      "block": {
+       "attributes": {
+        "create": {
+         "computed": false,
+         "description": "Timeout for the create operation.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "delete": {
+         "computed": false,
+         "description": "Timeout for the delete operation.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        },
+        "update": {
+         "computed": false,
+         "description": "Timeout for the update operation.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "string",
+         "write_only": false
+        }
+       },
+       "block_types": {}
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     },
+     "wait": {
+      "block": {
+       "attributes": {
+        "fields": {
+         "computed": false,
+         "description": "A map of paths to fields to wait for a specific field value.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": [
+          "map",
+          "string"
+         ],
+         "write_only": false
+        },
+        "rollout": {
+         "computed": false,
+         "description": "Wait for rollout to complete on resources that support `kubectl rollout status`.",
+         "optional": true,
+         "required": false,
+         "sensitive": false,
+         "type": "bool",
+         "write_only": false
+        }
+       },
+       "block_types": {
+        "condition": {
+         "block": {
+          "attributes": {
+           "status": {
+            "computed": false,
+            "description": "The condition status.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           },
+           "type": {
+            "computed": false,
+            "description": "The type of condition.",
+            "optional": true,
+            "required": false,
+            "sensitive": false,
+            "type": "string",
+            "write_only": false
+           }
+          },
+          "block_types": {}
+         },
+         "max_items": 0,
+         "min_items": 0,
+         "nesting_mode": "list"
+        }
+       }
+      },
+      "max_items": 1,
+      "min_items": 0,
+      "nesting_mode": "list"
+     }
+    }
+   },
+   "provider": "hashicorp/kubernetes",
+   "version": 1
+  },
+  "random_id": {
+   "block": {
+    "attributes": {
+     "b64_std": {
+      "computed": true,
+      "description": "The generated id presented in base64 without additional transformations.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "b64_url": {
+      "computed": true,
+      "description": "The generated id presented in base64, using the URL-friendly character set: case-sensitive letters, digits and the characters `_` and `-`.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "byte_length": {
+      "computed": false,
+      "description": "The number of random bytes to produce. The minimum value is 1, which produces eight bits of randomness.",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "dec": {
+      "computed": true,
+      "description": "The generated id presented in non-padded decimal digits.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "hex": {
+      "computed": true,
+      "description": "The generated id presented in padded hexadecimal digits. This result will always be twice as long as the requested byte length.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "The generated id presented in base64 without additional transformations or prefix.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "keepers": {
+      "computed": false,
+      "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. See [the main provider documentation](../index.html) for more information.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "prefix": {
+      "computed": false,
+      "description": "Arbitrary string to prefix the output value with. This string is supplied as-is, meaning it is not guaranteed to be URL-safe or base64 encoded.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     }
+    },
+    "block_types": {}
+   },
+   "provider": "hashicorp/random",
+   "version": 0
+  },
+  "random_password": {
+   "block": {
+    "attributes": {
+     "bcrypt_hash": {
+      "computed": true,
+      "description": "A bcrypt hash of the generated random string. **NOTE**: If the generated random string is greater than 72 bytes in length, `bcrypt_hash` will contain a hash of\u2026",
+      "optional": false,
+      "required": false,
+      "sensitive": true,
+      "type": "string",
+      "write_only": false
+     },
+     "id": {
+      "computed": true,
+      "description": "A static value used internally by Terraform, this should not be referenced in configurations.",
+      "optional": false,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "keepers": {
+      "computed": false,
+      "description": "Arbitrary map of values that, when changed, will trigger recreation of resource. See [the main provider documentation](../index.html) for more information.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": [
+       "map",
+       "string"
+      ],
+      "write_only": false
+     },
+     "length": {
+      "computed": false,
+      "description": "The length of the string desired. The minimum value for length is 1 and, length must also be >= (`min_upper` + `min_lower` + `min_numeric` + `min_special`).",
+      "optional": false,
+      "required": true,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "lower": {
+      "computed": true,
+      "description": "Include lowercase alphabet characters in the result. Default value is `true`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "min_lower": {
+      "computed": true,
+      "description": "Minimum number of lowercase alphabet characters in the result. Default value is `0`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "min_numeric": {
+      "computed": true,
+      "description": "Minimum number of numeric characters in the result. Default value is `0`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "min_special": {
+      "computed": true,
+      "description": "Minimum number of special characters in the result. Default value is `0`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "min_upper": {
+      "computed": true,
+      "description": "Minimum number of uppercase alphabet characters in the result. Default value is `0`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "number",
+      "write_only": false
+     },
+     "number": {
+      "computed": true,
+      "description": "Include numeric characters in the result. Default value is `true`. If `number`, `upper`, `lower`, and `special` are all configured, at least one of them must b\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "numeric": {
+      "computed": true,
+      "description": "Include numeric characters in the result. Default value is `true`. If `numeric`, `upper`, `lower`, and `special` are all configured, at least one of them must \u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "override_special": {
+      "computed": false,
+      "description": "Supply your own list of special characters to use for string generation. This overrides the default character list in the special argument. The `special` argum\u2026",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "string",
+      "write_only": false
+     },
+     "result": {
+      "computed": true,
+      "description": "The generated random string.",
+      "optional": false,
+      "required": false,
+      "sensitive": true,
+      "type": "string",
+      "write_only": false
+     },
+     "special": {
+      "computed": true,
+      "description": "Include special characters in the result. These are `!@#$%&*()-_=+[]{}<>:?`. Default value is `true`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     },
+     "upper": {
+      "computed": true,
+      "description": "Include uppercase alphabet characters in the result. Default value is `true`.",
+      "optional": true,
+      "required": false,
+      "sensitive": false,
+      "type": "bool",
+      "write_only": false
+     }
+    },
+    "block_types": {}
+   },
+   "provider": "hashicorp/random",
+   "version": 3
+  }
+ },
+ "schema": "iac_intent_provider_schema_slice/v1"
+}

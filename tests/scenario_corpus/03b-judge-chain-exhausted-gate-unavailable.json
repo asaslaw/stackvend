@@ -1,0 +1,29 @@
+{
+  "title": "Every judge model answers 504: QA stops GATE_UNAVAILABLE (fail loudly), never a pass or a repair round",
+  "source": "review 11-13 section 4 cell 'Judge: every model in the chain down'",
+  "mechanism": "M4 transient-dependency handling per call site (negative control: the chain-exhausted outcome)",
+  "product_id": "judge-demo",
+  "trace": "trace-judge-down",
+  "models": {"primary": "gemini-4-carbon", "fallback": ["gemini-4-argon"]},
+  "access": {"mode": "PUBLIC_APP"},
+  "topology": {"services": [{"name": "judge-demo", "kind": "cloudrun"}], "primary_service": "judge-demo",
+               "edges": [], "resources": []},
+  "task_dag": [{"task_id": "CODE-01", "title": "HTTP service", "target_files": ["apps/judge-demo/main.py"]}],
+  "drafts": {
+    "build": {
+      "apps/judge-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/judge-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/judge-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": ["build"],
+  "sandbox": {"tests_total": 3, "rules": []},
+  "judge": {"*": {
+    "security": {"by_model": {"*": [{"error": 504, "latency_s": 120}]}},
+    "adherence": {"by_model": {"*": [{"error": 504, "latency_s": 120}]}}
+  }},
+  "expect": {"outcome": {"status": "STOPPED", "stage": "qa", "error_class": "GATE_UNAVAILABLE", "qa_attempts": 1,
+                         "developer_dispatches": 1}}
+}

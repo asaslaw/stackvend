@@ -1,0 +1,112 @@
+{
+  "title": "Both Pro-class judge models answer 504 at their bound under the real Stage 2 time budget: a Flash fallback model still judges",
+  "source": "example 01 live run 11-16 (security lens: primary and first fallback 504 after about 117 s each; the Flash fallbacks were not tried, GATE_UNAVAILABLE); owner 11-16 JUDGE-FALLBACK-FLASH-ROOM",
+  "mechanism": "M4 transient-dependency handling per call site (fixed by JUDGE-FALLBACK-FLASH-ROOM: each judge attempt is time-boxed so a later chain model keeps room)",
+  "product_id": "judge-demo",
+  "trace": "trace-judge-flash-room",
+  "models": {
+    "primary": "gemini-4-carbon",
+    "fallback": [
+      "gemini-4-argon",
+      "gemini-3.8-flash",
+      "gemini-3.7-flash"
+    ]
+  },
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "judge-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "judge-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "HTTP service",
+      "target_files": [
+        "apps/judge-demo/main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/judge-demo/main.py": "@main",
+      "apps/judge-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/judge-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "by_model": {
+          "gemini-4-carbon": [
+            {
+              "error": 504,
+              "latency_s": 120
+            }
+          ],
+          "gemini-4-argon": [
+            {
+              "error": 504,
+              "latency_s": 120
+            }
+          ],
+          "*": [
+            {
+              "reply": {
+                "critical": []
+              },
+              "latency_s": 20
+            }
+          ]
+        }
+      },
+      "adherence": {
+        "by_model": {
+          "gemini-4-carbon": [
+            {
+              "error": 504,
+              "latency_s": 120
+            }
+          ],
+          "*": [
+            {
+              "reply": {
+                "score": 1.0,
+                "missed": []
+              },
+              "latency_s": 7
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1,
+      "max_generations": 1,
+      "judge_model_stamped": "gemini-3.8-flash"
+    }
+  }
+}

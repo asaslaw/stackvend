@@ -1,0 +1,45 @@
+{
+  "title": "Private (IAM) multi-service app: an allUsers finding on services.tf must still block (never a platform advisory)",
+  "source": "review 11-13 section 4 cell 'Multi-service, PRIVATE_IAP or PRIVATE_IAM: an allUsers finding on services.tf'",
+  "mechanism": "negative cell for B / C: the per-service-access limitation applies to public apps only",
+  "product_id": "mesh-private",
+  "trace": "trace-mesh-private",
+  "access": {"mode": "PRIVATE_IAM", "invoker_principals": ["group:staff@example.com"]},
+  "topology": {"services": [{"name": "service-a", "kind": "cloudrun"}, {"name": "service-b", "kind": "cloudrun"}],
+               "primary_service": "service-a",
+               "edges": [{"caller": "service-a", "callee": "service-b", "protocol": "http"}], "resources": []},
+  "task_dag": [{"task_id": "CODE-01", "title": "gateway service", "target_files": ["apps/service-a/main.py"]},
+               {"task_id": "CODE-02", "title": "orders service", "target_files": ["apps/service-b/main.py"]}],
+  "blobs": {
+    "a_main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\nSERVICE_B_URL = os.environ.get('SERVICE_B_URL', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "b_main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/service-a/main.py": "@a_main", "apps/service-a/requirements.txt": "@requirements",
+      "apps/service-a/Procfile": "@procfile",
+      "apps/service-a/tests/__init__.py": "",
+      "apps/service-a/tests/test_service_a.py": "def test_a():\n    assert True\n",
+      "apps/service-b/main.py": "@b_main", "apps/service-b/requirements.txt": "@requirements",
+      "apps/service-b/Procfile": "@procfile",
+      "apps/service-b/tests/__init__.py": "",
+      "apps/service-b/tests/test_service_b.py": "def test_b():\n    assert True\n",
+      "README.md": "# mesh-private\n\nTwo services.\n"
+    }
+  },
+  "generations": ["build", "build", "build", "build"],
+  "platform_owned_paths": ["infra/workload/services.tf"],
+  "sandbox": {"tests_total": 49, "rules": []},
+  "judge": {"*": {
+    "security": {"reply": {"critical": [
+      {"text": "services.tf grants roles/run.invoker to allUsers on service-b in a private workload",
+       "file": "infra/workload/services.tf", "schema_fields": {"critical_vulnerability_facets": "PER_SERVICE_ACCESS"}}]}},
+    "adherence": {"reply": {"score": 1.0, "missed": []}}
+  }},
+  "expect": {
+    "outcome": {"status_not": "SUCCESS"},
+    "never_seed_files": ["infra/workload/services.tf"]
+  }
+}

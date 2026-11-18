@@ -1,0 +1,78 @@
+# ==============================================================================
+# PROJECT CASTOR: WORKLOAD FOUNDATION - IAM & SERVICE ACCOUNTS
+# ==============================================================================
+# Configures least-privilege IAM bindings for GitHub Actions deployment and
+# the workload's runtime execution identity.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. CI/CD Deployer Service Account Roles
+# ------------------------------------------------------------------------------
+resource "google_project_iam_member" "deployer_editor" {
+  project = var.project_id
+  role    = "roles/editor"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_artifact_admin" {
+  project = var.project_id
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_sa_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_build_editor" {
+  project = var.project_id
+  role    = "roles/cloudbuild.builds.editor"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+# ------------------------------------------------------------------------------
+# 2. Workload Runtime Service Account & Scoped Permissions
+# ------------------------------------------------------------------------------
+resource "google_service_account" "workload_sa" {
+  project      = var.project_id
+  account_id   = "sa-${substr(replace(var.product_id, "_", "-"), 0, 20)}"
+  display_name = "Runtime Service Account for ${var.product_id}"
+}
+
+resource "google_project_iam_member" "workload_datastore_user" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.workload_sa.email}"
+}
+
+resource "google_project_iam_member" "workload_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.workload_sa.email}"
+}
+
+resource "google_project_iam_member" "workload_pubsub_publisher" {
+  project = var.project_id
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${google_service_account.workload_sa.email}"
+}
+
+resource "google_project_iam_member" "workload_storage_user" {
+  project = var.project_id
+  role    = "roles/storage.objectUser"
+  member  = "serviceAccount:${google_service_account.workload_sa.email}"
+}

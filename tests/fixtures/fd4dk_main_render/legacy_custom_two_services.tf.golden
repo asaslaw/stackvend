@@ -1,0 +1,76 @@
+resource "google_compute_network" "private_network" {
+  name                    = "${var.product_id}-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_global_address" "private_ip_address" {
+  name          = "${var.product_id}-private-ip"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.private_network.id
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.private_network.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+}
+
+resource "google_vpc_access_connector" "connector" {
+  name          = "cr-conn"
+  region        = var.region
+  ip_cidr_range = var.connector_cidr
+  network       = google_compute_network.private_network.name
+}
+
+resource "google_sql_database_instance" "postgres" {
+  name             = "${var.product_id}-pg-inst"
+  database_version = "POSTGRES_15"
+  region           = var.region
+  depends_on       = [google_service_networking_connection.private_vpc_connection]
+
+  settings {
+    tier = "db-f1-micro"
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = google_compute_network.private_network.id
+    }
+  }
+  deletion_protection = false
+}
+
+resource "google_secret_manager_secret" "postgres_db_credentials" {
+  secret_id = "postgres-db-credentials"
+  replication {
+    auto {}
+  }
+}
+
+module "compute_api" {
+  source                = "../modules/compute-cloudrun"
+  project_id            = var.project_id
+  region                = var.region
+  product_id            = var.product_id
+  service_name          = "api"
+  service_account_email = module.foundation.workload_sa_email
+  container_image       = replace(var.container_image, "/app:", "/api:")
+  oauth_client_id       = var.oauth_client_id
+  firebase_api_key      = var.firebase_api_key
+  firebase_auth_domain  = var.firebase_auth_domain
+  min_instances         = 0
+  max_instances         = 10
+  cpu_idle              = true
+  allow_unauthenticated = var.allow_unauthenticated
+  enable_direct_iap     = var.enable_direct_iap
+  authorized_invoker_members = var.authorized_invoker_members
+  cpu_limit             = var.cpu_limit
+  memory_limit          = var.memory_limit
+  env_vars              = merge(var.env_vars, {
+    "GCP_PROJECT_ID" = var.project_id
+    "PROJECT_ID" = var.project_id
+    "SECRET_POSTGRES_DB_CREDENTIALS" = google_secret_manager_secret.postgres_db_credentials.secret_id
+  })
+
+  depends_on = [module.foundation]
+}

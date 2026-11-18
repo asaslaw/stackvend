@@ -1,0 +1,200 @@
+resource "google_service_account" "scheduler" {
+  account_id   = "cloud-scheduler-sa"
+  display_name = "Cloud Scheduler Service Account"
+  project      = var.project_id
+}
+
+locals {
+  scheduler_sa = module.foundation.workload_sa_email != "" ? var.scheduler_sa_email : google_service_account.scheduler.email
+  internal_processor_sa = var.internal_processor_sa_email != "" ? var.internal_processor_sa_email : "internal-processor-sa@${var.project_id}.iam.gserviceaccount.com"
+  public_gateway_sa = module.foundation.workload_sa_email != "" ? var.public_gateway_sa_email : "public-gateway-sa@${var.project_id}.iam.gserviceaccount.com"
+  public_gateway_url    = var.public_gateway_url != "" ? var.public_gateway_url : "https://public-gateway-${var.project_id}.run.app"
+}
+
+# Secret Manager Secret for order signing with automatic replication
+resource "google_secret_manager_secret" "order_signing_secret" {
+  secret_id = "order_signing_secret"
+  project   = var.project_id
+
+  # Replication: automatic
+  replication {
+    auto {}
+  }
+
+  labels = {
+    environment = var.environment
+    workload    = "order-processing"
+  }
+}
+
+# Initial Secret Version for order signing secret
+resource "google_secret_manager_secret_version" "order_signing_secret_version" {
+  secret      = google_secret_manager_secret.order_signing_secret.id
+  secret_data = var.order_signing_secret_data
+}
+
+# Secret Manager IAM Member: Internal processor secretAccessor
+resource "google_secret_manager_secret_iam_member" "internal_processor_secret_accessor" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.order_signing_secret.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${local.internal_processor_sa}"
+}
+
+# Project IAM Member: Internal processor secretAccessor
+resource "google_project_iam_member" "internal_processor_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${local.internal_processor_sa}"
+}
+
+# Project IAM Member: Internal processor datastore.user for Firestore
+resource "google_project_iam_member" "internal_processor_datastore_user" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${local.internal_processor_sa}"
+}
+
+# Service Account IAM Invoker Binding: Cloud Scheduler invoking Public Gateway
+resource "google_project_iam_member" "scheduler_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${local.scheduler_sa}"
+}
+
+# Service Account IAM Invoker Binding: Public Gateway invoking Internal Processor
+resource "google_project_iam_member" "gateway_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${local.public_gateway_sa}"
+}
+
+# Cloud Scheduler daily reconciliation cron job targeting public-gateway
+resource "google_cloud_scheduler_job" "daily_reconciliation" {
+  name             = "daily-reconciliation"
+  description      = "Daily reconciliation job targeting public-gateway /api/v1/reconcile"
+  schedule         = "0 2 * * *"
+  time_zone        = "UTC"
+  project          = var.project_id
+  region           = var.region
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${trimsuffix(local.public_gateway_url, "/")}/api/v1/reconcile"
+
+    oidc_token {
+      service_account_email = local.scheduler_sa
+      audience              = local.public_gateway_url
+    }
+
+    headers = {
+      "Content-Type" = "application/json"
+    }
+
+    body = base64encode(jsonencode({
+      trigger = "cloud-scheduler-daily-reconciliation"
+    }))
+  }
+}
+
+# stackvend: from infra/workload/variables.tf (IAC_ENGINEER)
+
+
+variable "environment" {
+  type        = string
+  description = "Deployment environment name"
+  default     = "prod"
+}
+
+variable "internal_processor_sa_email" {
+  type        = string
+  description = "Service account email for internal-processor Cloud Run service"
+  default     = ""
+}
+
+variable "public_gateway_sa_email" {
+  type        = string
+  description = "Service account email for public-gateway Cloud Run service"
+  default     = ""
+}
+
+variable "public_gateway_url" {
+  type        = string
+  description = "Target base URL for public-gateway service"
+  default     = ""
+}
+
+variable "scheduler_sa_email" {
+  type        = string
+  description = "Existing service account email for Cloud Scheduler job if pre-provisioned"
+  default     = ""
+}
+
+variable "order_signing_secret_data" {
+  type        = string
+  description = "Initial secret payload for order_signing_secret"
+  default     = "castor-default-order-signing-secret-key-32chars"
+  sensitive   = true
+}
+
+# stackvend: from infra/workload/outputs.tf (IAC_ENGINEER)
+output "order_signing_secret_id" {
+  description = "Secret Manager secret ID for order signing secret"
+  value       = google_secret_manager_secret.order_signing_secret.secret_id
+}
+
+output "order_signing_secret_name" {
+  description = "Full canonical resource name of the order signing secret"
+  value       = google_secret_manager_secret.order_signing_secret.name
+}
+
+output "order_signing_secret_version" {
+  description = "Resource name of the initial order signing secret version"
+  value       = google_secret_manager_secret_version.order_signing_secret_version.name
+}
+
+output "cloud_scheduler_job_id" {
+  description = "Identifier of the daily reconciliation Cloud Scheduler job"
+  value       = google_cloud_scheduler_job.daily_reconciliation.id
+}
+
+output "cloud_scheduler_job_name" {
+  description = "Name of the daily reconciliation Cloud Scheduler job"
+  value       = google_cloud_scheduler_job.daily_reconciliation.name
+}
+
+output "scheduler_service_account_email" {
+  description = "Service account email utilized by Cloud Scheduler"
+  value       = local.scheduler_sa
+}
+
+module "compute_internal_processor" {
+  source                = "../modules/compute-cloudrun"
+  project_id            = var.project_id
+  region                = var.region
+  product_id            = var.product_id
+  service_name          = "internal-processor"
+  service_account_email = module.foundation.workload_sa_email
+  container_image       = replace(var.container_image, "/app:", "/internal-processor:")
+  oauth_client_id       = var.oauth_client_id
+  firebase_api_key      = var.firebase_api_key
+  firebase_auth_domain  = var.firebase_auth_domain
+  min_instances         = 0
+  max_instances         = 2
+  cpu_idle              = true
+  allow_unauthenticated = var.allow_unauthenticated
+  enable_direct_iap     = var.enable_direct_iap
+  authorized_invoker_members = var.authorized_invoker_members
+  cpu_limit             = var.cpu_limit
+  memory_limit          = var.memory_limit
+  env_vars              = merge(var.env_vars, {
+    "FIRESTORE_DATABASE_NAME" = module.foundation.database_name
+    "GCP_PROJECT_ID" = var.project_id
+    "ORDER_SIGNING_SECRET_ID" = google_secret_manager_secret.order_signing_secret.secret_id
+    "PROJECT_ID" = var.project_id
+    "SECRET_ORDER_SIGNING_SECRET" = google_secret_manager_secret.order_signing_secret.secret_id
+  })
+
+  depends_on = [module.foundation]
+}

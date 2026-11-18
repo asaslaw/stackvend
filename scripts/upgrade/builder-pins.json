@@ -1,0 +1,11 @@
+{
+  "_comment": "SELFUP P3b (plan \u00a73.6): what the upgrader's build.sh builds with. pack: the buildpacks CLI release (version + SHA-256 of pack-v<version>-linux.tgz from https://github.com/buildpacks/pack/releases). builders: Cloud Native Buildpacks builder images pinned BY DIGEST (image@sha256:...), never a floating tag: `default` = gcr.io/buildpacks/builder (the platform services), `qa-sandbox-test-runner` = the generated-workload builder. Empty = the upgrader refuses to build (BUILDER_PIN_MISSING; nothing is built or deployed). Filled by a person with network access (digests are not guessed); read only by scripts/upgrade/stage.py pins.",
+  "pack": {
+    "version": "0.40.10",
+    "linux_amd64_sha256": "687c3616e21824a449b56d4f989613ca68c921c6cce670b4de4459b025233806"
+  },
+  "builders": {
+    "default": "gcr.io/buildpacks/builder@sha256:a8d69b26fd4ff27dae2c790bb81f3b277d3d821a1149a46e16371a7eca2e461d",
+    "qa-sandbox-test-runner": "us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/builder/universal@sha256:cd72f79c1b9b271e3a435c8d6fcad646a0086355d93871d1071f59d7b51ef715"
+  }
+}

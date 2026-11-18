@@ -1,0 +1,124 @@
+{
+  "title": "Do-No-Harm: a missed directive on an application-code task still blocks and is repaired by the developer, even when the judge labels it IMAGE_BUILD",
+  "source": "negative control for IMAGE-BUILD-PLATFORM-FACT (example 01, 11-16): the facet must never excuse the developer's own code",
+  "mechanism": "IMAGE-BUILD-PLATFORM-FACT: the IMAGE_BUILD label applies only to a finding attributed to an infrastructure or CI/CD plan task (typed task kinds); CODE-01's missing POST /api/v1/events route stays blocking, is seeded on apps/event-router/main.py and the repair adds it",
+  "trace": "trace-cloudbuild-code-task",
+  "product_id": "event-router",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "event-router",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "event-router",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "category": "CODE",
+      "title": "webhook ingestion service",
+      "target_files": [
+        "apps/event-router/main.py",
+        "apps/event-router/requirements.txt",
+        "apps/event-router/Procfile"
+      ]
+    },
+    {
+      "task_id": "INFRA-05",
+      "category": "INFRA",
+      "title": "Configure Cloud Native Buildpacks CI/CD Pipeline (Zero Dockerfiles)",
+      "description": "Create cloudbuild.yaml and GitHub Actions workflow using Google Cloud Native Buildpacks (pack build or gcloud builds submit --pack) to build apps/event-router without any Dockerfile and deploy to Cloud Run.",
+      "acceptance_criteria": [
+        "CI/CD pipeline builds container strictly via Google Cloud Native Buildpacks (pack build or gcloud builds submit --pack)",
+        "Zero Dockerfiles and zero docker build commands exist in cloudbuild.yaml or workflows"
+      ],
+      "target_files": [
+        "cloudbuild.yaml",
+        ".github/workflows/deploy-event-router.yml"
+      ]
+    },
+    {
+      "task_id": "CODE-03",
+      "category": "TEST",
+      "title": "pytest suite",
+      "target_files": [
+        "tests/test_main.py"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "main_events": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n\n\n@app.post('/api/v1/events')\ndef ingest(event: dict):\n    return {'accepted': bool(event)}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "cloudbuild": "steps:\n  - name: gcr.io/k8s-skaffold/pack\n    args: ['build', 'event-router', '--builder=gcr.io/buildpacks/builder', '--path=apps/event-router']\n",
+    "test_main": "def test_health():\n    assert True\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/event-router/main.py": "@main",
+      "apps/event-router/requirements.txt": "@requirements",
+      "apps/event-router/Procfile": "@procfile",
+      "cloudbuild.yaml": "@cloudbuild",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "@test_main"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 12,
+    "rules": []
+  },
+  "repairs": [
+    {
+      "apps/event-router/main.py": "@main_events"
+    }
+  ],
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.9,
+          "score_after_withdrawal": 1.0,
+          "missed": [
+            {
+              "text": "CODE-01: apps/event-router/main.py has no POST /api/v1/events webhook route",
+              "task_id": "CODE-01",
+              "file": "apps/event-router/main.py",
+              "schema_fields": {
+                "missed_directive_facets": "IMAGE_BUILD"
+              },
+              "withdraw_if_tree": {
+                "file": "apps/event-router/main.py",
+                "contains": "/api/v1/events"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 2,
+      "max_generations": 1,
+      "seed_files_include": [
+        "apps/event-router/main.py"
+      ]
+    }
+  }
+}

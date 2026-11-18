@@ -1,0 +1,49 @@
+{
+  "title": "Multi-service app: a real security defect in the developer's own route is still repaired in place (negative control)",
+  "source": "example 02 live run 11-13 finding 1 (reconcile route minting an OIDC token without checking its caller)",
+  "mechanism": "control for M1/M2 fixes: ownership routing must keep sending developer-owned findings to the developer",
+  "product_id": "mesh-demo",
+  "trace": "trace-mesh-app-defect",
+  "access": {"mode": "PUBLIC_APP"},
+  "topology": {"services": [{"name": "service-a", "kind": "cloudrun"}, {"name": "service-b", "kind": "cloudrun"}],
+               "primary_service": "service-a",
+               "edges": [{"caller": "service-a", "callee": "service-b", "protocol": "http"}], "resources": []},
+  "task_dag": [{"task_id": "CODE-01", "title": "gateway service", "target_files": ["apps/service-a/main.py"]},
+               {"task_id": "CODE-02", "title": "orders service", "target_files": ["apps/service-b/main.py"]}],
+  "blobs": {
+    "a_main": "import os\n\nfrom fastapi import FastAPI\n\nfrom routers import orders\n\napp = FastAPI()\napp.include_router(orders.router)\nSERVICE_B_URL = os.environ.get('SERVICE_B_URL', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "orders_open": "from fastapi import APIRouter, Request\n\nrouter = APIRouter()\n\n\n@router.post('/api/v1/orders/reconcile')\nasync def reconcile_orders(request: Request):\n    body = await request.json()\n    return {'forwarded': bool(body)}\n",
+    "orders_verified": "from fastapi import APIRouter, HTTPException, Request\n\nrouter = APIRouter()\n\n\n@router.post('/api/v1/orders/reconcile')\nasync def reconcile_orders(request: Request):\n    if not request.headers.get('Authorization', '').startswith('Bearer '):\n        raise HTTPException(status_code=401)\n    body = await request.json()\n    return {'forwarded': bool(body)}\n",
+    "b_main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/service-a/main.py": "@a_main", "apps/service-a/routers/__init__.py": "",
+      "apps/service-a/routers/orders.py": "@orders_open",
+      "apps/service-a/requirements.txt": "@requirements", "apps/service-a/Procfile": "@procfile",
+      "apps/service-a/tests/__init__.py": "",
+      "apps/service-a/tests/test_service_a.py": "def test_a():\n    assert True\n",
+      "apps/service-b/main.py": "@b_main", "apps/service-b/requirements.txt": "@requirements",
+      "apps/service-b/Procfile": "@procfile",
+      "apps/service-b/tests/__init__.py": "",
+      "apps/service-b/tests/test_service_b.py": "def test_b():\n    assert True\n",
+      "README.md": "# mesh-demo\n\nTwo services.\n"
+    }
+  },
+  "generations": ["build"],
+  "repairs": [{"apps/service-a/routers/orders.py": "@orders_verified"}],
+  "sandbox": {"tests_total": 49, "rules": []},
+  "judge": {
+    "0": {"security": {"reply": {"critical": [
+            {"text": "POST /api/v1/orders/reconcile on the public service-a forwards to service-b with a minted OIDC token without verifying its caller",
+             "file": "apps/service-a/routers/orders.py", "schema_fields": {"critical_vulnerability_facets": "OTHER"}}]}},
+          "adherence": {"reply": {"score": 1.0, "missed": []}}},
+    "*": {"security": {"reply": {"critical": []}}, "adherence": {"reply": {"score": 1.0, "missed": []}}}
+  },
+  "expect": {
+    "outcome": {"status": "SUCCESS", "qa_attempts": 2, "max_generations": 1,
+                "seed_files_include": ["apps/service-a/routers/orders.py"]}
+  }
+}

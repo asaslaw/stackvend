@@ -1,0 +1,408 @@
+{
+ "id": "ex09-g13-live-control",
+ "summary": "Live run ex09-g13 (example 09, passed end to end). Valid control: must pass unchanged.",
+ "source": {
+  "kind": "live",
+  "run_label": "ex09-g13",
+  "record": "architect stage trace agent_output (typed post-consensus plan, raw model JSON)",
+  "model": "gemini-4-carbon"
+ },
+ "anonymized": "workload id ex09-g13 -> ex09-live (also in paths); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block nulled. Nothing else changed.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": []
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "ex09-live",
+  "project_tier": 2,
+  "summary": "Deploy a secure internal enterprise administration portal on Google Cloud Run v2 secured with Cloud Run Direct IAP (no OAuth client/secret), FastAPI backend with ES256 JWT IAP assertion verification, embedded Tailwind CSS UI, RBAC (Viewer and SuperAdmin), immutable Firestore audit logging in admin_audit_events, and a $10.00 FinOps monthly budget cap.",
+  "architecture_overview": "A single-service serverless architecture hosted on Google Cloud Run v2 (min_instances = 0, 512 MiB memory) in a healthy region (us-central1) with Direct IAP enabled natively on the Cloud Run service without custom OAuth clients or secrets. Perimeter authentication is enforced by IAP/IAM, disallowing unauthenticated public access. Inside the FastAPI application, custom authentication middleware cryptographically verifies the X-Goog-IAP-JWT-Assertion header using IAP ES256 public keys against the exact Cloud Run service audience (/projects/<project-number>/locations/<region>/services/ex09-live), strictly ignoring unsigned headers like X-Goog-Authenticated-User-Email. Verified claims drive RBAC authorization (Viewer vs. SuperAdmin) for administrative operations (user role updates and feature flag toggles) served via REST APIs and an embedded Tailwind CSS dashboard. Every mutating administrative action writes an immutable audit record to Google Cloud Firestore Native (admin_audit_events collection). No Compute Engine VMs or VPC connectors are used, natively satisfying folder organization policies while maintaining a projected monthly cost well within the $10.00 FinOps budget cap enforced via Cloud Billing Budgets.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable Required Google Cloud APIs",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf"
+    ],
+    "description": "Enable required Google Cloud APIs via google_project_service with disable_on_destroy = false: run.googleapis.com, iap.googleapis.com, firestore.googleapis.com, cloudbuild.googleapis.com, artifactregistry.googleapis.com, iam.googleapis.com, cloudresourcemanager.googleapis.com, and billingbudgets.googleapis.com.",
+    "acceptance_criteria": [
+     "All required Google Cloud service APIs declared with disable_on_destroy = false",
+     "OpenTofu configuration validates cleanly"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Firestore Native Database, Artifact Registry, and $10 FinOps Budget",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Provision the Firestore Native database (logical_name: default) for storing operator roles, feature flags, and immutable admin_audit_events records, an Artifact Registry Docker repository for container images, and a $10.00 USD monthly Cloud Billing Budget cap when a billing account is provided.",
+    "acceptance_criteria": [
+     "google_firestore_database.default configured in FIRESTORE_NATIVE mode",
+     "Artifact Registry Docker repository configured",
+     "FinOps $10.00 monthly budget cap configured with threshold alerts"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Configure Workload Service Account, Least-Privilege IAM, and Cloud Run Direct IAP",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/outputs.tf"
+    ],
+    "description": "Create dedicated runtime service account for ex09-live bound to roles/datastore.user. Provision Cloud Run v2 service ex09-live (min_instances = 0, memory = 512Mi) configured with Cloud Run Direct IAP (iap_enabled = true on google_cloud_run_v2_service with google-beta provider, no OAuth client or client secret, no allUsers invoker binding), grant IAP service agent roles/run.invoker on the Cloud Run service, and inject FIRESTORE_DATABASE and expected IAP audience metadata environment variables.",
+    "acceptance_criteria": [
+     "Dedicated workload service account granted roles/datastore.user only",
+     "Cloud Run v2 service configured with Direct IAP without OAuth client or secret and min_instances = 0, 512Mi memory",
+     "Unauthenticated allUsers access is absent so public requests are intercepted at perimeter by Google IAM/IAP",
+     "Project number, region, service name, and FIRESTORE_DATABASE exposed to the container for strict IAP JWT audience verification"
+    ],
+    "depends_on": [
+     "INFRA-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Configure GitHub Actions CI/CD Workflow",
+    "category": "RELEASE",
+    "target_files": [
+     ".github/workflows/deploy-ex09-live.yml"
+    ],
+    "description": "Create GitHub Actions deployment pipeline authenticating via Workload Identity Federation with path filtering on apps/ex09-live/** to build and deploy the Cloud Run service.",
+    "acceptance_criteria": [
+     "Workflow triggers on push to apps/ex09-live/**",
+     "Authenticates with WIF and deploys container image to Cloud Run service ex09-live"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "release-engineer",
+    "priority": "MEDIUM"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement FastAPI IAP JWT Verification Middleware, RBAC, Audit Logging, and Tailwind UI",
+    "category": "CODE",
+    "target_files": [
+     "apps/ex09-live/main.py",
+     "apps/ex09-live/auth.py",
+     "apps/ex09-live/firestore_store.py",
+     "apps/ex09-live/templates/index.html",
+     "apps/ex09-live/requirements.txt",
+     "apps/ex09-live/Procfile"
+    ],
+    "description": "Implement the FastAPI internal administration portal under apps/ex09-live/. Build authentication middleware that extracts X-Goog-IAP-JWT-Assertion, verifies its ES256 signature against IAP's public keys, validates issuer (https://cloud.google.com/iap) and exact Cloud Run service audience (/projects/<project-number>/locations/<region>/services/<service-name>), and derives operator email and sub strictly from the verified JWT claims while completely ignoring unsigned headers such as X-Goog-Authenticated-User-Email. Implement RBAC distinguishing Viewer (read-only access to portal state, users, feature flags, and audit logs) and SuperAdmin (authorized to update user roles and toggle feature flags). Persist every administrative mutation (user role updates, feature flag toggles) as an immutable event document in Firestore collection admin_audit_events (with timestamp, actor email/sub, action type, target resource, previous/new state, and request metadata), disallowing update or delete operations on audit documents. Serve an embedded Tailwind CSS administrative UI at GET / and provide a health check endpoint.",
+    "acceptance_criteria": [
+     "Middleware verifies ES256 signature and /projects/<project-number>/locations/<region>/services/<service-name> audience on X-Goog-IAP-JWT-Assertion",
+     "Unsigned X-Goog-Authenticated-User-Email header is never trusted or used for identity",
+     "RBAC enforces Viewer read-only permissions (403 on mutations) and SuperAdmin write permissions",
+     "All user role updates and feature flag toggles append immutable audit entries to Firestore collection admin_audit_events",
+     "Embedded Tailwind CSS administrative portal UI renders operator identity, role, users, feature flags, and audit trail"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Implement 100% Coverage Pytest Suite with Real ES256 IAP JWT Signing",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_main.py",
+     "README.md"
+    ],
+    "description": "Develop comprehensive pytest test suite achieving 100% test coverage across application modules. Generate an ephemeral ES256 key pair during tests, inject the public JWK/public key into the IAP key resolver, and sign real JWT assertions for X-Goog-IAP-JWT-Assertion so full cryptographic verification runs in tests. Cover valid Viewer and SuperAdmin assertions, missing assertions, expired tokens, wrong audience (including OAuth client ID audience rejection), tampered signatures, spoofing attempts via X-Goog-Authenticated-User-Email without valid JWT, RBAC enforcement on user role updates and feature flag toggles, immutable Firestore admin_audit_events emission, and Tailwind UI rendering. Document architecture, Direct IAP setup, RBAC model, and FinOps controls in README.md.",
+    "acceptance_criteria": [
+     "100% passing pytest coverage across application modules",
+     "Tests dynamically generate an ES256 key pair and execute real cryptographic JWT verification",
+     "Tests verify rejection of OAuth-client-style audiences, forged signatures, and unsigned X-Goog-Authenticated-User-Email headers",
+     "Tests verify Viewer vs SuperAdmin RBAC and immutable admin_audit_events Firestore writes"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "qa-reviewer",
+    "priority": "HIGH"
+   }
+  ],
+  "target_compute_services": [
+   "ex09-live"
+  ],
+  "compute_archetype": "cloudrun",
+  "service_topology": {
+   "services": [
+    {
+     "name": "ex09-live",
+     "kind": "cloudrun",
+     "purpose": "Internal enterprise administration portal with Direct IAP ES256 JWT verification, Viewer/SuperAdmin RBAC, Tailwind CSS UI, and immutable Firestore audit logging.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 10,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    }
+   ],
+   "primary_service": "ex09-live",
+   "edges": [],
+   "resources": [
+    {
+     "type": "google_firestore_database",
+     "logical_name": "default",
+     "purpose": "Stores operator RBAC assignments, feature flag state, and immutable admin_audit_events audit logs.",
+     "consumers": [
+      {
+       "service": "ex09-live",
+       "env_key": "FIRESTORE_DATABASE",
+       "attribute": "name"
+      }
+     ]
+    }
+   ],
+   "pushes": []
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "ex09-live",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "Internal Enterprise Administration Portal with Cloud Run Direct IAP and Immutable Firestore Audit Logging",
+   "summary": "Sequenced build plan for deploying ex09-live on Cloud Run v2 (min_instances=0, 512Mi) protected by Direct IAP without OAuth clients, FastAPI ES256 JWT verification middleware, Viewer/SuperAdmin RBAC, Tailwind CSS UI, Firestore admin_audit_events persistence, $10.00 FinOps budget cap, and 100% pytest coverage.",
+   "created_at": null,
+   "total_steps": 8,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "run.googleapis.com",
+    "iap.googleapis.com",
+    "firestore.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "billingbudgets.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-APIS",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Required Google Cloud Service APIs",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf"
+     ],
+     "description": "Declare google_project_service resources for Cloud Run, IAP, Firestore, Cloud Build, Artifact Registry, IAM, Cloud Resource Manager, and Billing Budgets with disable_on_destroy = false.",
+     "acceptance_criteria": [
+      "All required service APIs enabled with disable_on_destroy = false"
+     ],
+     "depends_on": [],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-02-DB-REGISTRY",
+     "step_index": 2,
+     "category": "DATABASE",
+     "title": "Provision Firestore Native Database, Artifact Registry, and $10 FinOps Budget",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Provision google_firestore_database.default in Native mode for admin_audit_events and portal state, Artifact Registry Docker repository, and a $10.00 monthly FinOps billing budget.",
+     "acceptance_criteria": [
+      "Firestore Native database initialized",
+      "Artifact Registry Docker repository provisioned",
+      "$10.00 FinOps budget configured"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-03-IAM",
+     "step_index": 3,
+     "category": "IAM",
+     "title": "Provision Dedicated Workload Service Account and Firestore IAM",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create dedicated workload service account for ex09-live and bind least-privilege roles/datastore.user.",
+     "acceptance_criteria": [
+      "Workload service account created",
+      "Bound strictly to roles/datastore.user"
+     ],
+     "depends_on": [
+      "STEP-02-DB-REGISTRY"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-03D-DIRECT-IAP",
+     "step_index": 4,
+     "category": "IAM",
+     "title": "Configure Cloud Run Direct IAP Perimeter Security",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Provision IAP service identity (iap.googleapis.com) and configure Direct IAP on Cloud Run without any OAuth client or client secret, binding the IAP service agent to roles/run.invoker and restricting unauthenticated public access so requests are intercepted at the perimeter by Google IAM/IAP.",
+     "acceptance_criteria": [
+      "Direct IAP configured with zero OAuth client or client secret resources",
+      "No allUsers invoker binding present; IAP service agent granted roles/run.invoker"
+     ],
+     "depends_on": [
+      "STEP-03-IAM"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-04-APP-CODE",
+     "step_index": 5,
+     "category": "APP_CODE",
+     "title": "Implement FastAPI Backend, IAP JWT Middleware, RBAC, Audit Trail, and Tailwind UI",
+     "target_files": [
+      "apps/ex09-live/main.py",
+      "apps/ex09-live/auth.py",
+      "apps/ex09-live/firestore_store.py",
+      "apps/ex09-live/templates/index.html",
+      "apps/ex09-live/requirements.txt",
+      "apps/ex09-live/Procfile"
+     ],
+     "description": "Build the FastAPI application with embedded Tailwind CSS administrative UI, X-Goog-IAP-JWT-Assertion ES256 verification against /projects/<project-number>/locations/<region>/services/<service-name> (ignoring X-Goog-Authenticated-User-Email), Viewer and SuperAdmin RBAC enforcement, and immutable audit logging to Firestore collection admin_audit_events for user role updates and feature flag toggles.",
+     "acceptance_criteria": [
+      "Middleware cryptographically validates X-Goog-IAP-JWT-Assertion ES256 signature and Cloud Run service audience",
+      "Operator identity extracted solely from verified JWT claims",
+      "Viewer and SuperAdmin RBAC enforced across endpoints",
+      "Immutable audit events persisted to admin_audit_events in Firestore"
+     ],
+     "depends_on": [
+      "STEP-03D-DIRECT-IAP"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-05-CICD",
+     "step_index": 6,
+     "category": "CICD",
+     "title": "Configure GitHub Actions CI/CD Pipeline with Path Filtering",
+     "target_files": [
+      ".github/workflows/deploy-ex09-live.yml"
+     ],
+     "description": "Create GitHub Actions workflow using WIF authentication and path filtering on apps/ex09-live/** to build and deploy container revisions to Cloud Run.",
+     "acceptance_criteria": [
+      "GitHub Actions workflow configured with WIF and apps/ex09-live/** path filter"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-06-COMPUTE",
+     "step_index": 7,
+     "category": "COMPUTE",
+     "title": "Provision Cloud Run v2 Service with Direct IAP and 512 MiB / Zero Min Instances",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Declare Cloud Run v2 service ex09-live with min_instances = 0, 512 MiB memory, Direct IAP enabled (iap_enabled = true), workload service account attachment, FIRESTORE_DATABASE and IAP audience env vars, and service URI output.",
+     "acceptance_criteria": [
+      "Cloud Run v2 service configured with min_instances = 0 and 512Mi memory",
+      "Direct IAP enabled and service URI exported in outputs.tf"
+     ],
+     "depends_on": [
+      "STEP-03D-DIRECT-IAP",
+      "STEP-05-CICD"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-07-TESTS",
+     "step_index": 8,
+     "category": "TEST",
+     "title": "Implement 100% Coverage Pytest Suite with ES256 IAP Key Signing and Documentation",
+     "target_files": [
+      "tests/test_main.py",
+      "README.md"
+     ],
+     "description": "Write comprehensive unit and integration tests using a locally generated ES256 key pair to sign X-Goog-IAP-JWT-Assertion tokens, achieving 100% pytest coverage over JWT validation, audience checks, unsigned header spoofing protection, Viewer/SuperAdmin RBAC, and immutable Firestore admin_audit_events writes, plus complete architecture documentation.",
+     "acceptance_criteria": [
+      "100% passing pytest coverage achieved",
+      "Locally generated ES256 key signs test IAP assertions exercising real signature and audience verification"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    }
+   ]
+  },
+  "estimated_complexity": "MEDIUM",
+  "requires_human_approval": false,
+  "risk_assessment": "Low operational and cost risk: scale-to-zero Cloud Run (min_instances = 0, 512 MiB) and Native Firestore easily stay within the $10.00 monthly FinOps cap, no Compute Engine VMs or external IPs are provisioned (fully compliant with folder policies), and defense-in-depth combines Cloud Run Direct IAP perimeter enforcement with in-app ES256 JWT signature and Cloud Run service audience verification.",
+  "requires_vpc": false,
+  "network_purpose": null,
+  "assigned_cidr_block": null,
+  "bundle_id": null,
+  "iac_engine": "tofu"
+ }
+}

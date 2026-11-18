@@ -1,0 +1,447 @@
+{
+ "id": "ex02-g13-prose-role-plan",
+ "summary": "Live run ex02-g13 (example 02): the plan asks for roles/iam.serviceAccountTokenCreator in task prose only (no typed role field). v1 reads typed target_files only (invariant 2), so this plan must PASS: it records the v1 IAM-in-prose gap (ARCHITECT-REFUSED-ROLES-FACT and the IAM_POLICY facet stay the defence).",
+ "source": {
+  "kind": "live",
+  "run_label": "ex02-g13",
+  "record": "architect stage trace agent_output (typed post-consensus plan, raw model JSON, before the test-layout rewrite)",
+  "model": "gemini-4-carbon",
+  "diagnosis": "docs/handoff/ex02-g13-repair-exhaustion-diagnosis.md"
+ },
+ "anonymized": "workload id ex02-g13 -> ex02-live (also in paths); build plan trace_id/created_at nulled, plan_id replaced; assigned_cidr_block nulled. Nothing else changed.",
+ "expect": [
+  {
+   "vcs_kind": "GITHUB",
+   "violations": []
+  },
+  {
+   "vcs_kind": "SERVERLESS_GIT",
+   "violations": []
+  },
+  {
+   "vcs_kind": null,
+   "violations": []
+  }
+ ],
+ "dag_preexisting": {
+  "is_valid": true,
+  "cycle_detected": false,
+  "orphan_dependencies": 0,
+  "ordering_violations": 0
+ },
+ "plan": {
+  "product_id": "ex02-live",
+  "project_tier": 2,
+  "summary": "Deploy a two-service Cloud Run microservices mesh consisting of a Public API Gateway (gateway) and an Internal Core Processing Service (core-service) with OIDC service-to-service authentication, Secret Manager HMAC signing, Firestore persistence, and a daily Cloud Scheduler OIDC reconciliation job.",
+  "architecture_overview": "The workload deploys two Cloud Run v2 services scaling to zero when idle in a healthy region without Compute Engine VMs or VPC requirements. Service A ('gateway', primary service) exposes public HTTPS routes GET /health, POST /api/v1/orders, and POST /api/v1/reconcile. On POST /api/v1/orders, gateway validates payloads, mints a Google-signed OIDC identity token with the fixed audience constant 'https://service-b.orders.example', and calls core-service over HTTPS. On POST /api/v1/reconcile, gateway strictly verifies the incoming Bearer OIDC token against Google signatures, the fixed audience constant 'https://service-a.orders.example', and the workload service account email lazily fetched from the GCP metadata server on first request, before invoking core-service's internal reconciliation route. Service B ('core-service', internal IAM-protected service) exposes GET /health and internal routes (/internal/orders, /internal/reconcile), verifying on every /internal/ request a Google-signed OIDC token with fixed audience 'https://service-b.orders.example' and email matching its own metadata-server service account email, retrieving 'order-signing-secret' from Secret Manager to compute cryptographic transaction digests, and persisting order and reconciliation records in Firestore Native DB. Cloud Scheduler triggers POST /api/v1/reconcile daily at 02:00 UTC ('0 2 * * *') using the workload service account and audience 'https://service-a.orders.example'.",
+  "infra_tasks": [
+   {
+    "task_id": "INFRA-01",
+    "title": "Enable Required Google Cloud APIs",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/variables.tf"
+    ],
+    "description": "Enable required Google Cloud APIs: run.googleapis.com, firestore.googleapis.com, secretmanager.googleapis.com, cloudscheduler.googleapis.com, cloudbuild.googleapis.com, artifactregistry.googleapis.com, and iam.googleapis.com with disable_on_destroy = false.",
+    "acceptance_criteria": [
+     "All required GCP service APIs are declared via google_project_service",
+     "disable_on_destroy is set to false on all API resources"
+    ],
+    "depends_on": [],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-02",
+    "title": "Provision Firestore Database, Secret Manager Secret, and Artifact Registry",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Provision the Firestore Native database ('orders_db' / default database), Artifact Registry Docker repository, and Secret Manager secret logical resource 'order_signing_secret' (secret_id 'order-signing-secret') with an initial random secret version for cryptographic order digest generation.",
+    "acceptance_criteria": [
+     "Firestore Native database resource is declared",
+     "Secret Manager secret 'order-signing-secret' and initial random secret version are provisioned",
+     "Artifact Registry repository is configured for container images"
+    ],
+    "depends_on": [
+     "INFRA-01"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-03",
+    "title": "Configure Workload Service Account and Least-Privilege IAM",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf"
+    ],
+    "description": "Create the shared workload service account used by both Cloud Run services and Cloud Scheduler. Grant roles/datastore.user for Firestore, roles/secretmanager.secretAccessor on the order-signing-secret, roles/iam.serviceAccountTokenCreator on itself so Cloud Scheduler and token flows can mint OIDC tokens, public roles/run.invoker (allUsers) on gateway, and authenticated roles/run.invoker for the workload service account on core-service.",
+    "acceptance_criteria": [
+     "Shared workload service account is created",
+     "Least-privilege bindings for Firestore (roles/datastore.user) and Secret Manager (roles/secretmanager.secretAccessor) are applied",
+     "Gateway allows public HTTPS invocation while core-service restricts roles/run.invoker to the workload service account"
+    ],
+    "depends_on": [
+     "INFRA-02"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "INFRA-04",
+    "title": "Provision Cloud Run Services (gateway & core-service) and Cloud Scheduler Job",
+    "category": "INFRA",
+    "target_files": [
+     "infra/workload/main.tf",
+     "infra/workload/outputs.tf",
+     ".github/workflows/deploy-gateway.yml",
+     ".github/workflows/deploy-core-service.yml"
+    ],
+    "description": "Provision Cloud Run v2 services 'gateway' and 'core-service' running as the shared workload service account with min_instance_count = 0 (scale to zero when idle). Wire CORE_SERVICE_URL and CORE_SERVICE_AUDIENCE to 'gateway', and ORDER_SIGNING_SECRET_ID and FIRESTORE_DATABASE to 'core-service'. Provision a google_cloud_scheduler_job running at '0 2 * * *' (Etc/UTC) sending POST requests to '${gateway.uri}/api/v1/reconcile' with oidc_token configured with service_account_email set to the workload service account email and audience set to 'https://service-a.orders.example'. Create path-filtered GitHub Actions deployment workflows for both services.",
+    "acceptance_criteria": [
+     "Both Cloud Run v2 services scale to zero (min_instance_count = 0) and run under the shared workload service account",
+     "core-service requires IAM authentication and exports its URL to gateway via CORE_SERVICE_URL",
+     "Cloud Scheduler job runs at '0 2 * * *' UTC targeting POST /api/v1/reconcile with OIDC audience 'https://service-a.orders.example' and workload service account email",
+     "GitHub Actions workflows deploy gateway and core-service with path filtering"
+    ],
+    "depends_on": [
+     "INFRA-03"
+    ],
+    "assigned_agent": "gcp-devops",
+    "priority": "HIGH"
+   }
+  ],
+  "code_tasks": [
+   {
+    "task_id": "CODE-01",
+    "title": "Implement Internal Core Processing Service (core-service)",
+    "category": "CODE",
+    "target_files": [
+     "apps/core-service/main.py",
+     "apps/core-service/requirements.txt",
+     "apps/core-service/Procfile"
+    ],
+    "description": "Build the FastAPI application for Service B ('core-service'). Expose GET /health and internal routes POST /internal/orders and POST /internal/reconcile. Implement strict application-level OIDC token verification on every /internal/ route: require an Authorization Bearer token, verify its Google signature and exact fixed audience constant 'https://service-b.orders.example' (never reading Host header or request URL), lazily fetch and cache the runtime service account email from the GCP metadata server on the first request (not at module import time), and verify token['email'] equals that service account email—returning HTTP 401 or 403 otherwise. Retrieve secret 'order-signing-secret' (via ORDER_SIGNING_SECRET_ID) from Secret Manager, compute an HMAC-SHA256 cryptographic transaction digest over order data, write transaction records to Firestore (FIRESTORE_DATABASE), and support order reconciliation on POST /internal/reconcile.",
+    "acceptance_criteria": [
+     "Every /internal/ request verifies Google-signed OIDC token with exact fixed audience 'https://service-b.orders.example'",
+     "Service account email is fetched from GCP metadata server lazily on first request (never at import time) and verified against token email",
+     "Requests with missing/invalid token, wrong audience, or wrong email return HTTP 401 or 403",
+     "Order signing key is retrieved from Secret Manager to generate HMAC-SHA256 digests and store records in Firestore"
+    ],
+    "depends_on": [
+     "INFRA-04"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-02",
+    "title": "Implement Public API Gateway Service (gateway)",
+    "category": "CODE",
+    "target_files": [
+     "apps/gateway/main.py",
+     "apps/gateway/requirements.txt",
+     "apps/gateway/Procfile"
+    ],
+    "description": "Build the FastAPI application for Service A ('gateway'). Expose GET /health, POST /api/v1/orders, and POST /api/v1/reconcile. On POST /api/v1/orders, validate incoming order payloads with Pydantic, acquire a Google Cloud IAM OIDC identity token with the fixed audience constant 'https://service-b.orders.example' (not the target URL), and forward the validated order to '${CORE_SERVICE_URL}/internal/orders' with Authorization Bearer token. On POST /api/v1/reconcile, before doing anything else, verify the caller's Bearer OIDC token: check Google signature, exact fixed audience constant 'https://service-a.orders.example' (never using Host or request fields), and token email matching the workload service account email lazily fetched from the metadata server on the first request (not at import time), returning HTTP 401 or 403 on any failure; once verified, mint an OIDC token for 'https://service-b.orders.example' and invoke '${CORE_SERVICE_URL}/internal/reconcile'.",
+    "acceptance_criteria": [
+     "GET /health and POST /api/v1/orders validate input and forward to core-service using OIDC audience constant 'https://service-b.orders.example'",
+     "POST /api/v1/reconcile verifies Google OIDC signature, exact fixed audience 'https://service-a.orders.example', and metadata-server service account email fetched on first request",
+     "POST /api/v1/reconcile returns HTTP 401 or 403 on missing token, invalid token, wrong audience, or wrong email before executing reconciliation logic"
+    ],
+    "depends_on": [
+     "CODE-01"
+    ],
+    "assigned_agent": "developer",
+    "priority": "HIGH"
+   },
+   {
+    "task_id": "CODE-03",
+    "title": "Implement Comprehensive Pytest Suite for OIDC, Metadata Server, and Order Flows",
+    "category": "TEST",
+    "target_files": [
+     "tests/test_gateway.py",
+     "tests/test_core_service.py",
+     "README.md"
+    ],
+    "description": "Write comprehensive unit and integration pytest suites for both 'gateway' and 'core-service' using mocked OIDC verification/minting, mocked GCP metadata server responses, mocked Secret Manager, and mocked Firestore. Explicitly test lazy metadata lookup (confirming importing modules makes zero network calls), valid order forwarding and HMAC digest persistence, core-service /internal/ rejection of missing tokens, wrong audiences (including Host-header spoofing attempts), and wrong service account emails, and gateway POST /api/v1/reconcile refusing a missing token, a wrong audience, and a wrong email with HTTP 401/403.",
+    "acceptance_criteria": [
+     "Importing gateway and core-service modules triggers no metadata server or GCP client calls at import time",
+     "Tests verify gateway POST /api/v1/reconcile rejects missing token, wrong audience, and wrong email with 401 or 403",
+     "Tests verify core-service /internal/ routes reject missing token, wrong audience, and wrong email with 401 or 403, and persist HMAC-signed orders on valid auth",
+     "All pytest tests pass deterministically offline"
+    ],
+    "depends_on": [
+     "CODE-02"
+    ],
+    "assigned_agent": "qa-reviewer",
+    "priority": "HIGH"
+   }
+  ],
+  "target_compute_services": [
+   "gateway",
+   "core-service"
+  ],
+  "compute_archetype": "cloudrun",
+  "service_topology": {
+   "services": [
+    {
+     "name": "gateway",
+     "kind": "cloudrun",
+     "purpose": "Public API Gateway exposing /health, /api/v1/orders, and OIDC-protected /api/v1/reconcile, forwarding requests to core-service with fixed-audience OIDC tokens.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 10,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    },
+    {
+     "name": "core-service",
+     "kind": "cloudrun",
+     "purpose": "Internal Core Processing Service verifying fixed-audience OIDC tokens and metadata SA email, computing Secret Manager HMAC digests, and writing orders to Firestore.",
+     "scaling": {
+      "min_instances": 0,
+      "max_instances": 10,
+      "cpu_always_allocated": false
+     },
+     "vm": null
+    }
+   ],
+   "primary_service": "gateway",
+   "edges": [
+    {
+     "caller": "gateway",
+     "callee": "core-service",
+     "protocol": "http",
+     "env_key_base": "CORE_SERVICE"
+    }
+   ],
+   "resources": [
+    {
+     "type": "google_secret_manager_secret",
+     "logical_name": "order_signing_secret",
+     "purpose": "Stores the order-signing-secret encryption/HMAC key read by core-service to compute cryptographic transaction digests.",
+     "consumers": [
+      {
+       "service": "core-service",
+       "env_key": "ORDER_SIGNING_SECRET_ID",
+       "attribute": "secret_id"
+      }
+     ],
+     "initial_value": "random"
+    },
+    {
+     "type": "google_firestore_database",
+     "logical_name": "orders_db",
+     "purpose": "Firestore Native database storing signed order transaction records and daily reconciliation summaries.",
+     "consumers": [
+      {
+       "service": "core-service",
+       "env_key": "FIRESTORE_DATABASE",
+       "attribute": "name"
+      }
+     ]
+    }
+   ],
+   "pushes": []
+  },
+  "sequenced_build_plan": {
+   "plan_id": "plan-corpus",
+   "product_id": "ex02-live",
+   "trace_id": null,
+   "build_type": "INITIAL_BUILD",
+   "feature_request_id": null,
+   "title": "Two-Service OIDC Cloud Run Mesh with Secret Manager Signing, Firestore, and Cloud Scheduler",
+   "summary": "Sequenced build plan for deploying Public Gateway (gateway) and Internal Core Service (core-service) on Cloud Run v2 with strict OIDC verification, Secret Manager signing secret, Firestore persistence, and daily Cloud Scheduler reconciliation.",
+   "created_at": null,
+   "total_steps": 7,
+   "status": "PLANNED",
+   "required_cloud_apis": [
+    "run.googleapis.com",
+    "firestore.googleapis.com",
+    "secretmanager.googleapis.com",
+    "cloudscheduler.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "iam.googleapis.com"
+   ],
+   "steps": [
+    {
+     "step_id": "STEP-01-APIS",
+     "step_index": 1,
+     "category": "FOUNDATION_API",
+     "title": "Enable Required Google Cloud Service APIs",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/variables.tf"
+     ],
+     "description": "Enable Cloud Run, Firestore, Secret Manager, Cloud Scheduler, Cloud Build, Artifact Registry, and IAM APIs with disable_on_destroy = false.",
+     "acceptance_criteria": [
+      "All required APIs declared with disable_on_destroy = false"
+     ],
+     "depends_on": [],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-02-DATA-SECRETS",
+     "step_index": 2,
+     "category": "DATABASE",
+     "title": "Provision Firestore Native DB, Secret Manager Secret, and Artifact Registry",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Provision Firestore Native database, Artifact Registry Docker repository, and Secret Manager secret 'order-signing-secret' (logical name order_signing_secret) with initial random secret version.",
+     "acceptance_criteria": [
+      "Firestore Native database provisioned",
+      "Secret Manager secret order-signing-secret created with initial random value",
+      "Artifact Registry repository created"
+     ],
+     "depends_on": [
+      "STEP-01-APIS"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-03-IAM",
+     "step_index": 3,
+     "category": "IAM",
+     "title": "Provision Shared Workload Service Account and IAM Bindings",
+     "target_files": [
+      "infra/workload/main.tf"
+     ],
+     "description": "Create the shared workload service account and bind roles/datastore.user, roles/secretmanager.secretAccessor on order-signing-secret, and roles/iam.serviceAccountTokenCreator for Cloud Scheduler OIDC token generation.",
+     "acceptance_criteria": [
+      "Shared workload service account created",
+      "Least-privilege IAM bindings configured for Firestore, Secret Manager, and OIDC token creation"
+     ],
+     "depends_on": [
+      "STEP-02-DATA-SECRETS"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-04-APP-CODE",
+     "step_index": 4,
+     "category": "APP_CODE",
+     "title": "Implement Gateway and Core-Service FastAPI Microservices",
+     "target_files": [
+      "apps/gateway/main.py",
+      "apps/gateway/requirements.txt",
+      "apps/gateway/Procfile",
+      "apps/core-service/main.py",
+      "apps/core-service/requirements.txt",
+      "apps/core-service/Procfile"
+     ],
+     "description": "Implement 'gateway' (GET /health, POST /api/v1/orders, POST /api/v1/reconcile) and 'core-service' (GET /health, POST /internal/orders, POST /internal/reconcile) with fixed-audience OIDC minting and verification ('https://service-b.orders.example' and 'https://service-a.orders.example'), lazy first-request metadata-server email lookup, Secret Manager HMAC signing, and Firestore persistence.",
+     "acceptance_criteria": [
+      "Both FastAPI services implemented with Procfiles and dependencies",
+      "Strict fixed-audience and metadata-server email OIDC verification enforced on core-service /internal/* and gateway /api/v1/reconcile",
+      "HMAC digest generation and Firestore order writes implemented in core-service"
+     ],
+     "depends_on": [
+      "STEP-03-IAM"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-05-CICD",
+     "step_index": 5,
+     "category": "CICD",
+     "title": "Configure Path-Filtered GitHub Actions Workflows",
+     "target_files": [
+      ".github/workflows/deploy-gateway.yml",
+      ".github/workflows/deploy-core-service.yml"
+     ],
+     "description": "Create GitHub Actions CI/CD pipelines authenticating via Workload Identity Federation with path filters for apps/gateway/** and apps/core-service/**.",
+     "acceptance_criteria": [
+      "Workflows configured for gateway and core-service with WIF and path filtering"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-06-COMPUTE",
+     "step_index": 6,
+     "category": "COMPUTE",
+     "title": "Provision Cloud Run Services and Daily Cloud Scheduler Job",
+     "target_files": [
+      "infra/workload/main.tf",
+      "infra/workload/outputs.tf"
+     ],
+     "description": "Provision scale-to-zero Cloud Run v2 services 'gateway' (public invoker) and 'core-service' (authenticated invoker restricted to workload SA), plus Cloud Scheduler job at '0 2 * * *' UTC targeting gateway POST /api/v1/reconcile with OIDC audience 'https://service-a.orders.example'.",
+     "acceptance_criteria": [
+      "gateway and core-service Cloud Run v2 resources declared with scale-to-zero and proper IAM invokers",
+      "Cloud Scheduler job configured at 0 2 * * * UTC with OIDC audience https://service-a.orders.example and workload SA"
+     ],
+     "depends_on": [
+      "STEP-03-IAM",
+      "STEP-05-CICD"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    },
+    {
+     "step_id": "STEP-07-TESTS",
+     "step_index": 7,
+     "category": "TEST",
+     "title": "Implement Pytest Unit Tests and Documentation",
+     "target_files": [
+      "tests/test_gateway.py",
+      "tests/test_core_service.py",
+      "README.md"
+     ],
+     "description": "Write comprehensive pytest unit tests mocking OIDC verification/minting, metadata server, Secret Manager, and Firestore, covering missing tokens, wrong audiences, wrong service account emails, lazy metadata lookup, and valid order processing.",
+     "acceptance_criteria": [
+      "All pytest tests pass with mocked OIDC and metadata server",
+      "Explicit test assertions cover reconcile and internal routes rejecting missing token, wrong audience, and wrong email"
+     ],
+     "depends_on": [
+      "STEP-04-APP-CODE"
+     ],
+     "status": "PENDING",
+     "started_at": null,
+     "completed_at": null,
+     "output_summary": null
+    }
+   ]
+  },
+  "estimated_complexity": "MEDIUM",
+  "requires_human_approval": false,
+  "risk_assessment": "Low operational and cost risk: serverless scale-to-zero Cloud Run v2 services, Firestore Native DB, Secret Manager, and Cloud Scheduler stay well under Tier 2 cost thresholds with zero Compute Engine VMs (inherently compliant with VM External IP prohibition) and defense-in-depth IAM + application-layer OIDC audience and identity verification.",
+  "requires_vpc": false,
+  "network_purpose": null,
+  "assigned_cidr_block": null,
+  "bundle_id": null,
+  "iac_engine": "tofu"
+ },
+ "prose_markers": [
+  {
+   "item": "infra_tasks[INFRA-03]",
+   "field": "description",
+   "contains": "roles/iam.serviceAccountTokenCreator"
+  }
+ ]
+}

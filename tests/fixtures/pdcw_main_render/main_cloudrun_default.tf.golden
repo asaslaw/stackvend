@@ -1,0 +1,73 @@
+# ==============================================================================
+# STACKVEND: WORKLOAD INFRASTRUCTURE (DETERMINISTIC GOLDEN FOUNDATION)
+# ==============================================================================
+# Instantiates canonical vendored foundation and compute modules.
+# Any bespoke additions (Storage, Pub/Sub, Redis) are declared in custom.tf.
+# ==============================================================================
+
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 6.0.0, < 7.0.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = ">= 6.0.0, < 7.0.0"
+    }
+  }
+}
+
+provider "google" {
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
+  billing_project       = var.project_id
+}
+
+provider "google-beta" {
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
+  billing_project       = var.project_id
+}
+
+# ------------------------------------------------------------------------------
+# Tier 1: Canonical Base Foundation (APIs, WIF, IAM, Firestore, Registry)
+# ------------------------------------------------------------------------------
+module "foundation" {
+  source                = "../modules/workload-foundation/base"
+  project_id            = var.project_id
+  region                = var.region
+  product_id            = var.product_id
+  github_repo_full_name = var.github_repo_full_name
+  additional_apis       = var.additional_apis
+}
+
+# ------------------------------------------------------------------------------
+# Tier 2: Compute Archetype (cloudrun)
+# ------------------------------------------------------------------------------
+module "compute" {
+  source                = "../modules/compute-cloudrun"
+  project_id            = var.project_id
+  region                = var.region
+  product_id            = var.product_id
+  service_name          = var.product_id
+  service_account_email = module.foundation.workload_sa_email
+  container_image       = var.container_image
+  oauth_client_id       = var.oauth_client_id
+  firebase_api_key      = var.firebase_api_key
+  firebase_auth_domain  = var.firebase_auth_domain
+  min_instances         = 0
+  max_instances         = 10
+  cpu_idle              = true
+  allow_unauthenticated = var.allow_unauthenticated
+  enable_direct_iap     = var.enable_direct_iap
+  authorized_invoker_members = var.authorized_invoker_members
+  cpu_limit             = var.cpu_limit
+  memory_limit          = var.memory_limit
+  env_vars              = var.env_vars
+
+  depends_on = [module.foundation]
+}

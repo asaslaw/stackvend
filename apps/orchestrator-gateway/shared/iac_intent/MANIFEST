@@ -1,0 +1,44 @@
+{
+ "module_catalog": {
+  "built_by": "scripts/build_iac_catalog.py",
+  "modules_tree_sha256": "2f72266db32b9d8cc79a89a68d9372ee9af4117d2da755944184b1807dcff903",
+  "sha256": "02ac3673c801b57ed29f42f960d10b9076a613189ece65dd94302dfee660591c"
+ },
+ "provider_schema": {
+  "built_by": "scripts/build_provider_schema_slice.py (offline, filesystem_mirror only)",
+  "engine": {
+   "name": "opentofu",
+   "version": "1.9.0"
+  },
+  "full_schema_dump_sha256": "128a36cd756fba515b9d0842b2b1586ff6509516e35c40dfd32173a2727dec0c",
+  "provider_schema_slice_sha256": "d82c59718fdab6d085bed318f1d179ced5cd2f302fe7535b5f954ec8e97d9a03",
+  "providers": {
+   "hashicorp/google": "6.35.0",
+   "hashicorp/google-beta": "6.35.0",
+   "hashicorp/kubernetes": "2.36.0",
+   "hashicorp/random": "3.7.1"
+  },
+  "schema": "iac_intent_manifest/v1",
+  "slice_types": [
+   "google_cloud_scheduler_job",
+   "google_project_iam_member",
+   "google_pubsub_subscription",
+   "google_pubsub_subscription_iam_member",
+   "google_pubsub_topic",
+   "google_pubsub_topic_iam_member",
+   "google_secret_manager_secret",
+   "google_secret_manager_secret_iam_member",
+   "google_secret_manager_secret_version",
+   "google_service_account",
+   "google_service_account_iam_member",
+   "google_sql_database",
+   "google_sql_user",
+   "google_storage_bucket",
+   "google_storage_bucket_iam_member",
+   "google_storage_notification",
+   "kubernetes_manifest",
+   "random_id",
+   "random_password"
+  ]
+ }
+}

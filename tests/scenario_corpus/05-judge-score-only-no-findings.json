@@ -1,0 +1,84 @@
+{
+  "title": "Adherence score below 0.95 with zero enumerated findings; the same bytes score 0.97 next time: no block on the score alone",
+  "source": "example 02 live run 11-13 finding 4 (score line) and the security lens passing then failing on identical code; review 11-13 (e) item 1",
+  "mechanism": "M5 an LLM verdict is a hard gate with no consistency control (fixed by JUDGE-GATE-ENUMERATED-FINDINGS, merged 11-14)",
+  "product_id": "score-demo",
+  "trace": "trace-score-only",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "score-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "score-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "HTTP service",
+      "target_files": [
+        "apps/score-demo/main.py"
+      ]
+    }
+  ],
+  "drafts": {
+    "build": {
+      "apps/score-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/score-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/score-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": [
+    "build",
+    "build",
+    "build",
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "0": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.9,
+          "missed": []
+        }
+      }
+    },
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.97,
+          "missed": []
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 1,
+      "max_generations": 1
+    }
+  }
+}

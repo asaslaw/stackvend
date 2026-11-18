@@ -1,0 +1,89 @@
+{
+  "title": "Plan error from a terraform server older than the gateway (no failure route): typed stop, no remediation",
+  "source": "red-team R4 of SCENARIO-REPLAY-CORPUS (11-14): deploy order gateway before terraform server",
+  "mechanism": "M1 developer by default, deploy side: no route is no evidence, so never the developer",
+  "product_id": "golden-plan-demo",
+  "trace": "trace-golden-plan-old-server",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "topology": {
+    "services": [
+      {
+        "name": "golden-plan-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "golden-plan-demo",
+    "edges": [],
+    "resources": []
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "HTTP service",
+      "target_files": [
+        "apps/golden-plan-demo/main.py"
+      ]
+    }
+  ],
+  "drafts": {
+    "build": {
+      "apps/golden-plan-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/golden-plan-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/golden-plan-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": [
+    "build",
+    "build",
+    "build"
+  ],
+  "sandbox": {
+    "tests_total": 3,
+    "rules": []
+  },
+  "judge": {
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "deploy": {
+    "note": "attempts[n].result = the failed result before routing (what a server without the owner router sends: status FAILED, the engine's text, no class); engine_plan_stream = the read-only re-plan's `plan -json` stream of the same error. The terraform server's own routing code runs on them (tests/scenario_tf_route_child.py).",
+    "attempts": [
+      {
+        "result": {
+          "status": "FAILED",
+          "error": "Terraform apply failed: Error: \"account_id\" (\"sa-golden-plan-demo-\") must match regex \"^[a-z]([-a-z0-9]*[a-z0-9])?$\"\n\n  with module.foundation.google_service_account.workload_sa,\n  on .terraform/modules/foundation/base/iam.tf line 84, in resource \"google_service_account\" \"workload_sa\"",
+          "lock_info": null,
+          "stdout": "",
+          "stderr": "Error: \"account_id\" (\"sa-golden-plan-demo-\") must match regex",
+          "compliance_gate_phase": "plan"
+        },
+        "engine_plan_stream": "{\"type\": \"version\", \"terraform\": \"1.10.0\"}\n{\"type\": \"diagnostic\", \"diagnostic\": {\"severity\": \"error\", \"summary\": \"\\\"account_id\\\" (\\\"sa-golden-plan-demo-\\\") must match regex \\\"^[a-z]([-a-z0-9]*[a-z0-9])?$\\\"\", \"address\": \"module.foundation.google_service_account.workload_sa\", \"range\": {\"filename\": \"modules/workload-foundation/base/iam.tf\", \"start\": {\"line\": 84, \"column\": 16}}}}"
+      }
+    ],
+    "server": "pre-router"
+  },
+  "expect": {
+    "outcome": {
+      "status": "STOPPED",
+      "stage": "developer",
+      "error_class": "OPERATOR_ACTION_REQUIRED",
+      "reason": "NO_DEPLOY_FAILURE_ROUTE",
+      "max_generations": 1
+    }
+  }
+}

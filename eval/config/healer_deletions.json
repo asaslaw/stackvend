@@ -1,0 +1,414 @@
+{
+  "_doc": "Retired healers (FD-55 W0 / FD-4CR): healer_targets.json fragments whose code was deleted ON PURPOSE, each with the commit that deleted it (`commit`, an abbreviated SHA on main) and the row or step that owns the deletion (`by`). Reviewed list: adding an entry is the deliberate act that takes a deleted healer out of the probe-coverage denominator. targets.anchor_to marks a listed fragment `absent` with `deleted_by` ONLY when its code is actually gone from the product root under test (function deleted, or inline anchor lost); against an older product root that still has the code it stays measured. metrics.coverage computes coverage_pct over live fragments only (inventory minus retired); an absent or anchor_lost fragment that is NOT listed here stays in the denominator as unmeasured and fails the exact pin in tests/test_eval_e2e.py. Each later healer deletion (e.g. an FD-55 wave) adds its rows here in the same commit.",
+  "schema": 2,
+  "retired": {
+    "HA-10@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1708-1823": {
+      "commit": "f313824e1ed0",
+      "by": "S1-A 1/5: HA-10 stem purge (HS-01, HS-08)"
+    },
+    "HA-13@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1822-1822": {
+      "commit": "fe8ee73a2ee9",
+      "by": "FD-4AA: generation-side HA-13 call deleted"
+    },
+    "HA-15@apps/orchestrator-gateway/developer_agent/hcl_utils.py:sanitize_hcl_wif:158-279": {
+      "commit": "6c1cfefdd267",
+      "by": "FD-4U/FD-4AY, register row 6: WIF sanitizer deleted"
+    },
+    "HA-15@apps/orchestrator-gateway/shared/hcl_utils.py:sanitize_hcl_wif:158-279": {
+      "commit": "6c1cfefdd267",
+      "by": "FD-4U/FD-4AY, register row 6: WIF sanitizer deleted"
+    },
+    "HA-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1518-1563": {
+      "commit": "e0802fd6d0a5",
+      "by": "S2-B B3 (HS-17a, HS-18)"
+    },
+    "HA-19@apps/orchestrator-gateway/shared/callbacks.py:CallbackDeliveryClient._get_headers:137-137": {
+      "commit": "a58ba120a939",
+      "by": "FD-4J: callback token only for the Workflows callback endpoint (substring checks deleted)"
+    },
+    "HA-19@apps/orchestrator-gateway/shared/callbacks.py:CallbackDeliveryClient._get_headers:149-149": {
+      "commit": "a58ba120a939",
+      "by": "FD-4J: callback token only for the Workflows callback endpoint (substring checks deleted)"
+    },
+    "HA-21@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.get_admin_and_creator_members:105-105": {
+      "commit": "c808395af8c2",
+      "by": "lane 19 L19-8, FD-4I: compliance never adds principals"
+    },
+    "HA-21@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.get_admin_and_creator_members:1264-1272": {
+      "commit": "27e366c5abad",
+      "by": "lane 19 L19-2, FD-4I: developer access from typed data only"
+    },
+    "HA-22@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.audit_and_enrich:576-584": {
+      "commit": "c808395af8c2",
+      "by": "lane 19 L19-8, FD-4I: compliance never adds principals"
+    },
+    "HA-22@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent._generate_template_scaffold:2586-2586": {
+      "commit": "32c709b611bd",
+      "by": "lane 19 L19-3a, register row 27a: template fallback app deleted"
+    },
+    "HA-22@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1692-1696": {
+      "commit": "27e366c5abad",
+      "by": "lane 19 L19-2, FD-4I: developer access from typed data only"
+    },
+    "HA-23@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent._generate_template_scaffold:2087-2087": {
+      "commit": "32c709b611bd",
+      "by": "lane 19 L19-3a, register row 27a: template fallback app deleted"
+    },
+    "HA-25@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.reconcile_automated_pull_requests:791-858": {
+      "commit": "0f51405b6a99",
+      "by": "FD-4BB + FD-4P: PR merge/close bound to the PR ledger"
+    },
+    "HA-26@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.merge_pull_request:3145-3145": {
+      "commit": "0f51405b6a99",
+      "by": "FD-4BB + FD-4P: PR merge/close bound to the PR ledger"
+    },
+    "HA-26@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.merge_pull_request:3158-3158": {
+      "commit": "0f51405b6a99",
+      "by": "FD-4BB + FD-4P: PR merge/close bound to the PR ledger"
+    },
+    "HA-26@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.merge_pull_request:921-940": {
+      "commit": "0f51405b6a99",
+      "by": "FD-4BB + FD-4P: PR merge/close bound to the PR ledger"
+    },
+    "HB-07@apps/orchestrator-gateway/developer_agent/handler.py:sanitize_hcl_triggers:1007-1056": {
+      "commit": "8385cd6d22a6",
+      "by": "lane 8: gateway sanitize_hcl_triggers deleted"
+    },
+    "HB-22@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1641-1663": {
+      "commit": "cea5d1366ff1",
+      "by": "S2-B B4 (HS-19b)"
+    },
+    "HB-26@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2354-2389": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-26@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.purge_shadowed_package_files:221-248": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-27@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.purge_shadowed_package_files:139-219": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-28@apps/orchestrator-gateway/developer_agent/handler.py:standardize_requirements:689-724": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-29@apps/orchestrator-gateway/developer_agent/handler.py:ensure_health_check_endpoint:661-686": {
+      "commit": "5b32c72921c8",
+      "by": "S2-A A6 (HS-09): HB-29 -> V3c container contract"
+    },
+    "HB-30@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_gce_resource_uris:709-760": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:heal_multiline_with_statements:17-53": {
+      "commit": "51c266016d6d",
+      "by": "S2-A A3 (HS-13): HB-31 syntax part deleted"
+    },
+    "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:heal_try_fallback_labels:56-71": {
+      "commit": "51c266016d6d",
+      "by": "S2-A A3 (HS-13): HB-31 syntax part deleted"
+    },
+    "HB-31@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:pre_ast_normalize:74-116": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-32@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2299-2342": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HB-42@apps/orchestrator-gateway/developer_agent/handler.py:sanitize_python_paths:562-615": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HC-01@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1757-1785": {
+      "commit": "8fb67d96e1e1",
+      "by": "lane 8: HC-01 random-provider rule deleted"
+    },
+    "HC-02@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1977-1997": {
+      "commit": "45a2a07f39bc",
+      "by": "S2-B B5 (HS-31a)"
+    },
+    "HC-04@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1671-1755": {
+      "commit": "3fb150187089",
+      "by": "S2-B B6 (HS-31a)"
+    },
+    "HC-05@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1567-1639": {
+      "commit": "cea5d1366ff1",
+      "by": "S2-B B4 (HS-19b)"
+    },
+    "HC-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1518-1563": {
+      "commit": "e0802fd6d0a5",
+      "by": "S2-B B3 (HS-17a, HS-18)"
+    },
+    "HC-07@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1788-1818": {
+      "commit": "d34f469273ca",
+      "by": "S2-B B7 (HS-22a)"
+    },
+    "HC-08@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1934-1956": {
+      "commit": "a6af7a1c5144",
+      "by": "S2-B B8 (HS-21a)"
+    },
+    "HC-09@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:2022-2029": {
+      "commit": "6822b51bb2ca",
+      "by": "S2-B B9 (HS-11)"
+    },
+    "HC-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1490-1516": {
+      "commit": "0da6d00e1186",
+      "by": "S2-B B2 (HS-11)"
+    },
+    "HC-16@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2344-2352": {
+      "commit": "358e45b6047a",
+      "by": "S2-A A4/A5 (HS-14, HS-15): HC-16 -> PY.* diagnostics"
+    },
+    "HC-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:2031-2062": {
+      "commit": "e0802fd6d0a5",
+      "by": "S2-B B3 (HS-17a, HS-18)"
+    },
+    "HD-01@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_compute_archetype:59-139": {
+      "commit": "14d21f44156f",
+      "by": "typed compute intent: HD-01/HD-02 from the architect plan"
+    },
+    "HD-02@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_requested_service_count:147-191": {
+      "commit": "14d21f44156f",
+      "by": "typed compute intent: HD-01/HD-02 from the architect plan"
+    },
+    "HD-02@apps/orchestrator-gateway/developer_agent/terraform_engine.py:detect_requested_service_names:210-364": {
+      "commit": "14d21f44156f",
+      "by": "typed compute intent: HD-01/HD-02 from the architect plan"
+    },
+    "HD-05@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.detect_profile:137-144": {
+      "commit": "987d5fcc05d8",
+      "by": "compliance bundle 2/3 (lane 17 PR-1a): intent in the server"
+    },
+    "HD-05@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.detect_profile:28-34": {
+      "commit": "987d5fcc05d8",
+      "by": "compliance bundle 2/3 (lane 17 PR-1a): intent in the server"
+    },
+    "HD-06@apps/orchestrator-gateway/compliance_agent/handler.py:ComplianceAgentHandler.audit_and_enrich:428-451": {
+      "commit": "987d5fcc05d8",
+      "by": "compliance bundle 2/3 (lane 17 PR-1a): intent in the server"
+    },
+    "HD-06@apps/orchestrator-gateway/developer_agent/handler.py:DeveloperAgent.generate_code_files:1585-1678": {
+      "commit": "fc4853bed19f",
+      "by": "FD-4R R-6: developer ingress-intent fallbacks deleted"
+    },
+    "HD-13@apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py:SwarmDispatcher._call_gemini_with_backoff:245-247": {
+      "commit": "8bb74b388ede",
+      "by": "lane 19 L19-3a, FD-4C, register row 27a: swarm stub files deleted"
+    },
+    "HD-13@apps/orchestrator-gateway/developer_agent/swarm_dispatcher.py:SwarmDispatcher._generate_deterministic_junior_files:325-345": {
+      "commit": "8bb74b388ede",
+      "by": "lane 19 L19-3a, FD-4C, register row 27a: swarm stub files deleted"
+    },
+    "HD-19@apps/orchestrator-gateway/qa_auditor/coordinator.py:DualLensAuditorCoordinator.evaluate_stage_two:62-115": {
+      "commit": "0d1c7ba89c65",
+      "by": "FD-4F (lane 13): Stage 2 dual-lens audit fails closed, heuristic lenses deleted"
+    },
+    "HD-19@apps/orchestrator-gateway/release_gatekeeper.py:evaluate_release_decision:69-69": {
+      "commit": "2fdec06d95b8",
+      "by": "FD-4F: release gatekeeper fails closed"
+    },
+    "HD-19@apps/orchestrator-gateway/release_gatekeeper.py:evaluate_release_decision:88-88": {
+      "commit": "2fdec06d95b8",
+      "by": "FD-4F: release gatekeeper fails closed"
+    },
+    "HD-22@apps/orchestrator-gateway/qa_auditor/adherence_lens.py:_deterministic_adherence_heuristic:154-217": {
+      "commit": "0d1c7ba89c65",
+      "by": "FD-4F (lane 13): Stage 2 dual-lens audit fails closed, heuristic lenses deleted"
+    },
+    "HD-22@apps/orchestrator-gateway/qa_auditor/security_lens.py:evaluate_security_lens:136-191": {
+      "commit": "0d1c7ba89c65",
+      "by": "FD-4F (lane 13): Stage 2 dual-lens audit fails closed, heuristic lenses deleted"
+    },
+    "HE-02@apps/orchestrator-gateway/gatekeeper_agent/ast_transformer.py:ContainerImportTransformer.transform:153-180": {
+      "commit": "21f5ff07aac5",
+      "by": "FD-4AD: Python healers that mutate valid apps deleted"
+    },
+    "HE-03@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.extract_ast_dependencies:277-322": {
+      "commit": "4e984f0132b7",
+      "by": "FD-4AD RT F4 / FDAD-5: uncalled verifier extract_ast_dependencies deleted"
+    },
+    "HE-13@apps/orchestrator-gateway/shared/module_inspector.py:_extract_blocks:37-213": {
+      "commit": "08ab83acbbae",
+      "by": "cc-module-inspector-parser CC-MI-1: block regexes replaced by python-hcl2"
+    },
+    "HA-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:run_ast_preflight_check:518-520": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HA-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_duplicate_gke_clusters:2454-2561": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HA-18@apps/orchestrator-gateway/developer_agent/preflight_validator.py:inject_gke_workload_identity_bindings:1375-1478": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-06@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_multiservice_compute_coverage:2564-2695": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-17@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_gcp_naming_invariants:1192-1293": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-18@apps/orchestrator-gateway/developer_agent/preflight_validator.py:sanitize_self_referential_hcl_blocks:1296-1372": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-19@apps/orchestrator-gateway/developer_agent/preflight_validator.py:inject_cloud_run_timeouts:2403-2451": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-23@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_service_account_ids:762-818": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HC-03@apps/orchestrator-gateway/developer_agent/preflight_validator.py:self_correct_hcl:1999-2015": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HD-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:generate_rfc1123_variable_default:1069-1189": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HD-15@apps/orchestrator-gateway/developer_agent/preflight_validator.py:_get_declared_compute_outputs:143-187": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HD-15@apps/orchestrator-gateway/developer_agent/preflight_validator.py:run_ast_preflight_check:431-690": {
+      "commit": "ccb88ae1",
+      "by": "FD-55 W4 (FD55-W4): generation-time name/infra guessing deleted"
+    },
+    "HB-01@apps/orchestrator-gateway/developer_agent/terraform_engine.py:reconcile_iac_reference_graph:743-909": {
+      "commit": "3a29fe83",
+      "by": "FD-55 W5 (FD55-W5): gateway legacy remainder deleted (name-matching rewiring, twins of kept rules)"
+    },
+    "HB-27@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_packages:2208-2297": {
+      "commit": "3a29fe83",
+      "by": "FD-55 W5 (FD55-W5): gateway legacy remainder deleted (name-matching rewiring, twins of kept rules)"
+    },
+    "HB-29@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.enforce_container_contracts:509-559": {
+      "commit": "3a29fe83",
+      "by": "FD-55 W5 (FD55-W5): gateway legacy remainder deleted (name-matching rewiring, twins of kept rules)"
+    },
+    "HB-33@apps/orchestrator-gateway/developer_agent/preflight_validator.py:validate_and_heal_python_requirements:2070-2156": {
+      "commit": "3a29fe83",
+      "by": "FD-55 W5 (FD55-W5): gateway legacy remainder deleted (name-matching rewiring, twins of kept rules)"
+    },
+    "HA-12@apps/orchestrator-gateway/shared/hcl_utils.py:strip_hcl_resource_block:573-603": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-12@apps/orchestrator-gateway/developer_agent/hcl_utils.py:strip_hcl_resource_block:573-603": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:deduplicate_semantic_hcl_resources:606-733": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:deduplicate_semantic_hcl_resources:606-733": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:_extract_resource_target_identifier:547-570": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:_extract_resource_target_identifier:547-570": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/shared/hcl_utils.py:deduplicate_semantic_hcl_blocks:1030-1122": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:deduplicate_semantic_hcl_blocks:1030-1122": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-14@apps/orchestrator-gateway/developer_agent/preflight_validator.py:deduplicate_semantic_hcl_resources:893-1006": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HB-03@apps/orchestrator-gateway/developer_agent/terraform_engine.py:extract_bespoke_custom_resources:1953-2034": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HB-44@apps/orchestrator-gateway/shared/providers/github_provider.py:GitHubProvider.sanitize_pipeline_content:965-1007": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HB-49@apps/orchestrator-gateway/shared/hcl_utils.py:coerce_hcl_metadata_maps:991-1027": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HB-49@apps/orchestrator-gateway/developer_agent/hcl_utils.py:coerce_hcl_metadata_maps:991-1027": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HC-15@apps/orchestrator-gateway/gatekeeper_agent/verifier.py:SynthesisVerifierAgent.cure_syntax_errors:878-924": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HC-19@apps/orchestrator-gateway/shared/hcl_utils.py:_ensure_resource_depends_on:1125-1162": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HC-19@apps/orchestrator-gateway/developer_agent/hcl_utils.py:_ensure_resource_depends_on:1125-1162": {
+      "commit": "0912620b",
+      "by": "FD-55 W1 (FD55-W1): unused fixer code deleted (no production caller)"
+    },
+    "HA-13@apps/orchestrator-gateway/shared/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HA-13@apps/orchestrator-gateway/developer_agent/hcl_utils.py:auto_wire_network_graph_dependencies:1165-1878": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HB-24@apps/orchestrator-gateway/shared/hcl_utils.py:heal_orphaned_resource_syntax:108-133": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HB-24@apps/orchestrator-gateway/developer_agent/hcl_utils.py:heal_orphaned_resource_syntax:108-133": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HC-14@apps/orchestrator-gateway/shared/hcl_utils.py:self_correct_hcl_syntax:469-518": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HC-14@apps/orchestrator-gateway/developer_agent/hcl_utils.py:self_correct_hcl_syntax:469-518": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HE-01@apps/orchestrator-gateway/shared/hcl_utils.py:validate_hcl_syntax_tree:282-466": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HE-01@apps/orchestrator-gateway/developer_agent/hcl_utils.py:validate_hcl_syntax_tree:282-466": {
+      "commit": "a1bc61b7",
+      "by": "FD-55 W6b (FD55-W6b+W6d): apply-time IaC curing deleted with its last caller"
+    },
+    "HA-17@apps/orchestrator-gateway/shared/hcl_utils.py:sanitize_hcl_locals_invariants:773-919": {
+      "commit": "1f01944f",
+      "by": "FD-55 W6b + W6c merge (FD55-W6b+W6d / FD55-W6c): locals curing deleted with its last callers (U2)"
+    },
+    "HA-17@apps/orchestrator-gateway/developer_agent/hcl_utils.py:sanitize_hcl_locals_invariants:773-919": {
+      "commit": "1f01944f",
+      "by": "FD-55 W6b + W6c merge (FD55-W6b+W6d / FD55-W6c): locals curing deleted with its last callers (U2)"
+    },
+    "HD-03@apps/orchestrator-gateway/developer_agent/handler.py:resolve_service_archetype:797-860": {
+      "commit": "b32b9a6b",
+      "by": "FD-55 W8-1 (FD55-W8): CI workflow kind from the typed compute intent, no HCL / name-substring guess"
+    },
+    "HB-43@apps/orchestrator-gateway/developer_agent/handler.py:_deduplicate_env_block:850-850": {
+      "commit": "b32b9a6b",
+      "by": "FD-55 W8-1 (FD55-W8): inventory line handler.py:850 (enclosing resolve_service_archetype, the HD-03 resource-type branch) deleted with HD-03"
+    }
+  }
+}

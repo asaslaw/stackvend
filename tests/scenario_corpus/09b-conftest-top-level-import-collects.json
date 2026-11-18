@@ -1,0 +1,43 @@
+{
+  "title": "Root tests/ import helpers with `from conftest import ...`: the gatekeeper no longer makes tests/ a package under them",
+  "source": "example 09 live run 11-15 (docs/handoff/ex09-1115-dag-target-file-diagnosis.md section 1): QA attempts 1 and 3 failed collection, PY.TEST_SETUP_ERROR tests.test_main (ModuleNotFoundError: No module named 'conftest'), because the platform added tests/__init__.py under a test module that imports its sibling conftest.py at top level",
+  "mechanism": "CONFTEST-TOP-LEVEL-IMPORT: the add-only package scaffolding (gatekeeper verifier.purge_shadowed_package_files) skips exactly a directory whose own files import the top-level module `conftest` next to its conftest.py (AST facts; no relative import, nothing imports the directory as a package). The sandbox rule is pytest's own import rule (default prepend mode), pinned by tests/test_conftest_top_level_import.py with real pytest collections",
+  "product_id": "admin-portal",
+  "trace": "trace-conftest-import",
+  "access": {"mode": "PUBLIC_APP"},
+  "topology": {"services": [{"name": "admin-portal", "kind": "cloudrun"}], "primary_service": "admin-portal",
+               "edges": [], "resources": []},
+  "task_dag": [
+    {"task_id": "CODE-01", "category": "CODE", "title": "HTTP service", "target_files": ["apps/admin-portal/main.py"]},
+    {"task_id": "CODE-03", "category": "TEST", "title": "pytest suite",
+     "target_files": ["tests/test_main.py", "tests/conftest.py"]}
+  ],
+  "blobs": {
+    "main": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "conftest": "import pytest\n\nTEST_REGION = 'us-central1'\n\n\n@pytest.fixture\ndef region():\n    return TEST_REGION\n",
+    "test_main": "from conftest import TEST_REGION\n\n\ndef test_region(region):\n    assert region == TEST_REGION\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/admin-portal/main.py": "@main",
+      "apps/admin-portal/requirements.txt": "@requirements",
+      "apps/admin-portal/Procfile": "@procfile",
+      "tests/conftest.py": "@conftest",
+      "tests/test_main.py": "@test_main"
+    }
+  },
+  "generations": ["build"],
+  "sandbox": {"tests_total": 4, "rules": [
+    {"when": {"all": [{"file": "tests/__init__.py", "present": true},
+                      {"file": "tests/test_main.py", "contains": "from conftest import"}]},
+     "diagnostics": [{"code": "PY.TEST_SETUP_ERROR", "file": "tests/test_main.py",
+                      "message": "tests.test_main: collection failure (ModuleNotFoundError: No module named 'conftest')"}]}
+  ]},
+  "judge": {"*": {"security": {"reply": {"critical": []}}, "adherence": {"reply": {"score": 1.0, "missed": []}}}},
+  "expect": {
+    "outcome": {"status": "SUCCESS", "qa_attempts": 1, "max_generations": 1, "developer_dispatches": 1,
+                "main_lacks": ["tests/__init__.py"]}
+  }
+}

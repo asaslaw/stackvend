@@ -1,0 +1,128 @@
+{
+  "title": "Typed intent workload: a judge finding on the render custom.tf.json is repaired through the intent (its single source)",
+  "source": "QA-STOP-RENDER-SOURCES (owner 11-14, item B of the ex08-1114 diagnosis): custom.tf.json is rendered from iac_intent.json only",
+  "mechanism": "QA-STOP-RENDER-SOURCES: a finding on a render whose single source is a developer document is seeded on that document (before: a full regeneration)",
+  "product_id": "vault-demo",
+  "trace": "trace-vault-render-finding",
+  "access": {
+    "mode": "PUBLIC_APP"
+  },
+  "iac_mode": "generate",
+  "topology": {
+    "services": [
+      {
+        "name": "vault-demo",
+        "kind": "cloudrun"
+      }
+    ],
+    "primary_service": "vault-demo",
+    "edges": [],
+    "resources": [
+      {
+        "type": "google_storage_bucket",
+        "logical_name": "uploads",
+        "purpose": "user uploads",
+        "consumers": [
+          {
+            "service": "vault-demo",
+            "env_key": "UPLOADS_BUCKET",
+            "attribute": null
+          }
+        ]
+      }
+    ]
+  },
+  "task_dag": [
+    {
+      "task_id": "CODE-01",
+      "title": "upload service",
+      "target_files": [
+        "apps/vault-demo/main.py"
+      ]
+    },
+    {
+      "task_id": "INFRA-04",
+      "title": "uploads bucket named files",
+      "target_files": [
+        "infra/workload/iac_intent.json"
+      ]
+    }
+  ],
+  "blobs": {
+    "main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\nUPLOADS_BUCKET = os.environ.get('UPLOADS_BUCKET', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "intent": "{\n  \"schema\": \"iac_intent/v1\",\n  \"modules\": [\n    {\"module\": \"storage-bucket\", \"name\": \"uploads\", \"realizes\": \"uploads\", \"args\": {\"bucket_name_suffix\": \"uploads\"}}\n  ],\n  \"resources\": [],\n  \"outputs\": []\n}\n",
+    "intent_repaired": "{\n  \"schema\": \"iac_intent/v1\",\n  \"modules\": [\n    {\"module\": \"storage-bucket\", \"name\": \"uploads\", \"realizes\": \"uploads\", \"args\": {\"bucket_name_suffix\": \"files\"}}\n  ],\n  \"resources\": [],\n  \"outputs\": []\n}\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/vault-demo/main.py": "@main",
+      "apps/vault-demo/requirements.txt": "@requirements",
+      "apps/vault-demo/Procfile": "@procfile",
+      "apps/vault-demo/tests/__init__.py": "",
+      "apps/vault-demo/tests/test_vault_demo.py": "def test_health():\n    assert True\n",
+      "infra/workload/iac_intent.json": "@intent",
+      "README.md": "# vault-demo\n\nUploads.\n"
+    }
+  },
+  "generations": [
+    "build"
+  ],
+  "repairs": [
+    {
+      "infra/workload/iac_intent.json": "@intent_repaired"
+    }
+  ],
+  "sandbox": {
+    "tests_total": 12,
+    "rules": []
+  },
+  "judge": {
+    "0": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 0.8,
+          "missed": [
+            {
+              "text": "The uploads bucket name suffix is 'uploads' in custom.tf.json; INFRA-04 asks for 'files'",
+              "file": "infra/workload/custom.tf.json",
+              "task_id": "INFRA-04"
+            }
+          ]
+        }
+      }
+    },
+    "*": {
+      "security": {
+        "reply": {
+          "critical": []
+        }
+      },
+      "adherence": {
+        "reply": {
+          "score": 1.0,
+          "missed": []
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": {
+      "status": "SUCCESS",
+      "qa_attempts": 2,
+      "max_generations": 1,
+      "seed_files_include": [
+        "infra/workload/iac_intent.json"
+      ]
+    },
+    "never_seed_files": [
+      "infra/workload/custom.tf.json"
+    ]
+  }
+}

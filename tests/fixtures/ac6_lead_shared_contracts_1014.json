@@ -1,0 +1,202 @@
+{
+ "old_registry": "origin/main 30270c8 developer_agent/contract_registry.py",
+ "runs": {
+  "01-r1": {
+   "old_custom_sha256": "db1da4c9d048cedca7572e0a56b808ebd9c9699d244b9e3cdc4607212331c1b1",
+   "shared_contracts": {
+    "api_routes": "GET /health -> HealthResponse\nPOST /api/v1/events -> 202 Accepted (EventIngestResponse)\nPOST /api/v1/tasks/process -> 200 OK (PubSub worker endpoint)",
+    "data_models": "class EventIngestPayload(BaseModel):\n    event_type: str\n    source_system: str\n    payload: dict\n    timestamp: str\n\nclass EventIngestResponse(BaseModel):\n    status: str = 'accepted'\n    trace_id: str\n    message_id: str\n\nclass HealthResponse(BaseModel):\n    status: str = 'healthy'\n    service: str = 'event-router'\n    engine: str = 'OpenTofu'\n\nclass PubSubMessage(BaseModel):\n    data: str\n    attributes: dict[str, str] = {}\n    messageId: str\n    publishTime: str\n\nclass PubSubPushEnvelope(BaseModel):\n    message: PubSubMessage\n    subscription: str",
+    "env_vars": "FIRESTORE_DATABASE, PUBSUB_TOPIC, STORAGE_BUCKET",
+    "iac_resources": "infra/workload/custom.tf must declare:\n- google_pubsub_topic.events_inbound\n- google_storage_bucket.event_archive\n- google_firestore_database.default\n(Compute and Cloud Run service are handled by platform module; do not declare google_cloud_run_v2_service or compute modules)."
+   }
+  },
+  "01-r2": {
+   "old_custom_sha256": "af61c4c8713be1a5a92c0708aa8dbd2954e6ca24a1d4b047654815df9608eef7",
+   "shared_contracts": {
+    "api_routes": "GET /health -> {\"status\": \"healthy\", \"service\": \"test-01-event-router\", \"engine\": \"OpenTofu\"}\nPOST /api/v1/events -> 202 Accepted {\"status\": \"accepted\", \"trace_id\": str, \"message_id\": str}\nPOST /api/v1/tasks/process -> 200 OK {\"status\": \"processed\", \"storage_path\": str, \"document_id\": str}",
+    "data_models": "class EventInbound(BaseModel):\n    event_type: str\n    source_system: str\n    payload: dict\n    timestamp: datetime\n\nclass PubSubMessage(BaseModel):\n    data: str\n    message_id: Optional[str] = None\n    attributes: Optional[dict] = None\n\nclass PubSubPushEnvelope(BaseModel):\n    message: PubSubMessage\n    subscription: Optional[str] = None",
+    "service_topology": "Service: test-01-event-router (Cloud Run, primary). Path: apps/test-01-event-router/. Required environment variables: FIRESTORE_DATABASE, PAYLOAD_BUCKET_NAME, PUBSUB_TOPIC_ID. IaC Resource addresses: google_pubsub_topic.test_events_inbound, google_storage_bucket.event_payloads, google_firestore_database.default in infra/workload/custom.tf."
+   }
+  },
+  "01-r3": {
+   "old_custom_sha256": "b34a8c9791b16d6e9ab65debce8a258cecd7a63bf5f27fee4d2048aa0f41612c",
+   "shared_contracts": {
+    "api_routes": "GET /health -> HealthResponse (200 OK)\nPOST /api/v1/events -> EventIngestResponse (202 Accepted)\nPOST /api/v1/tasks/process -> Dict[str, Any] (200 OK)\n",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Any, Dict, Optional\nfrom datetime import datetime\n\nclass EventIngestRequest(BaseModel):\n    event_type: str = Field(..., min_length=1, max_length=128)\n    source_system: str = Field(..., min_length=1, max_length=128)\n    payload: Dict[str, Any]\n    timestamp: datetime\n\nclass EventIngestResponse(BaseModel):\n    status: str = 'accepted'\n    trace_id: str\n    message_id: str\n\nclass HealthResponse(BaseModel):\n    status: str = 'healthy'\n    service: str = 'event-router'\n    engine: str = 'OpenTofu'\n\nclass PubSubEnvelope(BaseModel):\n    message: Dict[str, Any]\n    subscription: str\n"
+   }
+  },
+  "02-r1": {
+   "old_custom_sha256": "fa5ea962b70b8b066b74448ea99c58a4dabd09cac51c01d6cf98dc50f09772d9",
+   "shared_contracts": {
+    "api_routes": "public-gateway:\n  GET /health\n  POST /api/v1/orders (Payload: OrderRequest -> Proxies to internal-core)\n  POST /api/v1/reconcile (OIDC Cloud Scheduler trigger)\ninternal-core:\n  GET /health\n  POST /internal/process-order (Payload: OrderRequest -> ProcessedOrderResponse)",
+    "data_models": "class OrderRequest(BaseModel):\n    order_id: str\n    customer_id: str\n    amount: float\n    currency: str = 'USD'\n    items: list[dict[str, Any]]\n\nclass ProcessedOrderResponse(BaseModel):\n    order_id: str\n    status: str\n    transaction_digest: str\n    processed_at: str\n\nclass HealthStatus(BaseModel):\n    status: str\n    service: str\n    details: dict[str, Any] = {}",
+    "service_topology": "public-gateway (cloudrun, primary): apps/public-gateway/ reads env vars INTERNAL_CORE_AUDIENCE, INTERNAL_CORE_URL.\ninternal-core (cloudrun, secondary): apps/internal-core/ reads env vars FIRESTORE_DATABASE, ORDER_SIGNING_SECRET_ID.\nPlatform manages compute modules. Do NOT declare compute modules or google_cloud_run_v2_service.\nDeclare google_secret_manager_secret.order_signing_secret and google_firestore_database.default in infra/workload/custom.tf."
+   }
+  },
+  "02-r2": {
+   "old_custom_sha256": "4735e153eac10dd8b15634473d1556a43f88133a7bb600f35ded7c26cd0134f4",
+   "shared_contracts": {
+    "api_routes": "Gateway:\n  GET /health\n  POST /api/v1/orders (OrderCreateRequest -> OrderProcessResponse)\n  POST /api/v1/reconcile (-> ReconcileResponse)\nInternal Core:\n  GET /health\n  POST /internal/process-order (OrderProcessPayload -> OrderProcessResponse)",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional, Dict, Any\nfrom datetime import datetime\n\nclass OrderItem(BaseModel):\n    item_id: str\n    quantity: int = Field(gt=0)\n    unit_price: float = Field(gt=0.0)\n\nclass OrderCreateRequest(BaseModel):\n    order_id: str\n    customer_id: str\n    items: list[OrderItem]\n    total_amount: float = Field(gt=0.0)\n\nclass OrderProcessPayload(BaseModel):\n    order_id: str\n    customer_id: str\n    items: list[OrderItem]\n    total_amount: float\n    gateway_timestamp: str\n\nclass OrderProcessResponse(BaseModel):\n    order_id: str\n    status: str\n    signature_digest: str\n    persisted_at: str\n\nclass ReconcileResponse(BaseModel):\n    status: str\n    reconciled_count: int\n    timestamp: str\n"
+   }
+  },
+  "02-r3": {
+   "old_custom_sha256": "3f664b3bc6bb8321ba13c5130b8bb0a55627963ae073f581421e858f646e26d1",
+   "shared_contracts": {
+    "api_routes": "api-gateway: GET /health, POST /api/v1/orders, POST /api/v1/reconcile; internal-core: GET /health, POST /internal/process-order",
+    "data_models": "class OrderItem(BaseModel): item_id: str; quantity: int; unit_price: float\nclass OrderCreateRequest(BaseModel): order_id: str; customer_id: str; items: List[OrderItem]; total_amount: float\nclass OrderProcessResponse(BaseModel): order_id: str; status: str; transaction_digest: str; created_at: str\nclass ReconcileResponse(BaseModel): status: str; processed_count: int",
+    "service_topology": "api-gateway env vars: INTERNAL_CORE_AUDIENCE, INTERNAL_CORE_URL. internal-core env vars: FIRESTORE_DATABASE_ID, ORDER_SIGNING_SECRET_ID. Custom IaC resources: google_secret_manager_secret.order_signing_secret, google_firestore_database.default."
+   }
+  },
+  "03-r1": {
+   "old_custom_sha256": "11c3971b297c84e2c3b3eab5906c6cc2813ecc58b57c4acab20fb0bc6aa4eca2",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/jobs -> JobCreateResponse\nGET /api/v1/jobs/{job_id} -> JobStatusResponse\nGET /healthz -> dict(status='healthy')",
+    "data_models": "class JobStatus(str, Enum): PROVISIONING = 'PROVISIONING'; RUNNING = 'RUNNING'; COMPLETED = 'COMPLETED'; FAILED = 'FAILED'\nclass JobCreateRequest(BaseModel): data: str; filename: Optional[str] = 'payload.csv'\nclass JobCreateResponse(BaseModel): job_id: str; instance_name: str; status: JobStatus; input_uri: str\nclass JobStatusResponse(BaseModel): job_id: str; status: JobStatus; output_uri: Optional[str] = None; summary: Optional[Dict[str, Any]] = None"
+   }
+  },
+  "03-r2": {
+   "old_custom_sha256": "b62415e2af5b6b60c1f7b3a7afa6aa33550ab7eb1f7f6c72f9e298386ac109c4",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/jobs -> CreateJobResponse\nGET /api/v1/jobs/{job_id} -> JobStatusResponse\nGET /healthz -> {'status': 'ok'}",
+    "data_models": "from pydantic import BaseModel\nfrom typing import Optional, Dict, Any\nfrom enum import Enum\n\nclass JobStatus(str, Enum):\n    PROVISIONING = 'PROVISIONING'\n    RUNNING = 'RUNNING'\n    COMPLETED = 'COMPLETED'\n    FAILED = 'FAILED'\n\nclass CreateJobRequest(BaseModel):\n    payload: Dict[str, Any] | list[Dict[str, Any]]\n    filename: Optional[str] = 'input_data.json'\n\nclass CreateJobResponse(BaseModel):\n    job_id: str\n    instance_name: str\n    status: JobStatus\n    input_uri: str\n\nclass JobStatusResponse(BaseModel):\n    job_id: str\n    status: JobStatus\n    output_uri: Optional[str] = None\n    result: Optional[Dict[str, Any]] = None\n    error: Optional[str] = None"
+   }
+  },
+  "03-r3": {
+   "old_custom_sha256": "153903c348612407f8b4def5b415142813b480914f2f4b684c0c09cf48f1183f",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/jobs -> JobCreateResponse (202 Accepted / 201 Created)\nGET /api/v1/jobs/{job_id} -> JobStatusResponse (200 OK, 404 Not Found)\nGET /healthz -> {\"status\": \"ok\"} (200 OK)",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional, Dict, Any\nfrom enum import Enum\n\nclass JobStatus(str, Enum):\n    PROVISIONING = 'PROVISIONING'\n    RUNNING = 'RUNNING'\n    COMPLETED = 'COMPLETED'\n    FAILED = 'FAILED'\n\nclass JobCreateRequest(BaseModel):\n    dataset_name: str\n    payload: str\n\nclass JobCreateResponse(BaseModel):\n    job_id: str\n    vm_instance_name: str\n    status: JobStatus\n    input_uri: str\n\nclass JobStatusResponse(BaseModel):\n    job_id: str\n    status: JobStatus\n    output_uri: Optional[str] = None\n    summary: Optional[Dict[str, Any]] = None\n    error: Optional[str] = None",
+    "service_topology": "Service: test-03-hybrid-gce-worker (Cloud Run primary dispatcher). Env vars: BATCH_WORKER_INSTANCE_TEMPLATE, BATCH_WORKER_NAME_PREFIX, BATCH_WORKER_ZONE, COMPLETION_TOPIC, INPUTS_BUCKET, OUTPUTS_BUCKET. Ephemeral VM insertion via compute API: instances.insert(zone=BATCH_WORKER_ZONE, sourceInstanceTemplate=BATCH_WORKER_INSTANCE_TEMPLATE, name=f'{BATCH_WORKER_NAME_PREFIX}-{job_id}'), polling instances.get on the chosen name.\nService: batch-worker (GCE VM worker). Debian 12 minimal, no external IP. Startup script reads instance metadata: INPUTS_BUCKET, OUTPUTS_BUCKET from computeMetadata/v1/instance/attributes/<KEY>. Completes transform, writes output summary to gs://OUTPUTS_BUCKET/{job_id}_summary.json, publishes completion event, and runs sudo poweroff.\nIaC Custom Resources (infra/workload/custom.tf): google_storage_bucket.batch_inputs, google_storage_bucket.batch_outputs, google_pubsub_topic.job_completed_topic. Platform renders compute modules."
+   }
+  },
+  "04-r1": {
+   "old_custom_sha256": "ce9a53bd162d04804e48c6893a6e3386d901b378964f56ebe1d31d1505f1f0ac",
+   "shared_contracts": {
+    "api_routes": "GET /healthz (Liveness: HTTP 200)\nGET /readyz (Readiness: HTTP 200)\nFirestore Collection: stream_metrics (Document ID: <window_start_iso>)",
+    "data_models": "class StreamEvent(BaseModel):\n    event_id: str\n    timestamp: datetime\n    payload: dict[str, Any]\n\nclass WindowMetrics(BaseModel):\n    window_start: datetime\n    window_end: datetime\n    total_messages: int\n    throughput_eps: float\n    avg_latency_ms: float\n    p95_latency_ms: float\n    error_count: int",
+    "topology_contract": "Service: stream-processor (gke-autopilot, primary). Code location: apps/stream-processor/. Custom resources in infra/workload/custom.tf must include google_pubsub_subscription.stream_gke_sub, google_pubsub_topic.stream_ingest_topic, google_firestore_database.default. Platform manages compute cluster modules."
+   }
+  },
+  "04-r2": {
+   "old_custom_sha256": "26188db6e2c3f2956b2913c00d8fa6e371b2e74fec0efde7a418eea3460fdff9",
+   "shared_contracts": {
+    "api_routes": "GET /healthz -> 200 OK {'status': 'healthy', 'timestamp': '...', 'messages_processed': int, 'uptime_seconds': float}\nGET /livez -> 200 OK {'status': 'alive'}",
+    "data_models": "from pydantic import BaseModel, Field\nfrom datetime import datetime\nfrom typing import Dict, Any, Optional\n\nclass StreamMetricWindow(BaseModel):\n    window_start: datetime\n    window_end: datetime\n    message_count: int = Field(ge=0)\n    avg_latency_ms: float = Field(ge=0.0)\n    p95_latency_ms: float = Field(ge=0.0)\n    error_count: int = Field(ge=0)\n    throughput_msg_per_sec: float = Field(ge=0.0)\n    metadata: Optional[Dict[str, Any]] = None\n\nclass HealthStatus(BaseModel):\n    status: str\n    timestamp: datetime\n    messages_processed: int\n    uptime_seconds: float"
+   }
+  },
+  "04-r3": {
+   "old_custom_sha256": "dfc0f25354ca0d28aa1972cc5ee617ca1ef1b02d783c4565f939ac46a49bd7de",
+   "shared_contracts": {
+    "api_routes": "GET /healthz -> 200 {'status': 'healthy'}\nGET /readyz -> 200 {'status': 'ready'}",
+    "data_models": "from pydantic import BaseModel, Field\nfrom datetime import datetime\nfrom typing import Optional\n\nclass StreamEvent(BaseModel):\n    event_id: str\n    timestamp: datetime\n    payload: dict\n    latency_ms: Optional[float] = 0.0\n\nclass StreamMetricSummary(BaseModel):\n    window_start: datetime\n    window_end: datetime\n    message_count: int = Field(ge=0)\n    error_count: int = Field(ge=0)\n    avg_latency_ms: float = Field(ge=0.0)\n    max_latency_ms: float = Field(ge=0.0)\n    throughput_per_sec: float = Field(ge=0.0)",
+    "service_topology_contract": "Service stream-processor (gke-autopilot, primary) code lives in apps/stream-processor/. Never declare a compute module, google_cloud_run_v2_service, or google_container_cluster; the platform declares them. Declare google_pubsub_subscription.stream_gke_sub and google_firestore_database.default in infra/workload/custom.tf."
+   }
+  },
+  "05-r1": {
+   "old_custom_sha256": "a65077db3b39c93f4ad549d523086586a2a154da2df69f64616f4a844f83a323",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/dispatch -> DispatchResponse (Routes job to Pub/Sub fleet-commands, fleet-stream, or launches batch VM via Compute API)\\nGET /api/v1/fleet/status -> FleetStatusResponse (Returns aggregate health across edge-gateway, stream-processor, and batch-worker)",
+    "data_models": "class DispatchRequest(BaseModel):\\n    job_id: str = Field(..., description='Unique identifier for the job')\\n    target_tier: Literal['stream', 'batch'] = Field(..., description='Target execution tier')\\n    payload: dict = Field(default_factory=dict, description='Job payload parameters')\\n\\nclass DispatchResponse(BaseModel):\\n    job_id: str\\n    status: str\\n    target: str\\n    resource_reference: Optional[str] = None\\n\\nclass FleetStatusResponse(BaseModel):\\n    status: str\\n    tiers: dict[str, Any]\\n    finops_budget_limit_usd: float = 25.0\\n    estimated_spend_usd: float",
+    "opentofu_resources": "infra/workload/custom.tf must declare:\\n- google_pubsub_topic.fleet_commands\\n- google_pubsub_topic.fleet_stream\\n- google_pubsub_subscription.fleet_stream_sub\\n- google_storage_bucket.fleet_data_lake\\n- google_firestore_database.default\\nDO NOT declare google_cloud_run_v2_service or google_container_cluster (managed by platform modules)."
+   }
+  },
+  "05-r2": {
+   "old_custom_sha256": "803f2ae14f80860439bf46822aa84410d78faee653819f46a057e3b0a06a77ca",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/dispatch -> DispatchResponse\nGET /api/v1/fleet/status -> FleetStatusResponse",
+    "data_models": "class JobType(str, Enum): STREAM = 'stream'; BATCH = 'batch'\nclass DispatchRequest(BaseModel): job_id: str; job_type: JobType; payload: dict[str, Any]; timestamp: float\nclass DispatchResponse(BaseModel): status: str; job_id: str; routed_topic: str | None = None; worker_instance: str | None = None\nclass FleetStatusResponse(BaseModel): edge_status: str; stream_consumer_status: str; gce_worker_state: str; monthly_budget_usd: float; current_estimated_spend_usd: float; sandbox_ttl_remaining_days: float\nclass MetricAggregate(BaseModel): window_start: str; window_end: str; metric_count: int; average_value: float; service: str",
+    "iac_contracts": "Declare these resources in infra/workload/custom.tf with exactly these addresses: google_pubsub_topic.fleet_commands, google_pubsub_topic.fleet_stream, google_pubsub_subscription.fleet_stream_sub, google_storage_bucket.fleet_data_lake, google_firestore_database.default. Never declare a compute module, a google_cloud_run_v2_service or a google_container_cluster for fleet-gke, fleet-edge, or batch-worker."
+   }
+  },
+  "05-r3": {
+   "old_custom_sha256": "47fec7710e3189d829e2a82bcda916102052f1e58a5aa851b67a5182bab9a102",
+   "shared_contracts": {
+    "api_routes": "POST /api/v1/dispatch -> 200 DispatchResponse\nGET /api/v1/fleet/status -> 200 FleetStatusResponse\nGET /healthz -> 200 {'status': 'healthy'}",
+    "data_models": "class DispatchRequest(BaseModel):\n    job_id: str\n    target_tier: str # 'stream' | 'batch'\n    payload: dict\n\nclass DispatchResponse(BaseModel):\n    status: str\n    job_id: str\n    dispatched_to: str\n    timestamp: float\n\nclass FleetStatusResponse(BaseModel):\n    status: str\n    active_services: list[str]\n    budget_limit_usd: float\n    sandbox_ttl_days: int",
+    "infrastructure_contract": "Declare these resources in infra/workload/custom.tf with exactly these addresses:\n- google_pubsub_topic.fleet_commands\n- google_pubsub_topic.fleet_stream\n- google_pubsub_subscription.fleet_stream_sub\n- google_firestore_database.default\n- google_storage_bucket.fleet_data_lake\nNever declare google_cloud_run_v2_service or google_container_cluster or compute modules."
+   }
+  },
+  "06-r2": {
+   "old_custom_sha256": "0eee1cedee416208eec9d799f670f3e791ba1c74557b44018f1541b3cb664da1",
+   "shared_contracts": {
+    "api_routes": "Storefront:\nGET / -> HTML Storefront & Configurator\nGET /track/{order_id} -> HTML Order Tracking Timeline\nGET /api/v1/widgets -> List[WidgetItem]\nPOST /api/v1/orders/checkout -> JSON {order_id, status, total_amount_usd}\n\nFulfillment Worker:\nPOST /api/v1/factory/process-order -> JSON {status: 'success', order_id: str, invoice_gcs_uri: str}",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import List, Optional\n\nclass WidgetItem(BaseModel):\n    sku: str\n    name: str\n    material: str\n    base_price_usd: float\n    stock_quantity: int\n    dimensions: str\n    lead_time_days: int\n\nclass CartItem(BaseModel):\n    sku: str\n    quantity: int\n    custom_material: Optional[str] = None\n    bore_diameter_mm: Optional[float] = None\n    surface_finish: Optional[str] = None\n\nclass CheckoutRequest(BaseModel):\n    items: List[CartItem]\n    customer_email: str\n    shipping_address: str\n    payment_token: str\n\nclass OrderRecord(BaseModel):\n    order_id: str\n    customer_email: str\n    items: List[CartItem]\n    total_amount_usd: float\n    status: str  # PENDING_PAYMENT, QUEUED_IN_FACTORY, MANUFACTURING, SHIPPED\n    created_at: str\n\nclass PubSubMessage(BaseModel):\n    data: str\n    messageId: str\n    publishTime: str\n\nclass PubSubPushEnvelope(BaseModel):\n    message: PubSubMessage\n    subscription: str"
+   }
+  },
+  "06-r3": {
+   "old_custom_sha256": "0efbf5dcdd815447fb47c654898b00dffb1118f638751e1f1c9e63fd09cf4ad1",
+   "shared_contracts": {
+    "api_routes": "Storefront: GET /, GET /track/{order_id}, GET /api/v1/catalog, POST /api/v1/orders/checkout, GET /healthz\nFactory Worker: POST /api/v1/factory/process-order, GET /healthz",
+    "data_models": "class WidgetCatalogItem(BaseModel): sku: str; name: str; material: str; base_price_usd: float; stock_quantity: int; dimensions: str; lead_time_days: int\nclass CustomWidgetConfig(BaseModel): material: str; bore_diameter_mm: float; finish: str\nclass OrderCheckoutRequest(BaseModel): customer_email: str; shipping_address: str; items: List[dict]; custom_configs: Optional[List[CustomWidgetConfig]] = None; payment_token: str\nclass OrderRecord(BaseModel): order_id: str; customer_email: str; items: List[dict]; total_usd: float; status: str; created_at: str\nclass PubSubEnvelope(BaseModel): message: dict; subscription: str"
+   }
+  },
+  "07-r1": {
+   "old_custom_sha256": "986366da085ec23adcc9282631f6136026d71eb1c957f51a087683deee5817ae",
+   "shared_contracts": {
+    "api_routes": "# Agent Engine Direct & Reasoning Engine Contract:\n# query_account_status(account_id: str) -> Dict[str, Any]\n# search_knowledge_base(query: str) -> List[Dict[str, Any]]\n# create_service_ticket(title: str, severity: str, details: str) -> Dict[str, Any]\n# agent_engine.query(message: str, session_id: str) -> Dict[str, Any]",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import List, Optional, Dict, Any\n\nclass AccountStatusResponse(BaseModel):\n    account_id: str\n    status: str\n    tier: str\n    open_tickets: int\n    metadata: Dict[str, Any] = Field(default_factory=dict)\n\nclass TicketCreateRequest(BaseModel):\n    title: str\n    severity: str\n    details: str\n\nclass TicketCreateResponse(BaseModel):\n    ticket_id: str\n    status: str\n    published_topic: str\n\nclass GroundingSnippet(BaseModel):\n    content: str\n    source_uri: Optional[str] = None\n    relevance_score: Optional[float] = None",
+    "service_topology_iac": "Declare these resources in infra/workload/custom.tf with exactly these addresses:\n- google_storage_bucket.adk_staging_bucket\n- google_firestore_database.agent_firestore_db\n- google_pubsub_topic.agent_action_topic\nNever declare a compute module, google_cloud_run_v2_service, or google_container_cluster."
+   }
+  },
+  "07-r2": {
+   "old_custom_sha256": "ae1f7824874d967d5e439f7ffa259780bdfa3e6080172dd29f4aa7ac59d05def",
+   "shared_contracts": {
+    "api_routes": "Agent Engine Invocation:\nagent_engine.query(message: str, session_id: str) -> dict\n\nAgent Tools:\nquery_account_status(account_id: str) -> dict\nsearch_knowledge_base(query: str) -> list[str]\ncreate_service_ticket(title: str, severity: str, details: str) -> dict",
+    "data_models": "class AccountStatusResponse(BaseModel):\n    account_id: str\n    status: str\n    tier: str\n    balance_due: float\n\nclass KnowledgeSearchResult(BaseModel):\n    query: str\n    snippets: list[str]\n\nclass TicketCreateRequest(BaseModel):\n    title: str\n    severity: str\n    details: str\n\nclass TicketCreateResponse(BaseModel):\n    ticket_id: str\n    status: str\n    topic: str"
+   }
+  },
+  "07-r3": {
+   "old_custom_sha256": "1964db6408cd8c5376d186b1cfd7c7a5ee5e742e0f6f1ddb7ee0f5b7df7d6b59",
+   "shared_contracts": {
+    "api_routes": "POST /query (Agent Engine invocation wrapper: message: str, session_id: str -> AgentQueryResponse)",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional, List, Dict, Any\n\nclass AccountStatusResponse(BaseModel):\n    account_id: str\n    status: str\n    tier: str\n    balance_due: float\n    notes: Optional[str] = None\n\nclass SearchResultItem(BaseModel):\n    title: str\n    content: str\n    source_uri: str\n\nclass ServiceTicketRequest(BaseModel):\n    title: str\n    severity: str = Field(description='LOW, MEDIUM, HIGH, CRITICAL')\n    details: str\n    account_id: Optional[str] = None\n\nclass ServiceTicketResponse(BaseModel):\n    ticket_id: str\n    status: str\n    dispatched_at: str\n\nclass AgentQueryRequest(BaseModel):\n    message: str\n    session_id: str\n\nclass AgentQueryResponse(BaseModel):\n    response: str\n    session_id: str\n    citations: List[Dict[str, Any]] = Field(default_factory=list)"
+   }
+  },
+  "08-r1": {
+   "old_custom_sha256": "b02483511d09fdba23549b73aa4a8d8b0c32fc065dfc9e09be488574e42cd669",
+   "shared_contracts": {
+    "api_routes": "GET /health/live, GET /health/ready, GET /api/v1/organizations, POST /api/v1/organizations, GET /api/v1/organizations/{org_id}, GET /api/v1/invoices, POST /api/v1/invoices, GET /api/v1/invoices/{invoice_id}",
+    "data_models": "class OrganizationBase(BaseModel):\n    name: str\n    plan_tier: str = 'COMMUNITY'\n\nclass OrganizationCreate(OrganizationBase):\n    pass\n\nclass OrganizationResponse(OrganizationBase):\n    id: UUID\n    created_at: datetime\n    model_config = ConfigDict(from_attributes=True)\n\nclass InvoiceBase(BaseModel):\n    organization_id: UUID\n    amount_cents: int\n    currency: str = 'USD'\n    status: str = 'DRAFT'\n    due_date: date\n\nclass InvoiceCreate(InvoiceBase):\n    pass\n\nclass InvoiceResponse(InvoiceBase):\n    id: UUID\n    model_config = ConfigDict(from_attributes=True)",
+    "service_topology": "Service: test-08-cloudsql-postgres (Cloud Run, primary). Path: apps/test-08-cloudsql-postgres/. Environment variables: DB_HOST, DB_SECRET_ID. Custom IaC: infra/workload/custom.tf must define google_sql_database_instance.postgres_instance and google_secret_manager_secret.db_credentials."
+   }
+  },
+  "08-r2": {
+   "old_custom_sha256": "c433b39aae1df6a2767672d88ba83f5fdf318ce72c29dbac279fc797f624d01f",
+   "shared_contracts": {
+    "api_routes": "GET /health/live -> 200 {status: ok}\\nGET /health/ready -> 200 {status: ready, database: connected}\\nGET /api/v1/organizations -> list[OrganizationRead]\\nPOST /api/v1/organizations -> 201 OrganizationRead\\nGET /api/v1/organizations/{id} -> OrganizationRead\\nGET /api/v1/invoices -> list[InvoiceRead]\\nPOST /api/v1/invoices -> 201 InvoiceRead\\nGET /api/v1/invoices/{id} -> InvoiceRead",
+    "data_models": "class OrganizationBase(BaseModel):\\n    name: str\\n    plan_tier: str = 'COMMUNITY'\\n\\nclass OrganizationCreate(OrganizationBase):\\n    pass\\n\\nclass OrganizationRead(OrganizationBase):\\n    id: UUID\\n    created_at: datetime\\n\\n    model_config = ConfigDict(from_attributes=True)\\n\\nclass InvoiceBase(BaseModel):\\n    organization_id: UUID\\n    amount_cents: int\\n    currency: str = 'USD'\\n    status: str = 'DRAFT'\\n    due_date: date\\n\\nclass InvoiceCreate(InvoiceBase):\\n    pass\\n\\nclass InvoiceRead(InvoiceBase):\\n    id: UUID\\n\\n    model_config = ConfigDict(from_attributes=True)"
+   }
+  },
+  "08-r3": {
+   "old_custom_sha256": "1f6da9f981e353acea0e702bcfd05babe0c810af258ea6d92e6536e9b59579a3",
+   "shared_contracts": {
+    "api_routes": "GET /health/live -> 200 {'status': 'live'}\nGET /health/ready -> 200 {'status': 'ready'} (checks DB connectivity)\nGET /api/v1/organizations -> 200 list[OrganizationRead]\nPOST /api/v1/organizations -> 201 OrganizationRead\nGET /api/v1/organizations/{id} -> 200 OrganizationRead\nGET /api/v1/invoices -> 200 list[InvoiceRead]\nPOST /api/v1/invoices -> 201 InvoiceRead\nGET /api/v1/invoices/{id} -> 200 InvoiceRead",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional\nfrom datetime import date, datetime\nimport uuid\n\nclass OrganizationBase(BaseModel):\n    name: str = Field(..., max_length=255)\n    plan_tier: str = Field(default=\"COMMUNITY\", max_length=50)\n\nclass OrganizationCreate(OrganizationBase):\n    pass\n\nclass OrganizationRead(OrganizationBase):\n    id: uuid.UUID\n    created_at: datetime\n    class Config:\n        from_attributes = True\n\nclass InvoiceBase(BaseModel):\n    organization_id: uuid.UUID\n    amount_cents: int = Field(..., gt=0)\n    currency: str = Field(default=\"USD\", max_length=3)\n    status: str = Field(default=\"DRAFT\", max_length=20)\n    due_date: date\n\nclass InvoiceCreate(InvoiceBase):\n    pass\n\nclass InvoiceRead(InvoiceBase):\n    id: uuid.UUID\n    class Config:\n        from_attributes = True"
+   }
+  },
+  "09-r1": {
+   "old_custom_sha256": "5eae988813a14cf1d916248ea7adc02fa364ad25db139809cb8a8045339bc451",
+   "shared_contracts": {
+    "api_routes": "GET /healthz -> {'status': 'ok'}\nGET /admin/dashboard -> HTML dashboard\nGET /admin/audit-logs -> HTML audit log list\nGET /api/v1/audit-logs -> JSON List[AuditEvent]\nPOST /api/v1/actions/feature-flags -> JSON response (requires SuperAdmin)\nPOST /api/v1/actions/user-roles -> JSON response (requires SuperAdmin)",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional, List, Dict, Any\nfrom datetime import datetime\n\nclass AuditEvent(BaseModel):\n    event_id: Optional[str] = None\n    timestamp: datetime = Field(default_factory=datetime.utcnow)\n    operator_email: str\n    action_type: str\n    target_resource: str\n    client_ip: str\n    details: Optional[Dict[str, Any]] = None\n\nclass FeatureFlagToggleRequest(BaseModel):\n    flag_key: str\n    enabled: bool\n\nclass UserRoleUpdateRequest(BaseModel):\n    user_email: str\n    role: str # 'Viewer' | 'SuperAdmin'\n\nclass AuthenticatedUser(BaseModel):\n    email: str\n    role: str # 'Viewer' | 'SuperAdmin'\n    jwt_claims: Dict[str, Any] = Field(default_factory=dict)"
+   }
+  },
+  "09-r2": {
+   "old_custom_sha256": "68aea62f30e296002f5995ccbd818d35bb486a20037f0689c876b45bf4298958",
+   "shared_contracts": {
+    "api_routes": "GET /healthz\nGET /admin/dashboard\nGET /admin/audit-logs\nPOST /admin/actions/toggle-flag\nPOST /admin/actions/update-role",
+    "data_models": "class AuditLogEntry(BaseModel):\n    timestamp: datetime\n    operator_email: str\n    action_type: str\n    target_resource: str\n    client_ip: str\n    details: Optional[Dict[str, Any]] = None\n\nclass UserRole(str, Enum):\n    VIEWER = 'Viewer'\n    SUPERADMIN = 'SuperAdmin'\n\nclass FeatureFlagToggleRequest(BaseModel):\n    flag_name: str\n    enabled: bool\n\nclass RoleUpdateRequest(BaseModel):\n    user_email: str\n    role: UserRole",
+    "service_topology": "Service: test-09-internal-admin-direct-iap (cloudrun, primary). Environment variables: FIRESTORE_DATABASE, IAP_OAUTH_SECRET_ID. Custom IaC resources in infra/workload/custom.tf: google_secret_manager_secret.iap_oauth_credentials, google_firestore_database.default."
+   }
+  },
+  "09-r3": {
+   "old_custom_sha256": "7b5f712cbef0ac4f6e4f8e60843859e8fedfa6aecb6d0c007558a7ebab90969d",
+   "shared_contracts": {
+    "api_routes": "GET /healthz -> {\"status\": \"ok\"}\nGET / -> Redirect to /admin/dashboard\nGET /admin/dashboard -> HTML (Viewer, SuperAdmin)\nGET /admin/audit-logs -> HTML / JSON list of AuditEvent (Viewer, SuperAdmin)\nPOST /admin/actions/toggle-flag -> JSON response + Audit Log (SuperAdmin only)\nPOST /admin/actions/update-role -> JSON response + Audit Log (SuperAdmin only)",
+    "data_models": "from pydantic import BaseModel, Field\nfrom typing import Optional, Dict, Any\nfrom datetime import datetime\n\nclass AuditEvent(BaseModel):\n    event_id: Optional[str] = None\n    timestamp: datetime = Field(default_factory=datetime.utcnow)\n    operator_email: str\n    action_type: str\n    target_resource: str\n    client_ip: str\n    details: Dict[str, Any] = Field(default_factory=dict)\n\nclass FeatureFlagToggleRequest(BaseModel):\n    flag_key: str\n    enabled: bool\n    reason: Optional[str] = None\n\nclass RoleUpdateRequest(BaseModel):\n    target_email: str\n    assigned_role: str\n"
+   }
+  }
+ },
+ "source": "20261014-FRESH-main-769600e-record cassettes, lead decompose_specification answers (product 769600e)"
+}

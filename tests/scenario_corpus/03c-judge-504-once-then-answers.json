@@ -1,0 +1,30 @@
+{
+  "title": "One 504 on the primary judge model, then an answer: the bounded transport retry judges (QA-JUDGE-RETRY)",
+  "source": "example 02 live run 11-13 QA attempt 2 (adherence lens hit a Vertex 504, the judge retried)",
+  "mechanism": "M4 transient-dependency handling (neighbour of 03a: must keep passing)",
+  "product_id": "judge-demo",
+  "trace": "trace-judge-retry",
+  "models": {"primary": "gemini-4-carbon", "fallback": ["gemini-4-argon"]},
+  "access": {"mode": "PUBLIC_APP"},
+  "topology": {"services": [{"name": "judge-demo", "kind": "cloudrun"}], "primary_service": "judge-demo",
+               "edges": [], "resources": []},
+  "task_dag": [{"task_id": "CODE-01", "title": "HTTP service", "target_files": ["apps/judge-demo/main.py"]}],
+  "drafts": {
+    "build": {
+      "apps/judge-demo/main.py": "from fastapi import FastAPI\n\napp = FastAPI()\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+      "apps/judge-demo/requirements.txt": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+      "apps/judge-demo/Procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+      "tests/__init__.py": "",
+      "tests/test_main.py": "def test_health():\n    assert True\n"
+    }
+  },
+  "generations": ["build"],
+  "sandbox": {"tests_total": 3, "rules": []},
+  "judge": {"*": {
+    "security": {"reply": {"critical": []}},
+    "adherence": {"by_model": {"gemini-4-carbon": [{"error": 504, "latency_s": 120},
+                                                   {"reply": {"score": 1.0, "missed": []}}],
+                               "*": [{"reply": {"score": 1.0, "missed": []}}]}}
+  }},
+  "expect": {"outcome": {"status": "SUCCESS", "qa_attempts": 1, "max_generations": 1}}
+}

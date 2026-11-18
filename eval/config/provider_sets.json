@@ -1,0 +1,29 @@
+{
+  "_comment": "S1-0 (Step 1, owner D11 10-12): exact engine + provider pins per scoring column. 'production' is what mcp-terraform-server/tf-applier run (settings tofu_version 1.9.0; service.py pre-cache 6.35.0 / 2.36.0 / 3.7.1); scorer and HarnessValidateClient use it once the owner-approved download (integration plan S.6 step 0) has built eval/.tofu-mirror-prod. 'lane7-oracle' is the lane 7 mirror + host tofu 1.13.1, reported as the second column. A mirror is accepted for a set only when its MANIFEST.sha256 lists exactly these provider versions for the os_arch (no more, no fewer); anything else is refused with the reason.",
+  "schema": 1,
+  "sets": {
+    "production": {
+      "engine": "opentofu",
+      "engine_version": "1.9.0",
+      "providers": {
+        "hashicorp/google": "6.35.0",
+        "hashicorp/google-beta": "6.35.0",
+        "hashicorp/kubernetes": "2.36.0",
+        "hashicorp/random": "3.7.1"
+      }
+    },
+    "lane7-oracle": {
+      "engine": "opentofu",
+      "engine_version": "1.13.1",
+      "providers": {
+        "hashicorp/archive": "2.8.1",
+        "hashicorp/google": "6.50.0",
+        "hashicorp/google-beta": "6.50.0",
+        "hashicorp/kubernetes": "3.3.0",
+        "hashicorp/null": "3.3.2",
+        "hashicorp/random": "3.9.1",
+        "hashicorp/time": "0.14.2"
+      }
+    }
+  }
+}

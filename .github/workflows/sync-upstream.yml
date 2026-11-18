@@ -1,0 +1,213 @@
+name: 🔄 Sync with Upstream StackVend
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Runs every Monday at 4:00 AM UTC
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_SYNC: ${{ vars.STACKVEND_UPSTREAM_SYNC }}
+  UPSTREAM_REPO: ${{ vars.STACKVEND_UPSTREAM_REPO }}
+
+jobs:
+  sync-notice:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Log Upstream Sync Status
+        run: |
+          if [ "${UPSTREAM_SYNC}" != "true" ]; then
+            echo "Upstream sync is OFF (STACKVEND_UPSTREAM_SYNC is not 'true'). Enable with: gh variable set STACKVEND_UPSTREAM_SYNC --body true"
+            exit 0
+          fi
+          # This job has no checkout (permissions: {}), so it mirrors only the sync-upstream job's
+          # `if:` guard; the exact slug check runs in that job's "Validate Upstream Slug" step.
+          case "${UPSTREAM_REPO}" in
+            */*) ;;
+            *)
+              echo "Upstream sync skipped: STACKVEND_UPSTREAM_REPO is unset or not an exact owner/repo slug. Set with: gh variable set STACKVEND_UPSTREAM_REPO --body <owner>/<repo>"
+              exit 0
+              ;;
+          esac
+          if [ "${GITHUB_REPOSITORY}" = "${UPSTREAM_REPO}" ]; then
+            echo "Upstream sync skipped: current repository matches STACKVEND_UPSTREAM_REPO."
+            exit 0
+          fi
+          echo "Upstream sync is enabled for ${UPSTREAM_REPO} (the sync-upstream job validates the exact slug)."
+
+  sync-upstream:
+    runs-on: ubuntu-latest
+    if: vars.STACKVEND_UPSTREAM_SYNC == 'true' && vars.STACKVEND_UPSTREAM_REPO != '' && contains(vars.STACKVEND_UPSTREAM_REPO, '/') && github.repository != vars.STACKVEND_UPSTREAM_REPO
+    env:
+      # FD-4DA F10: the sync always starts from, and opens its pull request against, the repository's default
+      # branch, never the branch a manual run was started from. Empty in an event payload without a repository
+      # object; the "Resolve Default Branch" step then reads it from the API.
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Checkout Fork
+        # Pinned to a full commit SHA, the same action version as ci.yml.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          # Optional STACKVEND_SYNC_TOKEN (needs workflow write access) lets the sync push releases
+          # that change .github/workflows/**; without it the default GITHUB_TOKEN is used.
+          token: ${{ secrets.STACKVEND_SYNC_TOKEN || github.token }}
+
+      - name: Validate Upstream Slug
+        id: validate
+        run: |
+          if [ "${UPSTREAM_SYNC}" != "true" ]; then
+            echo "Upstream sync is OFF (STACKVEND_UPSTREAM_SYNC is not 'true'). Enable with: gh variable set STACKVEND_UPSTREAM_SYNC --body true"
+            echo "valid=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          if [ -z "${UPSTREAM_REPO}" ] || ! python3 scripts/sync_upstream_needs_apply.py --validate-slug "${UPSTREAM_REPO}"; then
+            echo "Upstream sync skipped: STACKVEND_UPSTREAM_REPO is unset or not an exact owner/repo slug. Set with: gh variable set STACKVEND_UPSTREAM_REPO --body <owner>/<repo>"
+            echo "valid=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          if [ "${GITHUB_REPOSITORY}" = "${UPSTREAM_REPO}" ]; then
+            echo "Upstream sync skipped: current repository matches STACKVEND_UPSTREAM_REPO."
+            echo "valid=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo "valid=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve Default Branch
+        id: base
+        if: steps.validate.outputs.valid == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_BRANCH="${DEFAULT_BRANCH}"
+          if [ -z "${BASE_BRANCH}" ]; then
+            BASE_BRANCH=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.default_branch')
+          fi
+          if [ -z "${BASE_BRANCH}" ] || ! git check-ref-format --branch "${BASE_BRANCH}" >/dev/null 2>&1; then
+            echo "::error::Could not resolve the default branch of ${GITHUB_REPOSITORY}; nothing was synced."
+            exit 1
+          fi
+          HEAD_SHA=$(git rev-parse HEAD)
+          BASE_SHA=$(git rev-parse --verify --quiet "refs/remotes/origin/${BASE_BRANCH}^{commit}" || true)
+          if [ "${HEAD_SHA}" != "${BASE_SHA}" ]; then
+            echo "::error::The checkout is not the head of the default branch ${BASE_BRANCH}; nothing was synced. Start the workflow from ${BASE_BRANCH}."
+            exit 1
+          fi
+          echo "base_branch=${BASE_BRANCH}" >> "${GITHUB_OUTPUT}"
+          echo "Sync base: ${BASE_BRANCH} (${HEAD_SHA})."
+
+      - name: Configure Git
+        if: steps.validate.outputs.valid == 'true'
+        run: |
+          git config user.name "StackVend Sync Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch Upstream Release Tags and Check Ancestry
+        id: check_tag
+        if: steps.validate.outputs.valid == 'true'
+        run: |
+          git remote remove upstream 2>/dev/null || true
+          git remote add upstream "https://github.com/${UPSTREAM_REPO}.git"
+          git fetch --no-tags --force --prune upstream "+refs/tags/*:refs/upstream-tags/*"
+
+          TARGET_TAG=$(git for-each-ref --format='%(refname:strip=2)' refs/upstream-tags | python3 scripts/sync_upstream_needs_apply.py --latest-tag)
+          if [ -z "${TARGET_TAG}" ]; then
+            echo "No release tags matching vX.Y.Z found in upstream ${UPSTREAM_REPO}; skipping."
+            echo "should_sync=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor "refs/upstream-tags/${TARGET_TAG}" HEAD; then
+            echo "Fork already contains release tag ${TARGET_TAG}; nothing to sync."
+            echo "should_sync=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          else
+            rc=$?
+            if [ "${rc}" -ne 1 ]; then
+              echo "Failed checking merge-base ancestry for ${TARGET_TAG} (exit ${rc})." >&2
+              exit "${rc}"
+            fi
+          fi
+
+          BRANCH_NAME="chore/sync-upstream-${TARGET_TAG}"
+          echo "target_tag=${TARGET_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "should_sync=true" >> "${GITHUB_OUTPUT}"
+          echo "Latest upstream release tag ${TARGET_TAG} is not yet merged into HEAD."
+
+      - name: Check for Existing Sync PR
+        id: check_pr
+        if: steps.validate.outputs.valid == 'true' && steps.check_tag.outputs.should_sync == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
+          TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
+          BASE_BRANCH: ${{ steps.base.outputs.base_branch }}
+        run: |
+          EXISTING_PR=$(gh pr list --base "${BASE_BRANCH}" --head "${BRANCH_NAME}" --state open --json number --jq '.[0].number // empty')
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "Sync PR #${EXISTING_PR} for ${TARGET_TAG} (${BRANCH_NAME}) is already open; skipping."
+            echo "pr_exists=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          # A sync PR for this exact release that was closed without merging means the release was
+          # declined: skip it until upstream publishes a newer release (merged PRs do not count).
+          CLOSED_PR=$(gh pr list --base "${BASE_BRANCH}" --head "${BRANCH_NAME}" --state closed --json number,state --jq '[.[] | select(.state == "CLOSED")][0].number // empty')
+          if [ -n "${CLOSED_PR}" ]; then
+            echo "Sync PR #${CLOSED_PR} for ${TARGET_TAG} (${BRANCH_NAME}) was closed without merging; skipping until a newer release."
+            echo "pr_exists=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo "pr_exists=false" >> "${GITHUB_OUTPUT}"
+
+      - name: Merge Upstream Release Tag and Compute Apply Requirement
+        id: needs_apply
+        if: steps.validate.outputs.valid == 'true' && steps.check_tag.outputs.should_sync == 'true' && steps.check_pr.outputs.pr_exists == 'false'
+        env:
+          BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
+          TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
+        run: |
+          PRE_MERGE_SHA=$(git rev-parse HEAD)
+          # Snapshot the fork's helper BEFORE the merge: after the merge the working tree holds
+          # upstream's files, and upstream code must never run while the job holds a write token.
+          SYNC_HELPER="${RUNNER_TEMP}/sync_upstream_needs_apply.py"
+          cp scripts/sync_upstream_needs_apply.py "${SYNC_HELPER}"
+          git checkout -B "${BRANCH_NAME}"
+          if ! git merge "refs/upstream-tags/${TARGET_TAG}" --no-edit -m "chore: sync upstream StackVend ${TARGET_TAG}"; then
+            echo "::error::Merging upstream ${TARGET_TAG} failed (usually merge conflicts). Merge it manually: git fetch https://github.com/${UPSTREAM_REPO}.git tag ${TARGET_TAG} && git merge ${TARGET_TAG}"
+            exit 1
+          fi
+
+          git diff --name-only --no-renames -z "${PRE_MERGE_SHA}" HEAD > "${RUNNER_TEMP}/changed_paths.bin"
+          APPLY_OUT=$(python3 "${SYNC_HELPER}" -z < "${RUNNER_TEMP}/changed_paths.bin")
+          NEEDS_APPLY="${APPLY_OUT%%$'\n'*}"
+          echo "needs_apply=${NEEDS_APPLY}" >> "${GITHUB_OUTPUT}"
+          echo "needs apply.sh: ${NEEDS_APPLY}"
+
+          python3 "${SYNC_HELPER}" \
+            -z \
+            --pr-body \
+            --tag "${TARGET_TAG}" \
+            --upstream "${UPSTREAM_REPO}" \
+            < "${RUNNER_TEMP}/changed_paths.bin" > "${RUNNER_TEMP}/pr_body.md"
+
+      - name: Push Sync Branch and Open Pull Request
+        if: steps.validate.outputs.valid == 'true' && steps.check_tag.outputs.should_sync == 'true' && steps.check_pr.outputs.pr_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
+          TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
+          BASE_BRANCH: ${{ steps.base.outputs.base_branch }}
+        run: |
+          git push --force-with-lease origin "${BRANCH_NAME}"
+
+          gh pr create \
+            --base "${BASE_BRANCH}" \
+            --head "${BRANCH_NAME}" \
+            --title "🔄 chore: sync upstream StackVend ${TARGET_TAG}" \
+            --body-file "${RUNNER_TEMP}/pr_body.md"

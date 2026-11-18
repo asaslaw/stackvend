@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!--
+  StackVend incident document template (FD-4BM), used by mcp-workspace-connector POST /create-incident-spec.
+  Drive converts this HTML into a Google Doc in one call (files.create with a text/html upload), so the document
+  either exists with every section or does not exist at all.
+  Placeholders are Python string.Template names (dollar sign + braces). Single pass: a value can never introduce
+  another placeholder. Every text value is HTML-escaped before substitution; the three *_ITEMS values are lists
+  of <li> elements whose text was escaped item by item. Keep the section headings: tests pin them.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>${TITLE}</title>
+</head>
+<body>
+<h1>${TITLE}</h1>
+<p>Created by StackVend for an incident the SRE sentinel recorded. This document belongs to the SRE remediation
+run for this incident, which can append its plan and status below.</p>
+
+<h2>Incident</h2>
+<table border="1" cellpadding="4">
+<tr><td><b>Incident</b></td><td>${INCIDENT_ID}</td></tr>
+<tr><td><b>Severity</b></td><td>${SEVERITY}</td></tr>
+<tr><td><b>Workload</b></td><td>${WORKLOAD}</td></tr>
+<tr><td><b>Component</b></td><td>${SERVICE_NAME}</td></tr>
+<tr><td><b>Repository</b></td><td>${AFFECTED_REPO}</td></tr>
+<tr><td><b>Trace</b></td><td>${TRACE_ID}</td></tr>
+<tr><td><b>Linked pipeline run</b></td><td>${PIPELINE_TRACE_ID}</td></tr>
+</table>
+
+<h2>Timeline</h2>
+<ul>
+${TIMELINE_ITEMS}
+</ul>
+
+<h2>Failure summary</h2>
+<p><b>Root cause (deterministic analysis):</b> ${ROOT_CAUSE}</p>
+<p><b>Error message:</b> ${ERROR_MESSAGE}</p>
+<p><b>Pipeline record:</b> ${PIPELINE_FAILURE}</p>
+
+<h2>Stack trace</h2>
+<pre>${STACK_TRACE}</pre>
+
+<h2>Recommended next steps</h2>
+<ol>
+${NEXT_STEPS_ITEMS}
+</ol>
+
+<h2>Record sources</h2>
+<ul>
+${SOURCES_ITEMS}
+</ul>
+</body>
+</html>

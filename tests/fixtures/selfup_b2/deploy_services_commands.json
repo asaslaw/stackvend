@@ -1,0 +1,343 @@
+{
+ "bulk_all_fail": {
+  "commands": [
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud config get-value compute/region",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy billing-alert-drain-job --source apps/billing-alert-drain --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy billing-alert-drain-job --source apps/billing-alert-drain --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-budget-enforcer-job --source apps/finops-enforcer --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-budget-enforcer-job --source apps/finops-enforcer --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-spend-sync-job --source apps/finops-spend-sync --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-spend-sync-job --source apps/finops-spend-sync --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy github-refactor-scanner-job --source apps/refactor-scanner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy github-refactor-scanner-job --source apps/refactor-scanner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy infra-rollback-job --source apps/infra-rollback --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy infra-rollback-job --source apps/infra-rollback --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-garbage-collector-job --source apps/sandbox-cleaner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-garbage-collector-job --source apps/sandbox-cleaner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-workload-sweeper-job --source apps/sandbox-sweeper --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-workload-sweeper-job --source apps/sandbox-sweeper --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sre-telemetry-digest-job --source apps/sre-digest --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sre-telemetry-digest-job --source apps/sre-digest --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 1
+ },
+ "bulk_all_jobs_git": {
+  "commands": [
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud config get-value compute/region",
+   "gcloud run deploy castor-git-server --source apps/git-server --region us-central1 --project proj-aaaa1 --no-allow-unauthenticated --quiet",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy billing-alert-drain-job --source apps/billing-alert-drain --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-budget-enforcer-job --source apps/finops-enforcer --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-spend-sync-job --source apps/finops-spend-sync --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy github-refactor-scanner-job --source apps/refactor-scanner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy infra-rollback-job --source apps/infra-rollback --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-garbage-collector-job --source apps/sandbox-cleaner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-workload-sweeper-job --source apps/sandbox-sweeper --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sre-telemetry-digest-job --source apps/sre-digest --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs list --region=us-central1 --project=proj-aaaa1 --filter=metadata.name=stage-runner --format=value(metadata.name) --quiet",
+   "gcloud run jobs update qa-sandbox-test-runner --region us-central1 --project proj-aaaa1 --update-labels=stackvend-qa-job-contract=1 --quiet",
+   "gcloud run jobs update stage-runner --image=https://stub.run.app --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs update tf-applier --image=img@sha256:abc --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe orchestrator-gateway-service --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "bulk_retry_tf_server": {
+  "commands": [
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud config get-value compute/region",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs list --region=us-central1 --project=proj-aaaa1 --filter=metadata.name=stage-runner --format=value(metadata.name) --quiet",
+   "gcloud run jobs update stage-runner --image=https://stub.run.app --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs update tf-applier --image=img@sha256:abc --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe orchestrator-gateway-service --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "bulk_services": {
+  "commands": [
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud config get-value compute/region",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs list --region=us-central1 --project=proj-aaaa1 --filter=metadata.name=stage-runner --format=value(metadata.name) --quiet",
+   "gcloud run jobs update stage-runner --image=https://stub.run.app --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs update tf-applier --image=img@sha256:abc --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe orchestrator-gateway-service --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "bulk_with_version": {
+  "commands": [
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud config get-value compute/region",
+   "gcloud run deploy castor-git-server --source apps/git-server --region us-central1 --project proj-aaaa1 --no-allow-unauthenticated --quiet",
+   "gcloud run deploy log-sre-sentinel-service --source apps/log-sre-sentinel --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-agent-builder-server --source mcp-servers/agent-builder --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-compliance-server --source mcp-servers/compliance --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-github-toolserver --source mcp-servers/github --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-infracost-server --source mcp-servers/infracost --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-workspace-connector --source mcp-servers/workspace --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy orchestrator-gateway-service --source apps/orchestrator-gateway --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy project-repo-vending-service --source apps/project-vending --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy billing-alert-drain-job --source apps/billing-alert-drain --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-budget-enforcer-job --source apps/finops-enforcer --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy finops-spend-sync-job --source apps/finops-spend-sync --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy github-refactor-scanner-job --source apps/refactor-scanner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy infra-rollback-job --source apps/infra-rollback --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-garbage-collector-job --source apps/sandbox-cleaner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sandbox-workload-sweeper-job --source apps/sandbox-sweeper --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sre-telemetry-digest-job --source apps/sre-digest --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs list --region=us-central1 --project=proj-aaaa1 --filter=metadata.name=stage-runner --format=value(metadata.name) --quiet",
+   "gcloud run jobs update qa-sandbox-test-runner --region us-central1 --project proj-aaaa1 --update-labels=stackvend-qa-job-contract=1 --quiet",
+   "gcloud run jobs update stage-runner --image=https://stub.run.app --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs update tf-applier --image=img@sha256:abc --region=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe orchestrator-gateway-service --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_cc_by_name": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet"
+  ],
+  "rc": 0
+ },
+ "single_control_center": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy product-control-center-ui --source apps/control-center --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run services describe product-control-center-ui --region=us-central1 --project=proj-aaaa1 --format=value(status.url) --quiet"
+  ],
+  "rc": 0
+ },
+ "single_deploy_fails": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-gcloud-server --source mcp-servers/gcloud --region us-central1 --project proj-aaaa1 --quiet"
+  ],
+  "rc": 1
+ },
+ "single_git_server_absent": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json"
+  ],
+  "rc": 1
+ },
+ "single_git_server_ok": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run services describe castor-git-server --region=us-central1 --project=proj-aaaa1 --format=json",
+   "gcloud run deploy castor-git-server --source apps/git-server --region us-central1 --project proj-aaaa1 --no-allow-unauthenticated --quiet"
+  ],
+  "rc": 0
+ },
+ "single_kubernetes_bad_pin": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "curl -fsSL -o <MKTEMP>/helm.tgz https://get.helm.sh/helm-v3.15.0-linux-amd64.tar.gz"
+  ],
+  "rc": 1
+ },
+ "single_kubernetes_no_pin": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-kubernetes-server --source mcp-servers/kubernetes --region us-central1 --project proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_qa_job": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs update qa-sandbox-test-runner --region us-central1 --project proj-aaaa1 --update-labels=stackvend-qa-job-contract=1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_qa_job_by_dir": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs deploy qa-sandbox-test-runner --source apps/qa-runner --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run jobs update qa-sandbox-test-runner --region us-central1 --project proj-aaaa1 --update-labels=stackvend-qa-job-contract=1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_region_flag": {
+  "commands": [
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=europe-west1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-europe-west1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy spec-ingestion-service --source apps/spec-ingestion --region europe-west1 --project proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_sre_digest_job": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run jobs deploy sre-telemetry-digest-job --source apps/sre-digest --region us-central1 --project proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_terraform_server": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run jobs update tf-applier --image=us-central1-docker.pkg.dev/p/r/mcp-terraform-server@sha256:feed --region=us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "single_tf_applier_alias": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud run deploy mcp-terraform-server --source mcp-servers/terraform --region us-central1 --project proj-aaaa1 --quiet",
+   "gcloud run services describe mcp-terraform-server --region=us-central1 --project=proj-aaaa1 --format=value(spec.template.spec.containers[0].image) --quiet",
+   "gcloud run jobs update tf-applier --image=img@sha256:abc --region=us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 0
+ },
+ "unknown_target": {
+  "commands": [
+   "gcloud config get-value compute/region",
+   "gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --project=proj-aaaa1 --quiet",
+   "gcloud artifacts repositories describe castor-docker-repo --location=us-central1 --project=proj-aaaa1 --quiet",
+   "gcloud storage buckets describe gs://run-sources-proj-aaaa1-us-central1 --project=proj-aaaa1 --quiet"
+  ],
+  "rc": 1
+ }
+}

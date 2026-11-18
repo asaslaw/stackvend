@@ -1,0 +1,51 @@
+{
+  "title": "Typed intent workload: the judge names iac_intent.json for an env binding no typed source can express",
+  "source": "ex08-1114 diagnosis (docs/handoff/ex08-1114-qa-routing-diagnosis.md section 4, fixture 08b): INFRA-04 'credential secret not injected into the Cloud Run service environment', with the judge naming iac_intent.json instead of topology.json",
+  "mechanism": "QA-STOP-RENDER-SOURCES: a judge finding on the developer's own document is seeded on it (exact file rule), even when the binding it asks for is one the intent cannot express (the developer's intent may not set env vars on module.compute); every repair round is futile until the platform can render the binding (P3-b) or the judge reports it as a typed binding fact. The harness has no IPAM facts provider, so the resource is a storage bucket, not Cloud SQL: the route depends only on the file the judge names",
+  "product_id": "vault-demo",
+  "trace": "trace-vault-intent-binding",
+  "access": {"mode": "PUBLIC_APP"},
+  "iac_mode": "generate",
+  "topology": {"services": [{"name": "vault-demo", "kind": "cloudrun"}], "primary_service": "vault-demo", "edges": [],
+               "resources": [{"type": "google_storage_bucket", "logical_name": "uploads", "purpose": "user uploads",
+                              "consumers": [{"service": "vault-demo", "env_key": "UPLOADS_BUCKET", "attribute": null}]}]},
+  "task_dag": [{"task_id": "CODE-01", "title": "upload service", "target_files": ["apps/vault-demo/main.py"]},
+               {"task_id": "INFRA-04", "title": "inject the upload signing secret into the service runtime",
+                "target_files": ["infra/workload/iac_intent.json"]}],
+  "blobs": {
+    "main": "import os\n\nfrom fastapi import FastAPI\n\napp = FastAPI()\nUPLOADS_BUCKET = os.environ.get('UPLOADS_BUCKET', '')\nSIGNING_KEY = os.environ.get('UPLOAD_SIGNING_KEY', '')\n\n\n@app.get('/health')\ndef health():\n    return {'ok': True}\n",
+    "requirements": "fastapi>=0.110.0\nuvicorn>=0.28.0\n",
+    "procfile": "web: uvicorn main:app --host 0.0.0.0 --port $PORT\n",
+    "intent": "{\n  \"schema\": \"iac_intent/v1\",\n  \"modules\": [\n    {\"module\": \"storage-bucket\", \"name\": \"uploads\", \"realizes\": \"uploads\", \"args\": {\"bucket_name_suffix\": \"uploads\"}}\n  ],\n  \"resources\": [],\n  \"outputs\": []\n}\n",
+    "intent_repaired": "{\n  \"schema\": \"iac_intent/v1\",\n  \"modules\": [\n    {\"module\": \"storage-bucket\", \"name\": \"uploads\", \"realizes\": \"uploads\", \"args\": {\"bucket_name_suffix\": \"files\"}}\n  ],\n  \"resources\": [],\n  \"outputs\": []\n}\n"
+  },
+  "drafts": {
+    "build": {
+      "apps/vault-demo/main.py": "@main", "apps/vault-demo/requirements.txt": "@requirements",
+      "apps/vault-demo/Procfile": "@procfile",
+      "apps/vault-demo/tests/__init__.py": "",
+      "apps/vault-demo/tests/test_vault_demo.py": "def test_health():\n    assert True\n",
+      "infra/workload/iac_intent.json": "@intent",
+      "README.md": "# vault-demo\n\nUploads.\n"
+    }
+  },
+  "generations": ["build"],
+  "repairs": [{"infra/workload/iac_intent.json": "@intent_repaired"}, {"infra/workload/iac_intent.json": "@intent"},
+              {"infra/workload/iac_intent.json": "@intent_repaired"}, {"infra/workload/iac_intent.json": "@intent"}],
+  "sandbox": {"tests_total": 12, "rules": []},
+  "judge": {"*": {
+    "security": {"reply": {"critical": []}},
+    "adherence": {"reply": {"score": 0.8, "missed": [
+      {"text": "Secret Manager upload signing key injection into the Cloud Run v2 service runtime environment (UPLOAD_SIGNING_KEY) is not configured in topology.json, main.tf, or iac_intent.json",
+       "file": "infra/workload/iac_intent.json", "task_id": "INFRA-04"}]}}
+  }},
+  "expect": {
+    "outcome": {"status_not": "SUCCESS", "error_class": "PLATFORM_DEFECT", "qa_attempts": 1},
+    "never_seed_files": ["infra/workload/iac_intent.json"]
+  },
+  "xfail": {
+    "row": "P3-b (Cloud SQL password secret binding, item A) or a typed binding fact from the judge",
+    "reason": "the judge names the developer's own document, so the exact file rule seeds it; no typed field says the binding is unexpressible, so every QA retry is a futile intent repair",
+    "current": {"status_not": "SUCCESS", "seed_files_include": ["infra/workload/iac_intent.json"]}
+  }
+}

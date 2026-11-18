@@ -1,0 +1,95 @@
+{
+ "cloudrun": [
+  {
+   "name": "Checkout repository",
+   "uses": "actions/checkout@v4"
+  },
+  {
+   "id": "auth",
+   "name": "Authenticate to Google Cloud",
+   "uses": "google-github-actions/auth@v2",
+   "with": {
+    "service_account": "${{ secrets.WIF_SERVICE_ACCOUNT || secrets.GCP_DEPLOYER_SA || (vars.GCP_PROJECT_ID != '' && format('sa-gh-deployer@{0}.iam.gserviceaccount.com', vars.GCP_PROJECT_ID)) || 'sa-gh-deployer@fd4at-proj.iam.gserviceaccount.com' }}",
+    "workload_identity_provider": "${{ secrets.WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || (vars.GCP_PROJECT_NUMBER != '' && format('projects/{0}/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider', vars.GCP_PROJECT_NUMBER)) || 'projects/123/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider' }}"
+   }
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Set up Cloud SDK",
+   "uses": "google-github-actions/setup-gcloud@v2"
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Sanitize workspace package shadows",
+   "run": "python3 -c \"\nimport os, glob\nfor py_file in glob.glob('apps/ops-bastion/**/*.py', recursive=True):\n    if not py_file.endswith('__init__.py') and os.path.isfile(py_file):\n        stem = py_file[:-3]\n        if os.path.isdir(stem) and any(f.endswith('.py') for f in os.listdir(stem)):\n            os.remove(py_file)\n\" || true\n"
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Build and Deploy to Cloud Run",
+   "run": "gcloud run deploy ${SERVICE_NAME} \\\n  --source \"apps/${APP_NAME}\" \\\n  --region ${REGION} \\\n  --platform managed \\\n  --allow-unauthenticated \\\n  --memory \"${MEMORY_LIMIT}\" \\\n  --cpu \"${CPU_LIMIT}\" \\\n  --min-instances 0 \\\n  --max-instances 10 \\\n  --service-account \"${GCP_WORKLOAD_SA}\" \\\n  --update-env-vars=PROJECT_ID=${PROJECT_ID},GCP_PROJECT_ID=${PROJECT_ID},FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}\n"
+  }
+ ],
+ "event-worker": [
+  {
+   "name": "Checkout repository",
+   "uses": "actions/checkout@v4"
+  },
+  {
+   "id": "auth",
+   "name": "Authenticate to Google Cloud",
+   "uses": "google-github-actions/auth@v2",
+   "with": {
+    "service_account": "${{ secrets.WIF_SERVICE_ACCOUNT || secrets.GCP_DEPLOYER_SA || (vars.GCP_PROJECT_ID != '' && format('sa-gh-deployer@{0}.iam.gserviceaccount.com', vars.GCP_PROJECT_ID)) || 'sa-gh-deployer@fd4at-proj.iam.gserviceaccount.com' }}",
+    "workload_identity_provider": "${{ secrets.WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || (vars.GCP_PROJECT_NUMBER != '' && format('projects/{0}/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider', vars.GCP_PROJECT_NUMBER)) || 'projects/123/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider' }}"
+   }
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Set up Cloud SDK",
+   "uses": "google-github-actions/setup-gcloud@v2"
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Sanitize workspace package shadows",
+   "run": "python3 -c \"\nimport os, glob\nfor py_file in glob.glob('apps/ops-bastion/**/*.py', recursive=True):\n    if not py_file.endswith('__init__.py') and os.path.isfile(py_file):\n        stem = py_file[:-3]\n        if os.path.isdir(stem) and any(f.endswith('.py') for f in os.listdir(stem)):\n            os.remove(py_file)\n\" || true\n"
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Deploy Cloud Run Job Worker",
+   "run": "gcloud run jobs deploy ${SERVICE_NAME} \\\n  --source \"apps/${APP_NAME}\" \\\n  --region ${REGION} \\\n  --service-account \"${GCP_WORKLOAD_SA}\" \\\n  --update-env-vars=PROJECT_ID=${PROJECT_ID},GCP_PROJECT_ID=${PROJECT_ID}\n"
+  }
+ ],
+ "gke-autopilot": [
+  {
+   "name": "Checkout repository",
+   "uses": "actions/checkout@v4"
+  },
+  {
+   "id": "auth",
+   "name": "Authenticate to Google Cloud",
+   "uses": "google-github-actions/auth@v2",
+   "with": {
+    "service_account": "${{ secrets.WIF_SERVICE_ACCOUNT || secrets.GCP_DEPLOYER_SA || (vars.GCP_PROJECT_ID != '' && format('sa-gh-deployer@{0}.iam.gserviceaccount.com', vars.GCP_PROJECT_ID)) || 'sa-gh-deployer@fd4at-proj.iam.gserviceaccount.com' }}",
+    "workload_identity_provider": "${{ secrets.WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || (vars.GCP_PROJECT_NUMBER != '' && format('projects/{0}/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider', vars.GCP_PROJECT_NUMBER)) || 'projects/123/locations/global/workloadIdentityPools/castor-gh-pool/providers/github-provider' }}"
+   }
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Set up Cloud SDK",
+   "uses": "google-github-actions/setup-gcloud@v2",
+   "with": {
+    "install_components": "gke-gcloud-auth-plugin"
+   }
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Sanitize workspace package shadows",
+   "run": "python3 -c \"\nimport os, glob\nfor py_file in glob.glob('apps/ops-bastion/**/*.py', recursive=True):\n    if not py_file.endswith('__init__.py') and os.path.isfile(py_file):\n        stem = py_file[:-3]\n        if os.path.isdir(stem) and any(f.endswith('.py') for f in os.listdir(stem)):\n            os.remove(py_file)\n\" || true\n"
+  },
+  {
+   "if": "steps.auth.outcome == 'success'",
+   "name": "Deploy to GKE Autopilot Cluster",
+   "run": "if ! gcloud container clusters describe gke-fd4at --region ${REGION} >/dev/null 2>&1; then\n  echo \"GKE Autopilot cluster 'gke-fd4at' is still being provisioned by OpenTofu. Skipping workflow run until cluster is ready.\"\n  exit 0\nfi\ngcloud container clusters get-credentials gke-fd4at --region ${REGION}\nif [ -d \"k8s\" ]; then kubectl apply -f k8s/; fi\n"
+  }
+ ]
+}
