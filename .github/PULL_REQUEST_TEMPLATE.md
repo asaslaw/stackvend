@@ -19,7 +19,7 @@ Please verify that your Pull Request adheres to the StackVend architectural inva
   pytest mcp-servers/terraform/test_service.py
   pytest mcp-servers/kubernetes/test_service.py
   ```
-- [ ] Updated `CHANGELOG.md` (the newest, unreleased section) with a concise summary of user-visible changes.
+- [ ] Added a concise summary of user-visible changes to `CHANGELOG.md` under `## [Unreleased]` (directly above the newest release).
 
 ### 2. Monorepo Replica Synchronization (Gate 5)
 - [ ] If modifying `shared/builtin_prompts.py`, all replicas in `apps/control-center/shared/` and `apps/orchestrator-gateway/shared/` are synchronized in lockstep.

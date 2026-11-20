@@ -147,7 +147,7 @@ _Not accepted during the preview (see the note at the top). This is how they wil
    - [ ] all replicas of any shared file you touched are updated;
    - [ ] no project IDs, emails, tokens or other environment-specific values were added;
    - [ ] a red-team review was done if you touched one of the files in section 2.5;
-   - [ ] `CHANGELOG.md` has a line under `[Unreleased]` for user-visible changes.
+   - [ ] `CHANGELOG.md` has a line under `## [Unreleased]` (directly above the newest release) for user-visible changes.
 4. **Do not deploy** as part of a contribution. Deployment of the maintainers' installations is handled by the maintainers.
 
 ### Documentation changes

@@ -7,13 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release entry convention
 
-Every tagged release (`vX.Y.Z`) must include a section in this file with:
+Releases are numbered steps `X.Y.Z-preview.K` (tag `vX.Y.Z-preview.K`) and roll-ups `X.Y.Z` (tag `vX.Y.Z`); a roll-up carries the same code as its last step and summarizes the steps since the previous roll-up. Every tagged release, step versions included, must include a section in this file with:
 
-1. **Version heading**: `## [X.Y.Z] - YYYY-MM-DD` matching the Git tag `vX.Y.Z`.
+1. **Version heading**: `## [<version>] - YYYY-MM-DD` matching the Git tag `v<version>` (for example `## [0.9.1-preview.1] - YYYY-MM-DD` for the tag `v0.9.1-preview.1`).
 2. **Host Terraform indicator**: an explicit `requires apply.sh: yes` or `requires apply.sh: no` line stating whether the release modifies host-platform infrastructure (`infra/platform/**`, `infra/modules/workflows/**`, or `workflows/**`).
-3. **Upgrade run order**: the exact commands and order an operator must run after merging the release (for example, `bash scripts/apply.sh apply` first when `requires apply.sh: yes`, followed by `bash scripts/deploy-services.sh --all-jobs`). `PROJECT_ID=<id> bash scripts/upgrade.sh vX.Y.Z` runs this order for a release tag (read-only plan, confirm, apply, deploy, smoke check); the entry still lists the commands for operators who run them by hand.
+3. **Upgrade run order**: the exact commands and order an operator must run after merging the release (for example, `bash scripts/apply.sh apply` first when `requires apply.sh: yes`, followed by `bash scripts/deploy-services.sh --all-jobs`). `PROJECT_ID=<id> bash scripts/upgrade.sh v<version>` runs this order for a release tag (read-only plan, confirm, apply, deploy, smoke check); the entry still lists the commands for operators who run them by hand.
+
+Changes that are not released yet are listed under `## [Unreleased]`, directly above the newest release heading. A release renames that heading to its own `## [<version>] - YYYY-MM-DD` and starts a new, empty `## [Unreleased]` above it. There is no rule line (`---`) between release sections: a release's notes are its section, from its heading up to the next `## ` heading.
 
 ---
+
+## [Unreleased]
+
+## [0.9.1-preview.1] - 2026-11-20
+
+The first release step after the 0.9.0 preview. It changes how releases are numbered and published, not what StackVend does.
+
+**requires apply.sh: no**
+
+**Upgrading:** no platform Terraform change and no functional change to the running code. **Update StackVend** (Settings ▸ Upgrades) rebuilds every service and job from the signed release tag and moves them to the new version. By default an administrator then approves the build in the Google Cloud console (Cloud Build ▸ History) within 60 minutes; new workload runs are refused until the update ends (runs already started continue). Without the upgrader, run `PROJECT_ID=<id> bash scripts/upgrade.sh v0.9.1-preview.1` from the checkout you installed from: it verifies the tag's signature first, then shows the read-only plan and runs `apply.sh` (this release changes no platform Terraform) and `deploy-services.sh --all-jobs`.
+
+### Changed
+- **Release numbering.** Releases are now numbered steps such as `0.9.1-preview.1`, each with its own signed tag and its own section in this file, and roll-ups such as `0.9.1` that carry the same code as their last step and summarize the steps. Changes not released yet are listed under `## [Unreleased]`, directly above the newest release; `CONTRIBUTING.md` and the pull request template say so.
+- **How releases reach this repository.** Each release now arrives as one pull request, merged by rebase onto `main`, followed by a signed tag on the merged commit. From now on each release adds to the history of `main` instead of replacing it.
 
 ## [0.9.0-preview] - 2026-11-18
 
@@ -243,8 +259,6 @@ First public preview. Read [`documentation/known-limitations.md`](documentation/
 - **Workload IaC can no longer grant secret access on the whole project.** A generated workload that grants a Secret Manager role (such as `roles/secretmanager.secretAccessor`) or an IAM-admin role at project level, written with a literal role, is now stopped before commit (`IAC.PROJECT_WIDE_GRANT` on the typed IaC intent, `POLICY.PROJECT_WIDE_GRANT` on hand-written-style Terraform) and sent back to the developer agent, which grants the role on the one secret it reads instead. Grants that StackVend's own modules make (for example a database module's access to its password secret) are unchanged.
 
 See the [roadmap](documentation/README.md#roadmap) for ideas under consideration; nothing there is scheduled.
-
----
 
 ## [0.1.0] - 2026-10-09
 
