@@ -438,11 +438,18 @@ def _harness():  # noqa: C901 - one linear scenario script
         if r.status_code != 404 or "set-cookie" in r.headers:
             r41_iap.append(["google-login behind IAP", r.status_code, r.headers.get("set-cookie")])
         # "absent" = configured nowhere, so no Terraform env pin either (lane 19 L19-0c: a pinned client -> 409).
+        # FD-103 (§8 Q3): an anonymous caller is refused (401) before the state read; an IAP administrator reaches the
+        # absent state and gets the unchanged row-41 refusal (403). Neither ever gets a cookie.
         with patch.object(cc_config, "oauth_client_id_state", return_value="absent"), \
                 patch.object(cc_config, "GOOGLE_OAUTH_CLIENT_ID_ENV_PINNED", False):
             r = client.post("/auth/config-client-id", json={"client_id": "x.apps.googleusercontent.com", "credential": "tok"})
-        if r.status_code != 403 or "set-cookie" in r.headers:
-            r41_iap.append(["first-run GIS session behind IAP", r.status_code, r.headers.get("set-cookie")])
+            r_iap_admin = client.post(
+                "/auth/config-client-id", json={"client_id": "x.apps.googleusercontent.com", "credential": "tok"},
+                headers={"x-goog-iap-jwt-assertion": iap_token("owner@example.com", IAP_AUD)})
+        if r.status_code != 401 or "set-cookie" in r.headers:
+            r41_iap.append(["first-run anonymous behind IAP", r.status_code, r.headers.get("set-cookie")])
+        if r_iap_admin.status_code != 403 or "set-cookie" in r_iap_admin.headers:
+            r41_iap.append(["first-run GIS session behind IAP", r_iap_admin.status_code, r_iap_admin.headers.get("set-cookie")])
         r = client.get("/api/workloads", cookies=own_ck)
         if r.status_code != 401:
             r41_iap.append(["admin session cookie honoured behind IAP", r.status_code])

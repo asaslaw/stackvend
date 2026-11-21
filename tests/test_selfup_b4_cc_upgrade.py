@@ -237,7 +237,7 @@ def env(monkeypatch):
 
     def github(method, path, token="", body=None, accept=""):
         st["gh"].append((method, path))
-        if path == "/repos/asaslaw/stackvend/commits/tags/v0.9.3":
+        if path == "/repos/asaslaw/stackvend/commits/refs/tags/v0.9.3":
             return 200, {"sha": COMMIT}
         return 404, None
 
@@ -469,8 +469,93 @@ def test_start_writes_b2_contract_documents_and_publishes_once(env):
     assert body["status"] == "WAITING_FOR_BUILD"
     assert "approve this build in the Google Cloud console (Cloud Build ▸ History)" in body["waiting_text"]
     # the only GitHub call of the start is resolving the tag; no Cloud Run call at all
-    assert env["gh"] == [("GET", "/repos/asaslaw/stackvend/commits/tags/v0.9.3")]
+    assert env["gh"] == [("GET", "/repos/asaslaw/stackvend/commits/refs/tags/v0.9.3")]
     assert env["run_calls"] == []
+
+
+# ================================================================================================ FD-148 tag resolve
+def _github_answer(env, monkeypatch, answer):
+    """Replace the GitHub double: every call is recorded, then answered by `answer(path)` (or raises it)."""
+    def github(method, path, token="", body=None, accept=""):
+        env["gh"].append((method, path))
+        if isinstance(answer, Exception):
+            raise answer
+        return answer(path)
+    monkeypatch.setattr(pr, "github_request", github)
+
+
+def _nothing_started(env):
+    """No request document (for this or any id), no lease, no message, maintenance untouched."""
+    rid = pu.request_id_for(ADMIN_EMAIL, KEY)
+    assert env["guard"].doc(f"platform_upgrades/{rid}") is None
+    assert env["guard"].doc("platform_upgrades/_lease") is None
+    assert not [p for p in env["guard"].docs if p[0] == pu.REQUESTS]
+    no_side_effects(env)
+
+
+def test_fd148_missing_tag_is_tag_unresolved_and_starts_nothing(env, monkeypatch):
+    """GitHub answers 422 "No commit found for SHA: refs/tags/<tag>" for a tag that does not exist (checked live
+    2026-11-20). No earlier request is seeded, so nothing can be answered from an idempotent replay."""
+    assert not [p for p in env["guard"].docs if p[0] == pu.REQUESTS]
+    _github_answer(env, monkeypatch, lambda path: (422, {"message": "No commit found for SHA: refs/tags/v0.9.3"}))
+    r = start()
+    assert r.status_code == 502 and code(r) == "TAG_UNRESOLVED", r.text
+    assert "HTTP 422" in r.json()["detail"]["message"]
+    assert env["gh"] == [("GET", "/repos/asaslaw/stackvend/commits/refs/tags/v0.9.3")]
+    _nothing_started(env)
+
+
+@pytest.mark.parametrize("status", [403, 429])
+def test_fd148_rate_limit_is_typed_and_starts_nothing(env, monkeypatch, status):
+    _github_answer(env, monkeypatch, lambda path: (status, {"message": "API rate limit exceeded"}))
+    r = start()
+    assert r.status_code == 502 and code(r) == "GITHUB_RATE_LIMITED", r.text
+    message = r.json()["detail"]["message"]
+    assert f"HTTP {status}" in message
+    # 429 is always the rate limit; a 403 cannot be told apart from a refusal without headers, so it says both
+    assert ("rate-limited or refused" in message) is (status == 403)
+    _nothing_started(env)
+
+
+@pytest.mark.parametrize("answer", [
+    lambda path: (200, {"sha": "not-a-sha"}),
+    lambda path: (200, None),
+    lambda path: (404, None),
+    lambda path: (500, {"message": "x"}),
+    OSError("network down"),
+])
+def test_fd148_negative_other_failures_stay_tag_unresolved(env, monkeypatch, answer):
+    """Only 403 / 429 are renamed: every other failure (bad sha, no body, 404, 5xx, no network) is TAG_UNRESOLVED."""
+    _github_answer(env, monkeypatch, answer)
+    r = start()
+    assert r.status_code == 502 and code(r) == "TAG_UNRESOLVED", r.text
+    _nothing_started(env)
+
+
+def test_fd148_tag_is_resolved_only_through_the_qualified_ref(env):
+    """Recorded: a start asks GitHub only for `commits/refs/tags/<quoted tag>`. Static: neither CC route module holds
+    a GitHub `commits/...` path in any other form (a bare `commits/<tag>`, the 422 `commits/tags/` or a branch's
+    `commits/heads/`), so a branch named like the tag can never be resolved instead."""
+    assert start().status_code == 202
+    gh_paths = [p for _m, p in env["gh"]]
+    assert gh_paths == ["/repos/asaslaw/stackvend/commits/refs/tags/v0.9.3"]
+    for name in ("platform_upgrade.py", "platform_release.py"):
+        tree = ast.parse(open(os.path.join(CC_DIR, "routes", name), encoding="utf-8").read())
+        parts = [n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)
+                 and "/commits/" in n.value]
+        for s in parts:
+            assert s.endswith("/commits/refs/tags/"), (name, s)
+            assert "/commits/tags/" not in s and "/commits/heads/" not in s and "/refs/heads/" not in s, (name, s)
+        if name == "platform_upgrade.py":
+            assert parts == ["/commits/refs/tags/"]  # the one resolve; a second commits path would be reviewed
+
+
+def test_fd148_tag_is_quoted_into_one_path_segment(env, monkeypatch):
+    """The tag is percent-encoded with safe="" (a `/` or `?` in a tag can never change the path GitHub resolves)."""
+    seen = []
+    monkeypatch.setattr(pr, "_github", lambda method, path, **kw: (seen.append(path), (200, {"sha": COMMIT}))[1])
+    assert pu._resolve_commit("acme/sv", "v1.0.0/../heads?x") == COMMIT
+    assert seen == ["/repos/acme/sv/commits/refs/tags/v1.0.0%2F..%2Fheads%3Fx"]
 
 
 def test_start_is_idempotent(env):
@@ -577,6 +662,41 @@ def test_progress_view_running(env):
     assert rows["product-control-center-ui"]["result"] == "BUILT"
     assert cur["build_url"].startswith("https://console.cloud.google.com/cloud-build/builds;region=us-central1/")
     assert body["lease"]["state"] == "ACTIVE" and env["maint_writes"] == []
+
+
+def test_progress_build_id_becomes_the_build_log_link(env):
+    # FD-148: step0-verify passes Cloud Build's $BUILD_ID; guard.py records it; the card links that exact build.
+    rid = started(env)
+    bid = "0b1c2d3e-aaaa-bbbb-cccc-0123456789ab"
+    env["db"].put(f"platform_upgrades_progress/{rid}", progress(rid, stage="VERIFYING"))
+    cur = client().get("/api/settings/platform-upgrade").json()["current"]
+    assert cur["build_id"] == bid
+    assert cur["build_url"] == (f"https://console.cloud.google.com/cloud-build/builds;region=us-central1/{bid}"
+                                f"?project={PROJ}")
+    # no build id (the pre-FD-148 trigger) or a malformed one: no link, never a guessed one
+    # (FD-148 attacker review: an exact canonical UUID only; the id itself is never echoed unless it is one)
+    for bad in ("", "../x", "ABC", "-" * 36, "0" * 36, bid.upper(), "{" + bid + "}", bid.replace("-", ""),
+                bid + "\n", " " + bid[1:], "urn:uuid:" + bid, 12345, None, ["x"]):
+        env["db"].put(f"platform_upgrades_progress/{rid}", progress(rid, stage="VERIFYING", build_id=bad))
+        cur = client().get("/api/settings/platform-upgrade").json()["current"]
+        assert cur["build_url"] == "" and cur["build_id"] == "", bad
+
+
+def test_malformed_build_id_is_logged_without_its_value(env, caplog):
+    rid = started(env)
+    planted = "evil-" + "x" * 31
+    env["db"].put(f"platform_upgrades_progress/{rid}", progress(rid, stage="VERIFYING", build_id=planted))
+    with caplog.at_level("WARNING", logger="control-center-platform-upgrade"):
+        assert client().get("/api/settings/platform-upgrade").json()["current"]["build_url"] == ""
+    hits = [r.getMessage() for r in caplog.records if "build_id rejected" in r.getMessage()]
+    assert hits and "length=36" in hits[0] and planted not in caplog.text
+    # an absent id (a pre-FD-148 trigger) and a valid one stay silent
+    caplog.clear()
+    for quiet in ("", "0b1c2d3e-aaaa-bbbb-cccc-0123456789ab"):
+        env["db"].put(f"platform_upgrades_progress/{rid}", progress(rid, stage="VERIFYING", build_id=quiet))
+        with caplog.at_level("WARNING", logger="control-center-platform-upgrade"):
+            client().get("/api/settings/platform-upgrade")
+    assert "build_id rejected" not in caplog.text
 
 
 def test_succeeded_releases_lease_and_restores_maintenance(env):

@@ -119,16 +119,35 @@ To a release tag, in one guided run (fetch the tag and verify its signature, rea
 PROJECT_ID=<your-project-id> bash scripts/upgrade.sh <tag>      # for example v0.9.1
 ```
 
-In a fork, the release tags are on the official repository, not on your `origin`: add it as a remote (for example `git remote add upstream https://github.com/asaslaw/stackvend.git`) and pass `--remote=upstream`; this applies the upstream release, not your fork's `main`. Before anything of the release runs, `upgrade.sh` verifies the tag's SSH signature against `scripts/release/allowed_signers` of the checkout you installed from, and refuses an unsigned tag or one signed by another key; for your own unsigned tags pass `--trust-unsigned` (it prints a red warning). See [Known Limitations](documentation/known-limitations.md).
+An install on `0.9.0-preview` or `0.9.1-preview.1` must update this way: the Control Center's **Update StackVend** button of those releases cannot resolve a release tag (it stops with `TAG_UNRESOLVED` and changes nothing). The button works on an install that already runs `0.9.1-preview.2` or later, for the releases after it.
 
-Or step by step:
+In a fork, the release tags are on the official repository, not on your `origin`: add it as a remote (for example `git remote add upstream https://github.com/asaslaw/stackvend.git`) and pass `--remote=upstream`; this applies the upstream release, not your fork's `main`. Before anything of the release runs, `upgrade.sh` verifies the tag's SSH signature against `scripts/release/allowed_signers` of the checkout you installed from, and refuses an unsigned tag or one signed by another key; for your own unsigned tags pass `--trust-unsigned` (it prints a red warning). From `0.9.1-preview.2` on it also refuses an annotated tag whose own name is not the tag you asked for (an older signed release published under a newer name), with or without `--trust-unsigned`. Never pass `--trust-unsigned` for an official release. See [Known Limitations](documentation/known-limitations.md).
+
+**On `0.9.0-preview` or `0.9.1-preview.1`, check the tag yourself first.** The `upgrade.sh` that runs is the one of the release you installed, and those releases do not check the name inside the tag. Before you run it, from the checkout you installed from (in a fork, `<remote>` is the official repository's remote):
 
 ```bash
-git pull origin main
+git fetch --no-tags <remote> refs/tags/<tag>:refs/tags/<tag>
+git cat-file tag refs/tags/<tag> | sed -n 's/^tag //p'     # must print exactly one line: <tag>
+git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag refs/tags/<tag>
+```
+
+Run `upgrade.sh` only when the name line is exactly the tag and `verify-tag` reports a good signature with the `allowed_signers` of the checkout you are on.
+
+Or step by step, from a clean checkout. Verify the tag before you check it out: the release's scripts run with your credentials.
+
+```bash
+git fetch --no-tags origin refs/tags/<tag>:refs/tags/<tag>   # in a fork: the official repository instead of origin
+git cat-file -t refs/tags/<tag>                              # must print: tag
+git for-each-ref --format='%(tag)' refs/tags/<tag>           # must print <tag> itself
+git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen -c gpg.program=false -c gpg.openpgp.program=false \
+    -c gpg.x509.program=false -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag refs/tags/<tag>
+git checkout --detach 'refs/tags/<tag>^{commit}'             # only after all three checks passed
+bash scripts/apply.sh apply                        # first, only if files under infra/platform/ changed
 bash scripts/deploy-services.sh                    # all services (add --all-jobs for batch jobs)
 bash scripts/deploy-services.sh control-center     # or one service
-bash scripts/apply.sh apply                        # only if files under infra/platform/ changed
 ```
+
+`verify-tag` must report a good signature from the key in `scripts/release/allowed_signers` of the checkout you are on (the one you installed from), never the release's own copy. It checks the signature only, not that the tag object was made for the name you fetched: that is what the `%(tag)` line checks.
 
 ### Your configuration is backed up automatically
 
@@ -156,6 +175,15 @@ Every install is a stable workload manager: StackVend builds and manages your ap
 * **Update from your own repository:** publish signed release tags there, and point the release source at it (Settings ▸ Upgrades ▸ **Release source**, or `scripts/release-source.py set`) with your signing keys.
 * **Or deploy your own changes directly** with `bash scripts/deploy-services.sh` (add `scripts/apply.sh apply` first when `infra/platform/` changed). There are no push-to-deploy triggers: a change reaches an install only when you run one of these.
 
+**Upstream sync: until your default branch has the verified workflow, keep the sync off and the token deleted.** Scheduled runs use the workflow file on your default branch, and the sync ignores pre-release tags, so no fork receives the verified workflow through the sync itself. The workflow of releases up to `0.9.1-preview.1` merges the newest tag without checking its signature, and its pull request body does not show changed scripts or release keys. Turn it off and delete the token now:
+
+```bash
+gh variable set STACKVEND_UPSTREAM_SYNC --body false
+gh secret delete STACKVEND_SYNC_TOKEN
+```
+
+Then merge `v0.9.1-preview.2` (or a later release) by hand with the verified steps below, and only then turn the sync on again. Do not merge a sync pull request opened by the old workflow without running the same checks on its tag.
+
 **Opt-in upstream sync (`.github/workflows/sync-upstream.yml`):** Weekly upstream sync is **off by default**. To enable it in a fork, set the GitHub repository variables `STACKVEND_UPSTREAM_REPO` (the upstream `owner/repo` slug) and `STACKVEND_UPSTREAM_SYNC=true`:
 
 ```bash
@@ -163,9 +191,20 @@ gh variable set STACKVEND_UPSTREAM_REPO --body example-org/stackvend
 gh variable set STACKVEND_UPSTREAM_SYNC --body true
 ```
 
-When enabled, the workflow is **tag-based** (it syncs only the newest `vX.Y.Z` semantic version release tag from upstream tags, never `main`, and ignores pre-release tags) and **PR-only** (it creates a `chore/sync-upstream-vX.Y.Z` branch from the repository's default branch and opens a pull request against it, also when a manual run is started from another branch; it never pushes to `main` or auto-merges). The pull request body states `needs apply.sh: yes` or `needs apply.sh: no` (computed after merging the release tag from changed paths under `infra/platform/**`, `infra/modules/workflows/**` and `workflows/**`), lists the matching paths, and directs you to the release's `CHANGELOG.md` entry for the upgrade run order. **Sync pull requests must be merged with a merge commit (do not squash or rebase)** so the upstream tag commit remains an ancestor of `main` for future `git merge-base --is-ancestor` checks. If you close a sync pull request without merging it, the workflow skips that release (one log line) until upstream publishes a newer `vX.Y.Z` tag; to take the release later, reopen the pull request. If the merge has conflicts, the run fails with one error line that tells you how to merge the tag by hand.
+When enabled, the workflow reads the upstream repository without credentials, so the upstream must be public (otherwise the run stops with `SYNC_UPSTREAM_FETCH_FAILED`). It is **tag-based** (it syncs only the newest `vX.Y.Z` semantic version release tag from upstream tags, never `main`, and ignores pre-release tags), **verified** (from `0.9.1-preview.2` on: it merges the tag only if it is an annotated tag whose own name is that tag, signed with SSH by a key in `scripts/release/allowed_signers` of your repository's default branch, never the tag's own list; otherwise the run stops with one error that names the tag and the manual path below, and nothing is pushed, so one unsigned or wrongly signed higher tag upstream stops the sync until it is removed there) and **PR-only** (it creates a `chore/sync-upstream-vX.Y.Z` branch from the repository's default branch and opens a pull request against it, also when a manual run is started from another branch; it pushes only that branch, never `main`, and never auto-merges). The pull request body states `needs apply.sh: yes` or `needs apply.sh: no` (computed after merging the release tag from changed paths under `infra/platform/**`, `infra/modules/workflows/**` and `workflows/**`), lists the matching paths, lists every changed trust-anchor path with the tag object, its commit and its signer ("none changed" when there is none; the paths are chosen by shape: `scripts/`, `.github/`, the release keys, the upgrader and release-source files, any path with a component that starts with `.` at any depth, every Markdown file outside `documentation/`, dependency pins and build or test configuration such as `requirements*.txt`, `conftest.py`, `pyproject.toml`, `setup.py`, `Makefile` or `*.pth` at any depth, and every path with a non-ASCII character), and directs you to the release's `CHANGELOG.md` entry for the upgrade run order. **Sync pull requests must be merged with a merge commit (do not squash or rebase)** so the upstream tag commit remains an ancestor of `main` for future `git merge-base --is-ancestor` checks. If you close a sync pull request without merging it, the workflow skips that release (one log line) until upstream publishes a newer `vX.Y.Z` tag; to take the release later, reopen the pull request. If the merge has conflicts, the run fails with one error line that tells you how to merge the tag by hand.
 
-By default the workflow uses the built-in `GITHUB_TOKEN`. That has two limits: pull requests it opens do not trigger other workflows such as CI (re-run CI before merging, for example by closing and reopening the pull request or pushing a commit), and it cannot push a release that changes files under `.github/workflows/**`. To remove both limits, add the optional repository secret `STACKVEND_SYNC_TOKEN`: a fine-grained personal access token for this repository with read and write access to Contents, Pull requests and Workflows (or a classic token with the `repo` and `workflow` scopes). Without it, merge such a release by hand: `git fetch https://github.com/<owner>/<repo>.git tag vX.Y.Z && git merge vX.Y.Z`.
+By default the workflow uses the built-in `GITHUB_TOKEN`. That has two limits, both because GitHub keeps that token from starting more workflow runs or changing workflow files: pull requests it opens do not trigger other workflows such as CI (re-run CI before merging, for example by closing and reopening the pull request or pushing a commit), and it cannot push a release that changes files under `.github/workflows/**`. The optional repository secret `STACKVEND_SYNC_TOKEN` (a fine-grained personal access token for this repository with read and write access to Contents, Pull requests and Workflows, or a classic token with the `repo` and `workflow` scopes) removes both limits, and that is also its risk: with it, the workflow files of the pushed branch, which come from upstream, run in your repository with its secrets. The old workflow kept the token in the checkout for every step; the verified workflow uses it only in the push and pull-request step, and pushes only a verified release. Add it, if at all, only after the verified workflow is on your default branch. Without it, merge a release that changes workflow files by hand, verified, from a clean checkout of your default branch:
+
+```bash
+git fetch --no-tags https://github.com/<owner>/<repo>.git refs/tags/vX.Y.Z:refs/tags/vX.Y.Z
+git cat-file -t refs/tags/vX.Y.Z                      # must print: tag
+git for-each-ref --format='%(tag)' refs/tags/vX.Y.Z   # must print: vX.Y.Z
+git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen -c gpg.program=false -c gpg.openpgp.program=false \
+    -c gpg.x509.program=false -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag refs/tags/vX.Y.Z
+git merge -m "Merge StackVend vX.Y.Z" 'refs/tags/vX.Y.Z^{commit}'   # only after all three checks passed
+```
+
+`verify-tag` reads the trusted keys from `scripts/release/allowed_signers` of your default branch (the file in your working tree before the merge). It checks the signature only; the `%(tag)` line checks that the signed tag object was made for the name you fetched.
 
 ---
 

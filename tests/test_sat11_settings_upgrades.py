@@ -58,8 +58,8 @@ C1, C2 = "a" * 40, "b" * 40
 
 # ------------------------------------------------------------------------------------------------ Firestore double
 class Snap:
-    def __init__(self, data, update_time):
-        self._d, self.exists, self.update_time = data, data is not None, update_time
+    def __init__(self, data, update_time, doc_id=""):
+        self._d, self.exists, self.update_time, self.id = data, data is not None, update_time, doc_id
 
     def to_dict(self):
         return json.loads(json.dumps(self._d)) if self._d is not None else None
@@ -80,11 +80,27 @@ class Ref:
 
 
 class Col:
-    def __init__(self, db, path):
-        self.db, self.path = db, path
+    def __init__(self, db, path, order=None, limit=None):
+        self.db, self.path, self._order, self._limit = db, path, order, limit
 
     def document(self, doc_id):
         return Ref(self.db, self.path + (doc_id,))
+
+    def order_by(self, field, direction="ASCENDING"):
+        return Col(self.db, self.path, (field, direction), self._limit)
+
+    def limit(self, n):
+        return Col(self.db, self.path, self._order, n)
+
+    def stream(self):
+        if self.db.fail_queries:
+            raise RuntimeError("unavailable")
+        items = [(p, d) for p, d in self.db.docs.items() if p[:-1] == self.path]
+        if self._order:  # Firestore: a document without the ordering field is not returned
+            field, direction = self._order
+            items = sorted([x for x in items if field in x[1]], key=lambda x: x[1][field],
+                           reverse=direction == "DESCENDING")
+        return [Snap(d, self.db.times.get(p), p[-1]) for p, d in items[:self._limit]]
 
 
 class Batch:
@@ -133,6 +149,7 @@ def _apply_update(old, data, ignore_delete=False):
 class FakeDb:
     def __init__(self):
         self.docs, self.times, self.tick, self.fail_commit = {}, {}, 0, False
+        self.fail_queries = False
         self.ignore_delete = False  # True: behave like a merge that keeps unknown keys (the pre-fix save, review M1)
         self.updates = []  # every `update` payload committed, for the Do No Harm check
 
@@ -209,7 +226,11 @@ class FakeGitHub:
         if "/releases?" in path:
             return (self.status, self.releases) if self.status == 200 else (self.status, {"message": "x"})
         if "/contents/release-manifest.json" in path:
-            tag = path.split("ref=")[1]
+            # FD-148: only the fully qualified, encoded tag ref is ever asked for (never a bare tag a branch could
+            # shadow); any other form fails the test instead of answering.
+            ref = path.split("?ref=", 1)[1]
+            assert ref.startswith("refs%2Ftags%2F") and "/" not in ref, path
+            tag = ref[len("refs%2Ftags%2F"):]
             return (200, self.manifests[tag].encode()) if tag in self.manifests else (404, None)
         if "/commits/" in path:
             return (200, {"sha": self.branch_sha}) if self.branch_sha else (404, None)
@@ -267,6 +288,7 @@ def env(monkeypatch):
                         lambda: {"schema_version": 1, "release": "0.9.2", "commit": C1, "dirty": False,
                                  "built_at": "t", "source_repo": "acme/stackvend", "builder": "deploy-services"})
     monkeypatch.setenv("GITHUB_REPO", "acme/platform")
+    monkeypatch.setenv(pr.GUARD_DB_ENV, "stackvend-guard")  # a separate guard database, as every install has
     pr._updates_cache.clear()
     return state
 
@@ -368,6 +390,160 @@ def test_platform_ahead_of_the_services_says_redeploy_the_services(env):
     body = client().get("/api/settings/platform-version").json()
     assert body["platform_update_pending"] is True and body["pending_direction"] == "SERVICES_BEHIND"
     assert body["pending_text"] == pr.SERVICES_BEHIND_TEXT and "upgrade.sh" not in body["pending_text"]
+
+
+# ================================================================================================ FD-148 compatible stamp
+def _progress(env, rid, status, release, minimum, started="2026-11-20T19:00:00Z", commit=C1, request=True):
+    """A progress record as step 0 + run.sh write it, and (request=True) the guard-database request it ran for."""
+    env["db"].collection("platform_upgrades_progress").document(rid).set(
+        {"schema_version": 1, "request_id": rid, "status": status, "stage": "DONE", "started_at": started,
+         "updated_at": started, "verified": {"target_tag": "v" + release, "commit": commit, "release": release,
+                                             "repository": "acme/stackvend", "signer_fingerprint": "SHA256:x",
+                                             "platform_release": "0.9.1-preview.1", "floor": "0.9.0-preview",
+                                             "min_platform_release": minimum, "warnings": []}})
+    if request:
+        env["guard"].collection("platform_upgrades").document(rid).set(
+            {"schema_version": 1, "kind": "UPGRADE", "status": "STARTED", "target_tag": "v" + release,
+             "expected_commit": commit, "requested_by": ADMIN_EMAIL})
+
+
+def _version(env, services="0.9.1-preview.2", stamp="0.9.1-preview.1"):
+    env["db"].collection("system_config").document("platform_release").set(record(release=services))
+    env["run"] = FakeRun(annotations={rm.STAMP_RELEASE_ANNOTATION: stamp, rm.STAMP_COMMIT_ANNOTATION: C2})
+    return client().get("/api/settings/platform-version").json()
+
+
+def _banner(body):
+    return (body["platform_update_pending"] is True and body["pending_direction"] == "PLATFORM_BEHIND"
+            and body["pending_text"] == pr.PENDING_TEXT)
+
+
+def test_fd148_button_update_within_min_platform_shows_no_banner(env):
+    """After an Update StackVend run to a release that needs no apply.sh, the stamp (written only by apply.sh) stays on
+    the earlier release: services 0.9.1-preview.2 whose SUCCEEDED run verified min_platform_release 0.9.0-preview, on
+    stamp 0.9.1-preview.1, is a complete install, not "run upgrade.sh"."""
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview")
+    body = _version(env)
+    assert body["platform"]["state"] == "STAMPED" and body["platform"]["release"] == "0.9.1-preview.1"
+    assert body["platform_update_pending"] is False and body["pending_text"] == ""
+    assert body["pending_direction"] == pr.PLATFORM_COMPATIBLE
+    # the stamp exactly at min_platform_release is enough too
+    assert _version(env, stamp="0.9.0-preview")["platform_update_pending"] is False
+
+
+def test_fd148_min_platform_above_the_stamp_keeps_the_banner(env):
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.1-preview.2")  # a release that needed apply.sh
+    assert _banner(_version(env))
+
+
+def test_fd148_the_newest_succeeded_run_for_the_release_decides(env):
+    """An older SUCCEEDED run of the same release with a lower floor does not override the newest one."""
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview", started="2026-11-20T18:00:00Z")
+    _progress(env, "b" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.1-preview.2", started="2026-11-20T19:00:00Z")
+    assert _banner(_version(env))
+
+
+@pytest.mark.parametrize("seed", [
+    None,                                                                 # no record at all
+    ("FAILED_DEPLOYING", "0.9.1-preview.2", "0.9.0-preview"),
+    ("PARTIAL", "0.9.1-preview.2", "0.9.0-preview"),
+    ("ROLLED_BACK", "0.9.1-preview.2", "0.9.0-preview"),
+    ("RUNNING", "0.9.1-preview.2", "0.9.0-preview"),
+    ("SUCCEEDED", "0.9.1-preview.3", "0.9.0-preview"),                    # another release than the services run
+    ("SUCCEEDED", "0.9.1-preview.2", "not-a-version"),
+    ("SUCCEEDED", "0.9.1-preview.2", None),
+])
+def test_fd148_negative_no_matching_succeeded_run_keeps_the_banner(env, seed):
+    """No such record, a run that did not succeed, a mismatched release or unusable fields -> today's behaviour."""
+    if seed:
+        _progress(env, "a" * 32, *seed)
+    assert _banner(_version(env))
+
+
+def test_fd148_negative_unreadable_progress_keeps_the_banner(env):
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview")
+    env["db"].fail_queries = True
+    assert _banner(_version(env))
+
+
+def test_fd148_negative_other_directions_are_unchanged_and_read_nothing(env, monkeypatch):
+    """Do No Harm: equal releases, a newer platform and an unknown stamp never read the progress records."""
+    calls = []
+    real = pr._succeeded_upgrade_floor
+    monkeypatch.setattr(pr, "_succeeded_upgrade_floor", lambda s, c: calls.append(s) or real(s, c))
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.2", "0.9.0-preview")
+    assert _version(env, "0.9.2", "0.9.2")["platform_update_pending"] is False
+    body = _version(env, "0.9.2", "0.9.3")
+    assert body["platform_update_pending"] is True and body["pending_direction"] == "SERVICES_BEHIND"
+    env["run"] = FakeRun(unreadable={rm.CONTROL_CENTER_SERVICE})
+    body = client().get("/api/settings/platform-version").json()
+    assert body["platform"]["state"] == "UNKNOWN" and body["platform_update_pending"] is False
+    assert calls == []
+
+
+def test_fd148_commit_mismatch_keeps_the_banner(env):
+    """The verified commit must be the services' recorded commit (C1): a run of the same release from another commit
+    does not count."""
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview", commit=C2)
+    assert _banner(_version(env))
+
+
+@pytest.mark.parametrize("request_doc", [
+    None,                                                                              # no guard-database request
+    {"target_tag": "v0.9.1-preview.9", "expected_commit": C1},                         # another tag
+    {"target_tag": "v0.9.1-preview.2", "expected_commit": C2},                         # another commit
+    {"target_tag": None, "expected_commit": C1},
+])
+def test_fd148_missing_or_mismatched_guard_request_keeps_the_banner(env, request_doc):
+    """A progress record alone (default database, writable by every agent) is not enough: the guard-database request
+    with the same id must exist and name the same tag and commit."""
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview", request=False)
+    if request_doc is not None:
+        env["guard"].collection("platform_upgrades").document("a" * 32).set({"kind": "UPGRADE", **request_doc})
+    assert _banner(_version(env))
+
+
+@pytest.mark.parametrize("guard_env", [None, "", "  ", "(default)"])
+def test_fd148_no_separate_guard_database_keeps_the_banner(env, monkeypatch, guard_env):
+    """Without a separate guard database, get_guard_db falls back to the default one, which every agent can write:
+    the matching request then proves nothing, so the banner stays (even with an otherwise matching record)."""
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview")
+    if guard_env is None:
+        monkeypatch.delenv(pr.GUARD_DB_ENV, raising=False)
+    else:
+        monkeypatch.setenv(pr.GUARD_DB_ENV, guard_env)
+    assert _banner(_version(env))
+
+
+def test_fd148_unreadable_guard_database_keeps_the_banner(env, monkeypatch):
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview")
+
+    def broken():
+        raise RuntimeError("guard database unavailable")
+    monkeypatch.setattr(pr, "guard_db_provider", broken)
+    assert _banner(_version(env))
+
+
+def test_fd148_a_failing_floor_lookup_keeps_the_banner(env, monkeypatch):
+    """build_version_view keeps the banner when the lookup itself raises."""
+    def boom(release, commit):
+        raise RuntimeError("unexpected")
+    monkeypatch.setattr(pr, "_succeeded_upgrade_floor", boom)
+    _progress(env, "a" * 32, "SUCCEEDED", "0.9.1-preview.2", "0.9.0-preview")
+    assert _banner(_version(env))
+
+
+def test_fd148_platform_meets_floor_table():
+    assert pr.platform_meets_floor("0.9.1-preview.1", "0.9.0-preview") is True
+    assert pr.platform_meets_floor("0.9.0-preview", "0.9.0-preview") is True
+    assert pr.platform_meets_floor("0.8.9", "0.9.0-preview") is False
+    for platform, floor in ((None, "0.9.0"), ("0.9.0", None), ("junk", "0.9.0"), ("0.9.0", "junk")):
+        assert pr.platform_meets_floor(platform, floor) is False
+
+
+def test_fd148_progress_collection_is_the_upgraders():
+    from routes import platform_upgrade as pu
+    assert pr.UPGRADE_PROGRESS == pu.PROGRESS
 
 
 def test_pending_direction_never_guesses():
@@ -628,6 +804,25 @@ def test_updates_lists_newest_release_with_manifest_and_guard(env):
     u = client().get("/api/settings/platform-updates").json()
     assert u["guard"]["decision"] == rm.NEEDS_APPLY_SH and u["guard"]["assumed"] is False
     assert u["guard"]["platform_release"] == "0.9.2" and len(u["steps"]) == 1
+
+
+def test_fd148_manifest_read_uses_the_qualified_tag_ref(env):
+    """FD-148 (r4 attacker A4): the release manifest is read at `?ref=refs%2Ftags%2F<tag>` (checked live 2026-11-20:
+    GitHub answers 200 for it, the same body as the unencoded `refs/tags/<tag>`), never at a bare `?ref=<tag>` that a
+    branch of the same name could answer."""
+    env["gh"] = FakeGitHub(releases=[rel("v0.9.3")], manifests={"v0.9.3": manifest("0.9.3", False, "0.9.2")})
+    u = client().get("/api/settings/platform-updates").json()
+    assert u["status"] == "OK" and u["manifest"]["release"] == "0.9.3"
+    reads = [c[1] for c in env["gh"].calls if "/contents/" in c[1]]
+    assert reads == [f"/repos/{rm.OFFICIAL_RELEASE_REPOSITORY}/contents/release-manifest.json"
+                     "?ref=refs%2Ftags%2Fv0.9.3"]
+
+
+def test_fd148_negative_missing_tag_manifest_is_manifest_missing(env):
+    """A tag with no manifest (GitHub 404 "No commit found for the ref refs/tags/..." live) stays MANIFEST_MISSING."""
+    env["gh"] = FakeGitHub(releases=[rel("v0.9.3")])
+    u = client().get("/api/settings/platform-updates").json()
+    assert u["status"] == "OK" and u["manifest_error"]["code"] == "MANIFEST_MISSING" and "manifest" not in u
 
 
 def test_manual_steps_are_only_upgrade_sh_even_when_the_guard_allows(env):

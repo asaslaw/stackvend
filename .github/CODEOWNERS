@@ -1,8 +1,24 @@
-# CI gates and the hermetic test guard: changes need the repository owner's review (red-team F10). Effective once
-# branch protection "Require review from Code Owners" is enabled on main (owner setting).
-/.github/                         @asaslaw
-/conftest.py                      @asaslaw
-/pytest.ini                       @asaslaw
-/tests/conftest.py                @asaslaw
-/tests/hermetic_guard.py          @asaslaw
-/tests/hermetic_known_leaks.py    @asaslaw
+# What this file does, and what it does not do.
+#
+# GitHub asks the maintainer to review every pull request from someone else (not drafts) that changes a path below,
+# and marks those paths in the diff. That is all. No ruleset of this repository requires a code owner's approval (a
+# single maintainer cannot approve their own pull requests), so this file enforces nothing and is not a security
+# control. In a fork, the owner named here has no effect: change it to your own reviewer or delete the lines.
+#
+# The paths are the ones a reviewer must read closely: CI and the hermetic test guard (red-team F10), the files that
+# instruct AI coding assistants (root Markdown files, root dot files and folders, the skills under .agents/, and
+# every AGENTS.md at any depth), the scripts that install, update and release StackVend (scripts/, including the
+# release keys in scripts/release/allowed_signers), and the platform upgrader.
+/.github/                                @asaslaw
+/conftest.py                             @asaslaw
+/pytest.ini                              @asaslaw
+/tests/conftest.py                       @asaslaw
+/tests/hermetic_guard.py                 @asaslaw
+/tests/hermetic_known_leaks.py           @asaslaw
+/*.md                                    @asaslaw
+/.*                                      @asaslaw
+AGENTS.md                                @asaslaw
+/.agents/                                @asaslaw
+/scripts/                                @asaslaw
+/infra/platform/upgrade_step0/           @asaslaw
+/infra/platform/platform_upgrader.tf     @asaslaw

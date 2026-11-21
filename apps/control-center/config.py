@@ -54,48 +54,67 @@ def _client_id_resolved(previous: str) -> None:
         logger.warning(f"Could not republish platform_config/cc_identity: {type(e).__name__}")
 
 
-def get_google_oauth_client_id() -> str:
-    """Returns configured Google OAuth Client ID, resolving from Secret Manager or Firestore if unset."""
+def resolve_google_oauth_client() -> tuple:
+    """
+    FD-103 (SEC-HOTFIX-FIRST-RUN-CLIENT): the Control Center OAuth client and the configuration state, from ONE pass
+    over the stores (so callers that need both read Secret Manager / Firestore at most once). Returns
+    (client_id, state):
+    - (id, "configured"): in memory, or Secret Manager / Firestore yields a value (cached in memory).
+    - ("", "absent"):     Secret Manager says NotFound / no enabled version (or holds an empty value) AND the
+                          Firestore doc platform_config/auth has no value; or no project (local dev).
+    - ("", "unknown"):    any other read error (outage, permission, ...). Firestore is never consulted after a
+                          Secret Manager error that is not a definitive absence. Callers must fail closed.
+    Nothing is cached on "absent" / "unknown": the next call reads again.
+    """
     global GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_ID_SOURCE
     if GOOGLE_OAUTH_CLIENT_ID:
-        return GOOGLE_OAUTH_CLIENT_ID
-
+        return GOOGLE_OAUTH_CLIENT_ID, "configured"
     proj = PROJECT_ID or os.getenv("PROJECT_ID", "")
-    if proj:
-        # 1. Attempt lookup from Secret Manager
-        try:
-            from google.cloud import secretmanager
-            client = secretmanager.SecretManagerServiceClient()
-            secret_path = f"projects/{proj}/secrets/castor-oauth-client-id/versions/latest"
-            resp = client.access_secret_version(request={"name": secret_path})
-            secret_val = resp.payload.data.decode("utf-8").strip()
-            if secret_val:
-                GOOGLE_OAUTH_CLIENT_ID = secret_val
-                GOOGLE_OAUTH_CLIENT_ID_SOURCE = "secret_manager"
-                logger.info("Resolved GOOGLE_OAUTH_CLIENT_ID from Secret Manager castor-oauth-client-id")
+    if not proj:
+        return "", "absent"  # local dev: nothing persisted anywhere but memory
+
+    try:
+        from google.cloud import secretmanager
+        client = secretmanager.SecretManagerServiceClient()
+        resp = client.access_secret_version(
+            request={"name": f"projects/{proj}/secrets/castor-oauth-client-id/versions/latest"}
+        )
+        secret_val = resp.payload.data.decode("utf-8").strip()
+        if secret_val:
+            GOOGLE_OAUTH_CLIENT_ID = secret_val
+            GOOGLE_OAUTH_CLIENT_ID_SOURCE = "secret_manager"
+            logger.info("Resolved GOOGLE_OAUTH_CLIENT_ID from Secret Manager castor-oauth-client-id")
+            _client_id_resolved("")
+            return GOOGLE_OAUTH_CLIENT_ID, "configured"
+    except Exception as e:
+        if not _is_definitive_absence(e):
+            logger.warning(f"OAuth client ID state unknown: Secret Manager read failed ({type(e).__name__}); "
+                           "Firestore is not consulted.")
+            return "", "unknown"
+
+    try:
+        from google.cloud import firestore
+        doc = firestore.Client(project=proj).collection("platform_config").document("auth").get()
+        if doc.exists:
+            fs_val = str((doc.to_dict() or {}).get("google_oauth_client_id", "")).strip()
+            if fs_val:
+                GOOGLE_OAUTH_CLIENT_ID = fs_val
+                GOOGLE_OAUTH_CLIENT_ID_SOURCE = "firestore"
+                logger.info("Resolved GOOGLE_OAUTH_CLIENT_ID from Firestore platform_config/auth")
                 _client_id_resolved("")
-                return GOOGLE_OAUTH_CLIENT_ID
-        except Exception:
-            pass
+                return GOOGLE_OAUTH_CLIENT_ID, "configured"
+    except Exception as e:
+        logger.warning(f"OAuth client ID state unknown: Firestore read failed ({type(e).__name__}).")
+        return "", "unknown"
+    return "", "absent"
 
-        # 2. Attempt lookup from Firestore
-        try:
-            from google.cloud import firestore
-            fs_client = firestore.Client(project=proj)
-            doc = fs_client.collection("platform_config").document("auth").get()
-            if doc.exists:
-                data = doc.to_dict() or {}
-                fs_val = str(data.get("google_oauth_client_id", "")).strip()
-                if fs_val:
-                    GOOGLE_OAUTH_CLIENT_ID = fs_val
-                    GOOGLE_OAUTH_CLIENT_ID_SOURCE = "firestore"
-                    logger.info("Resolved GOOGLE_OAUTH_CLIENT_ID from Firestore platform_config/auth")
-                    _client_id_resolved("")
-                    return GOOGLE_OAUTH_CLIENT_ID
-        except Exception:
-            pass
 
-    return GOOGLE_OAUTH_CLIENT_ID
+def get_google_oauth_client_id() -> str:
+    """Returns the configured Google OAuth Client ID, resolving from Secret Manager or Firestore if unset; "" when
+    there is none OR the stores cannot be read (FD-103: a Secret Manager error other than NotFound /
+    FailedPrecondition never falls through to Firestore). Callers that must tell those apart use
+    resolve_google_oauth_client()."""
+    return resolve_google_oauth_client()[0]
 
 
 def _is_definitive_absence(err: Exception) -> bool:
@@ -109,51 +128,10 @@ def _is_definitive_absence(err: Exception) -> bool:
 
 def oauth_client_id_state() -> str:
     """
-    FD-4E F1: tri-state OAuth client-ID configuration, for gating first-run setup.
-    - "configured": in memory, or Secret Manager / Firestore yields a value (cached in memory).
-    - "absent":     Secret Manager says NotFound / no enabled version (or holds an empty value) AND the
-                    Firestore doc platform_config/auth has no value. Only then may first-run setup proceed.
-    - "unknown":    any other read error (transient outage, permission, ...). Callers must fail closed.
-    Unlike get_google_oauth_client_id(), errors are never collapsed into "not configured".
+    FD-4E F1: tri-state OAuth client-ID configuration ("configured" | "absent" | "unknown"), for gating the
+    client-ID route. Errors are never collapsed into "not configured" (see resolve_google_oauth_client).
     """
-    global GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_ID_SOURCE
-    if GOOGLE_OAUTH_CLIENT_ID:
-        return "configured"
-    proj = PROJECT_ID or os.getenv("PROJECT_ID", "")
-    if not proj:
-        return "absent"  # local dev: nothing persisted anywhere but memory
-
-    try:
-        from google.cloud import secretmanager
-        client = secretmanager.SecretManagerServiceClient()
-        resp = client.access_secret_version(
-            request={"name": f"projects/{proj}/secrets/castor-oauth-client-id/versions/latest"}
-        )
-        secret_val = resp.payload.data.decode("utf-8").strip()
-        if secret_val:
-            GOOGLE_OAUTH_CLIENT_ID = secret_val
-            GOOGLE_OAUTH_CLIENT_ID_SOURCE = "secret_manager"
-            _client_id_resolved("")
-            return "configured"
-    except Exception as e:
-        if not _is_definitive_absence(e):
-            logger.warning(f"OAuth client ID state unknown: Secret Manager read failed ({type(e).__name__}).")
-            return "unknown"
-
-    try:
-        from google.cloud import firestore
-        doc = firestore.Client(project=proj).collection("platform_config").document("auth").get()
-        if doc.exists:
-            fs_val = str((doc.to_dict() or {}).get("google_oauth_client_id", "")).strip()
-            if fs_val:
-                GOOGLE_OAUTH_CLIENT_ID = fs_val
-                GOOGLE_OAUTH_CLIENT_ID_SOURCE = "firestore"
-                _client_id_resolved("")
-                return "configured"
-    except Exception as e:
-        logger.warning(f"OAuth client ID state unknown: Firestore read failed ({type(e).__name__}).")
-        return "unknown"
-    return "absent"
+    return resolve_google_oauth_client()[1]
 
 
 # Auto-resolve at startup

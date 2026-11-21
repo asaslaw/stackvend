@@ -98,16 +98,51 @@ def test_three_failures_are_unavailable():
 
 
 def test_three_504s_through_the_coordinator_are_lens_unavailable(monkeypatch):
-    c = _Client([_Status(504)] * 10)
-    monkeypatch.setattr(judge_mod, "_client", c)
+    """FLAKY-QA-JUDGE-TEST (11-20): every call is a 504 and calls are counted PER LENS. The old fake shared ten 504s
+    between the two concurrent lenses; with the 4-model chain (6 calls a lens) a lens could get an answer, and how
+    many calls followed depended on thread interleaving (a 5+5 split: the adherence lens's UNPARSEABLE answer + its
+    documented one re-ask -> 13 calls), and the total was read while the other lens could still be running (the
+    coordinator returns on the first lens error, `shutdown(wait=False)`)."""
+    import threading
+
+    import qa_auditor.coordinator as coord_mod
+
+    lens = threading.local()
+    calls = {}                      # lens name -> transport calls
+    done = {}                       # lens name -> finished (a lens cancelled before it started never registers)
+    lock = threading.Lock()
+
+    def tagged(fn, name):
+        def run(*a, **k):
+            lens.name = name
+            done[name] = threading.Event()
+            try:
+                return fn(*a, **k)
+            finally:
+                done[name].set()
+        return run
+
+    class PerLens(_Client):
+        def generate_content(self, model, contents, config):
+            with lock:
+                calls[lens.name] = calls.get(lens.name, 0) + 1
+            raise _Status(504)
+
+    monkeypatch.setattr(coord_mod, "evaluate_security_lens", tagged(coord_mod.evaluate_security_lens, "security"))
+    monkeypatch.setattr(coord_mod, "evaluate_adherence_lens", tagged(coord_mod.evaluate_adherence_lens, "adherence"))
+    monkeypatch.setattr(judge_mod, "_client", PerLens([]))
     monkeypatch.setattr(judge_mod.time, "sleep", lambda s: None)
     with pytest.raises(LensUnavailableError):
         DualLensAuditorCoordinator(timeout_seconds=300.0).evaluate_stage_two(
             git_diff="+x", determ_report={"passed": True, "summary": "ok"}, task_dag=[{"task_id": "t"}],
             ingress_policy={}, model_name="m", platform_facts=build_platform_facts(None, "off", []))
-    # QA-JUDGE-FALLBACK: per lens, each chain model once + the 2 backoff retries of the first model
+    # a lens still in flight finishes (sleep still patched) before anything is counted
+    assert all(ev.wait(timeout=10) for ev in list(done.values()))
+    # QA-JUDGE-FALLBACK: per lens, each chain model once + the 2 backoff retries of the first model (no answer ever
+    # arrives, so the one UNPARSEABLE re-ask cannot occur)
     chain = judge_mod._model_chain("m", None)
-    assert len(chain) >= 2 and c.calls <= 2 * (len(chain) + len(judge_mod.RETRY_BACKOFF_S))
+    assert len(chain) >= 2 and calls and set(calls) == set(done)
+    assert all(n == len(chain) + len(judge_mod.RETRY_BACKOFF_S) for n in calls.values()), calls
 
 
 # ------------------------------------------------------------------ no retry (negative)

@@ -24,6 +24,7 @@ from typing import Any, Callable, Dict, Mapping, Optional
 
 import release_info  # FD-7C P3a (SELFUP-VERSION-RECORD): this build's release.json, read-only
 from service import TOFU_TIME_LIMITS_JOB, TerraformService, deploy_url_summary, is_cloud_capacity_stockout
+from service import callback_outputs   # FD-102: the outcome's outputs are the confirmed service URL only
 from service import install_runner_identity_mode, ri, runner_creds   # FD-7L: install mode + brokered credentials
 from service import TOFU_TIME_LIMITS_SERVICE, DestroyPolicy            # FD-7L 5b: sync runs (server limits, EXP-7)
 from service import IaCEngineDowngradeBlockedError                     # FD-7L 5b part 2 (SAT-37): the plan run
@@ -561,8 +562,8 @@ def _run_deploy(service, product_id, trace_id, target_project_id, callback_url, 
                 else:
                     agent.set_summary(f"Deployment failed: {err_msg[:120]}", status="FAILED")
                     delivered_error = err_msg
-                outcome["outputs"] = res
                 outcome.update(res)
+                outcome["outputs"] = callback_outputs(res)   # FD-102: after update(res), never the output map
                 # FD-4D-c-e: the error is set AFTER outcome.update(res), so the result's own "error" (even None) never
                 # overwrites it (e.g. the GCE_STOCKOUT prefix). err_msg is the result's error when it has one.
                 outcome["error"] = delivered_error
@@ -580,8 +581,8 @@ def _run_deploy(service, product_id, trace_id, target_project_id, callback_url, 
                     status="SUCCESS",
                 )
                 outcome["error"] = None
-                outcome["outputs"] = res
                 outcome.update(res)
+                outcome["outputs"] = callback_outputs(res)   # FD-102: after update(res), never the output map
                 outcome["status"] = "SUCCESS"   # FD-4AI-c F1: after update(res), so the result's word never overrides it
                 logger.info(f"✅ tf-applier completed successfully. URL: {res.get('service_url')}")
                 success = True
