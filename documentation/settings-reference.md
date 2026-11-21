@@ -984,7 +984,10 @@ they start. The card:
   on the Control Center service. Without a stamp it reads **unknown (no platform stamp …)**: every install from the
   first release on has one, so run `scripts/apply.sh apply` to write it. When the stamp differs from the services'
   release, the card says which side is behind: **Platform update pending: run upgrade.sh** when the platform is older, or
-  **Services are behind the platform: redeploy the services** when the platform is newer;
+  **Services are behind the platform: redeploy the services** when the platform is newer. After a successful
+  **Update StackVend** run that needs no `apply.sh` (the release and commit the services run match that run's verified
+  release, and its verified minimum platform release is at or below the stamp), the platform is not shown as behind;
+  any other state still shows the banner;
 * lists the last 20 recorded deploys;
 * shows a grey line **Update check off** when the update check (below) is switched off.
 
@@ -1037,6 +1040,14 @@ nothing: it records the request and a lease in the guard database, turns mainten
 the upgrader (a Cloud Build trigger that runs as `sa-stackvend-upgrader`, which may only build images and deploy new
 revisions of the existing services and jobs).
 
+**On `0.9.0-preview` and `0.9.1-preview.1` the button cannot update.** The Control Center of those releases asks
+GitHub for the release tag in a form GitHub does not answer, so every press stops with `TAG_UNRESOLVED` (HTTP 502)
+before anything is recorded: no lease, no request, no maintenance mode. Update those installs from a terminal with
+`PROJECT_ID=<project_id> bash scripts/upgrade.sh <tag>` from the checkout you installed from. Their `upgrade.sh`
+verifies the signature but not the name inside the tag, so check the tag yourself before running it (the commands are
+in the README's "Updating an installation"), and never pass `--trust-unsigned` for an official release. The button
+works on an install that already runs `0.9.1-preview.2` or later, for the releases after it.
+
 * **When it is shown.** Only on an install whose platform Terraform includes the upgrader (the Control Center then
   has `STACKVEND_PLATFORM_UPGRADE_TOPIC`); otherwise the card says the upgrader is not installed and updates are manual.
   A new install made with `scripts/bootstrap.sh` has the upgrader (`enable_platform_upgrader = true`); an existing
@@ -1051,8 +1062,10 @@ revisions of the existing services and jobs).
   workload runs are refused (maintenance mode) until it ends; runs already in progress continue.
 * **Approval.** By default an administrator must approve this build in the Google Cloud console (Cloud Build ▸ History)
   within 60 minutes of the request; the card says so while it waits. A build approved later refuses to start (its
-  lease no longer covers a whole 2-hour build); clear the lease and request again. An operator can turn the approval
-  off in the install's tfvars.
+  lease no longer covers a whole 2-hour build); clear the lease and request again. Approve only a build whose
+  `_REQUEST_ID` substitution matches a request you just made: find the build in Cloud Build ▸ History by that
+  substitution (the card links Cloud Build ▸ History; its link to this build appears only once the build starts,
+  after approval). An operator can turn the approval off in the install's tfvars.
 * **What the build checks again** before it changes anything: the tag's signature against the trusted keys of the
   release source, that the tag still points at the commit you confirmed, no downgrade, the platform guard
   (`NEEDS_APPLY_SH` stops it with the terminal steps), that the update check is on and that the release source did not
@@ -1068,8 +1081,9 @@ revisions of the existing services and jobs).
   puts back the earlier value.
 * **Roll back services** (typed project id) is offered after **PARTIAL** or a failed health check: the upgrader
   redeploys the revisions (services) and images (jobs) it recorded before the deploy, through the same approval.
-  Platform Terraform is never rolled back. **Retry** runs a request that did not succeed again, with the same verified
-  release.
+  Platform Terraform is never rolled back. **After the first button update, do not use it:** jobs cannot be rolled
+  back yet (`ROLLBACK_UNAVAILABLE`, the result is partial); go back with `scripts/upgrade.sh <previous tag>` instead.
+  **Retry** runs a request that did not succeed again, with the same verified release.
 * **Stale lease.** The lease lasts the 60-minute approval window, 10 minutes for the build to start and the 2-hour
   build; while a build runs the Control Center extends it to cover that build's 2 hours (never beyond that total). A build that was rejected in the console or never started leaves
   the lease stale once the approval window has passed; one that timed out, once its 2 hours have. **Clear the stale
@@ -1104,7 +1118,12 @@ administrator saves a valid one; it is never silently replaced by the default.
 
 **Weekly auto-update from upstream** (off by default). The switch is the GitHub repository variable
 `STACKVEND_UPSTREAM_SYNC` of this install's platform repository: when it is `true`, the weekly sync workflow opens a
-pull request for the newest official release (it never merges). The button sets the variable through the GitHub API
+pull request for the newest signed official release (it never merges). Only the sync workflow of `0.9.1-preview.2` and
+later verifies the release tag (its signature against the repository's own `scripts/release/allowed_signers` and the
+name inside the tag); scheduled runs use the workflow on the repository's default branch. Leave the switch off, and
+delete the repository secret `STACKVEND_SYNC_TOKEN` if it exists, until that branch holds the verified workflow,
+merged by hand after verifying the tag (see the README's "Opt-in upstream sync"). The verified workflow reads the
+upstream without credentials, so the upstream must be a public repository. The button sets the variable through the GitHub API
 when the Control Center's GitHub token is allowed to change repository variables; otherwise it shows the exact
 `gh variable set` commands to run. The workflow also needs `STACKVEND_UPSTREAM_REPO` (shown with the commands).
 After turning the switch on, the Control Center reads `STACKVEND_UPSTREAM_REPO`: when it is unset, not an

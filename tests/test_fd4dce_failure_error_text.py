@@ -34,7 +34,7 @@ def test_async_result_error_none_no_longer_erases_the_error(tf_main, sent_callba
     _run_async(tf_main, {"status": "FAILED", "error": None, "stderr": "tofu: provider crashed"}, "t-fd4dce-1")
     last = sent_callbacks[-1]
     assert last["status"] == "FAILED" and last["error"] == "tofu: provider crashed"
-    assert last["outputs"]["error"] is None  # the result itself is still delivered as-is
+    assert last["outputs"] == {"service_url": ""}  # FD-102: the outcome's outputs are the deploy's URL only
 
 
 def test_async_result_without_any_text_gets_the_fallback(tf_main, sent_callbacks):
@@ -93,7 +93,7 @@ def test_applier_stockout_prefix_survives_the_result_error(monkeypatch, base, se
     last = sent_callbacks[-1]
     assert last["status"] == "FAILED"
     assert last["error"] == f"Cloud capacity deficit (GCE_STOCKOUT): {STOCKOUT[:200]}"
-    assert last["outputs"]["error"] == STOCKOUT
+    assert last["outputs"] == {"service_url": ""}  # FD-102: the outcome's outputs are the deploy's URL only
     purge.assert_called_once()
     assert purge.call_args.args[0] == "child-1"   # RT14-01: the run's own project, never the product id
     assert last["errored_stubs"] == {"connectors": [], "clusters": [], "errors": []}

@@ -176,27 +176,33 @@ class TestControlCenterIdentityFD4E(unittest.TestCase):
         self.expect("iap_fwd_human_assertion_job_route", 200)  # a human ADMIN may run the job route (unchanged)
 
     # ---------------------------------------------------------------- first-run OAuth client-id bootstrap
+    # FD-103 (SEC-HOTFIX-FIRST-RUN-CLIENT): no request sets the first client or mints a session. Anonymous callers get
+    # 401 before any state read (§8 Q3); an administrator gets the old answers (503 / 400) and, in the absent state,
+    # the typed 409 FIRST_RUN_CLIENT_OUT_OF_BAND.
     # F1: transient read errors fail closed (503, nothing stored), even with a valid phished owner token.
-    def test_fr_transient_sm_error_503(self):
+    def test_fr_transient_sm_error_anon_401_admin_503(self):
         self.expect("fr_state_sm_transient", "unknown")
-        self.expect("fr_transient_sm_error_503", 503)
+        self.expect("fr_transient_sm_error_anon_401", 401)        # FD-103: anonymous, refused before the state read
+        self.expect("fr_transient_sm_error_admin_503", 503)
 
-    def test_fr_transient_sm_permission_denied_503(self):
-        self.expect("fr_transient_sm_denied_503", 503)
+    def test_fr_transient_sm_permission_denied_anon_401_admin_503(self):
+        self.expect("fr_transient_sm_denied_anon_401", 401)       # FD-103: anonymous
+        self.expect("fr_transient_sm_denied_admin_503", 503)
 
-    def test_fr_transient_fs_error_503(self):
+    def test_fr_transient_fs_error_anon_401_admin_503(self):
         self.expect("fr_state_fs_transient", "unknown")
-        self.expect("fr_transient_fs_error_503", 503)
+        self.expect("fr_transient_fs_error_anon_401", 401)        # FD-103: anonymous
+        self.expect("fr_transient_fs_error_admin_503", 503)
 
     def test_fr_transient_errors_store_nothing(self):
         self.expect("fr_transient_nothing_stored", ["", False, 0])
 
     def test_fr_genuine_absence_is_absent(self):
-        # Negative test: Secret Manager NotFound AND no Firestore doc still allows first run (see fr_owner_completes).
+        # Negative test: Secret Manager NotFound AND no Firestore doc is still "absent" (now answered with the typed 409).
         self.expect("fr_state_absent", "absent")
 
-    def test_fr_state_configured_after_setup(self):
-        self.expect("fr_state_after_configured", "configured")
+    def test_fr_state_stays_absent_after_refusal(self):
+        self.expect("fr_state_after_refusal", "absent")   # FD-103: the refused request stored nothing
 
     def test_fr_precondition_unconfigured(self):
         self.expect("fr_precondition_unconfigured", "")
@@ -205,16 +211,19 @@ class TestControlCenterIdentityFD4E(unittest.TestCase):
         self.expect("fr_no_credential", 401)
 
     def test_fr_empty_id(self):
-        self.expect("fr_empty_id", 400)
+        self.expect("fr_empty_id", 401)        # FD-103: anonymous before the format check
+        self.expect("fr_admin_empty_id", 400)
 
     def test_fr_malformed_id(self):
-        self.expect("fr_malformed_id", 400)
+        self.expect("fr_malformed_id", 401)
+        self.expect("fr_admin_malformed_id", 400)
 
     def test_fr_suffix_only_id(self):
-        self.expect("fr_suffix_only_id", 400)
+        self.expect("fr_suffix_only_id", 401)
+        self.expect("fr_admin_suffix_only_id", 400)
 
     def test_fr_attacker_own_account(self):
-        self.expect("fr_attacker_own_account", 403)
+        self.expect("fr_attacker_own_account", 401)   # FD-103: was 403 after verifying the token; now never verified
 
     def test_fr_attacker_replays_owner_token(self):
         self.expect("fr_attacker_replays_owner_token", 401)
@@ -226,13 +235,20 @@ class TestControlCenterIdentityFD4E(unittest.TestCase):
     def test_fr_login_refused_unconfigured(self):
         self.expect("fr_login_refused_unconfigured", 401)
 
-    def test_fr_owner_completes(self):
-        self.expect("fr_owner_completes", 200)
-        self.expect("fr_owner_completes_cookie", True)
+    def test_fr_admin_first_run_refused_typed_409(self):
+        # FD-103: even the administrator cannot set the first client from the browser: typed 409, no cookie.
+        self.expect("fr_admin_first_run_refused", 409)
+        self.expect("fr_admin_first_run_refused_code", "FIRST_RUN_CLIENT_OUT_OF_BAND")
+        self.expect("fr_admin_first_run_refused_sets_cookie", False)
 
-    def test_fr_configured_value(self):
-        self.expect("fr_configured_value", "222-owner.apps.googleusercontent.com")
-        self.expect("fr_configured_persisted", "222-owner.apps.googleusercontent.com")
+    def test_fr_refusal_stores_nothing(self):
+        # FD-103: nothing stored by the refused first-run request (memory, Firestore, Secret Manager).
+        self.expect("fr_after_refusal_value", "")
+        self.expect("fr_after_refusal_persisted", "")
+        self.expect("fr_after_refusal_sm_writes", 0)
+
+    def test_fr_state_configured_after_out_of_band_seed(self):
+        self.expect("fr_state_after_seed", "configured")
 
     def test_fr_after_unauthenticated(self):
         self.expect("fr_after_unauthenticated", 401)

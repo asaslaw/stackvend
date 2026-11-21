@@ -25,7 +25,7 @@ StackVend turns a product specification into a tested, deployed Google Cloud wor
 | **[Composite Bundles](composite-bundles.md)** | The built-in catalog of multi-module infrastructure bundles and how custom bundles are registered. |
 | **[Workload Lifecycle](workload-lifecycle.md)** | Sandbox workloads, expiry, extension, promotion and decommissioning. |
 | **[Test a Spec Locally (dry run)](test-a-spec-locally.md)** | Run a spec through the real generation pipeline on your machine and get a verdict, without creating anything. |
-| **[Live Canary](live-canary.md)** | Send example 01 through a running install and follow it read-only through QA, build, apply and a `/health` probe; pass or fail per stage. Run it after every deploy to a dev install. |
+| **[Live Canary](live-canary.md)** | Send example 01 through a running install and follow it read-only through QA, build, apply and a `/health` probe of the service URL Cloud Run confirms (anonymous; no user token is ever sent); pass or fail per stage. Run it after every deploy to a dev install, only on workloads whose code and Terraform you trust. |
 | **[Developer & Contributor Guide](developer-guide.md)** | Local setup, running the tests, and quality gates. See also [`CONTRIBUTING.md`](../CONTRIBUTING.md). |
 | **[Fail-Loudly Policy](fail-loudly-policy.md)** | When platform code must stop with a typed error and when it may carry on with a recorded warning, with examples from the code. |
 | **[Extensibility Guide](extensibility-guide.md)** | Recipes for adding golden modules, validators, MCP servers and swarm roles. |

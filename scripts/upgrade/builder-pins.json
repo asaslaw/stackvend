@@ -1,11 +1,18 @@
 {
-  "_comment": "SELFUP P3b (plan \u00a73.6): what the upgrader's build.sh builds with. pack: the buildpacks CLI release (version + SHA-256 of pack-v<version>-linux.tgz from https://github.com/buildpacks/pack/releases). builders: Cloud Native Buildpacks builder images pinned BY DIGEST (image@sha256:...), never a floating tag: `default` = gcr.io/buildpacks/builder (the platform services), `qa-sandbox-test-runner` = the generated-workload builder. Empty = the upgrader refuses to build (BUILDER_PIN_MISSING; nothing is built or deployed). Filled by a person with network access (digests are not guessed); read only by scripts/upgrade/stage.py pins.",
+  "_comment": "SELFUP P3b (plan §3.6): what the upgrader's build.sh builds with. Every image is pinned BY DIGEST (image@sha256:...), never a floating tag; an empty, missing or tag-only pin = the upgrader refuses to build (BUILDER_PIN_MISSING; nothing is built or deployed). Filled by a person with network access (digests are read from the registry, never guessed); read only by scripts/upgrade/stage.py pins. pack: the buildpacks CLI release (version + SHA-256 of pack-v<version>-linux.tgz from https://github.com/buildpacks/pack/releases). builders.default (the platform services and jobs) and builders.qa-sandbox-test-runner (the QA job): the builder that `gcloud run deploy --source` / `gcloud run jobs deploy --source` (scripts/deploy-services.sh) uses, read from the results.buildStepImages of such a build (serverless-runtimes google-24-full builder/universal:universal_builder_<date>; the registry lists the digest under that tag; Ubuntu 24.04, stack google.24). Like --source, the builder resolves Python at build time: a component without .python-version gets the newest runtime published for the stack (the minor and patch can move with a later build); a .python-version pin (the QA job's 3.13) is honoured. run_images.default: the run image those builds use (image label google.run-image = serverless-runtimes google-24 run/universal:public-image-next, a floating tag; the digest is a built image's io.buildpacks.lifecycle.metadata runImage.reference), passed as --run-image because the builder's own default run image (gcr.io/buildpacks/google-24/run) is a different image. lifecycle.image: the lifecycle pack runs for analyze / restore / export (the builder is not trusted, so pack would otherwise pull buildpacksio/lifecycle:<version> by tag): the version the builder's io.buildpacks.builder.metadata names, as the multi-arch index digest of docker.io/buildpacksio/lifecycle:<version> (the image the buildpacks/lifecycle GitHub release names), pulled from mirror.gcr.io (Google's Docker Hub cache), which serves the same digest; passed as --lifecycle-image. The digests were read on 2026-11-20 from the us-central1 registry paths; the same digests are served from the europe-west1 and asia-northeast1 serverless-runtimes registries.",
   "pack": {
     "version": "0.40.10",
     "linux_amd64_sha256": "687c3616e21824a449b56d4f989613ca68c921c6cce670b4de4459b025233806"
   },
   "builders": {
-    "default": "gcr.io/buildpacks/builder@sha256:a8d69b26fd4ff27dae2c790bb81f3b277d3d821a1149a46e16371a7eca2e461d",
-    "qa-sandbox-test-runner": "us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/builder/universal@sha256:cd72f79c1b9b271e3a435c8d6fcad646a0086355d93871d1071f59d7b51ef715"
+    "default": "us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/builder/universal@sha256:eed34031fd9ba4ecce8d844f7ef0b97ab06811649b64f4312853de8c82f3b981",
+    "qa-sandbox-test-runner": "us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/builder/universal@sha256:eed34031fd9ba4ecce8d844f7ef0b97ab06811649b64f4312853de8c82f3b981"
+  },
+  "run_images": {
+    "default": "us-central1-docker.pkg.dev/serverless-runtimes/google-24/run/universal@sha256:4a040650646e5d6d193156dcba8a4452502df9b88fbb409577654569fb57216f"
+  },
+  "lifecycle": {
+    "version": "0.21.25",
+    "image": "mirror.gcr.io/buildpacksio/lifecycle@sha256:319ef7d97a2e9e1fc82cd83fcb632a223647dbfb23b0fe8bb27846bc98247d1d"
   }
 }

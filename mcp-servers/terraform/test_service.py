@@ -1531,6 +1531,17 @@ def test_rt14_01_pre_apply_orphan_subnet_is_never_deleted(tf_svc, tmp_path, expr
     assert not any(str(c.args[0]).endswith("/subnetworks") for c in sess_cls.return_value.get.call_args_list if c.args)
 
 
+def _fd102_listing_answer(url):
+    """FD-102: the Cloud Run v2 listing of the deploy's child region (the URL confirmation's one read), holding the
+    fake outputs' https://t.run.app, else None (the URL is not the listing)."""
+    if url.startswith("https://run.googleapis.com/v2/projects/") and url.endswith("/services"):
+        resp = MagicMock(status_code=200, text="")
+        resp.json.return_value = {"services": [{"name": url[len("https://run.googleapis.com/v2/"):] + "/shop",
+                                                "uri": "https://t.run.app"}]}
+        return resp
+    return None
+
+
 def _rt14_gke_deploy(tf_svc, tmp_path, outputs_json, manifests, cluster_answer=None, apply_report=None,
                      apply_error=None):
     """deploy_workload of a GKE workload whose apply succeeds; `outputs_json` is `tofu output -json`."""
@@ -1560,7 +1571,7 @@ def _rt14_gke_deploy(tf_svc, tmp_path, outputs_json, manifests, cluster_answer=N
          patch("httpx.Client"), patch("time.sleep"):
         sess_cls.return_value.get.side_effect = lambda url, **k: (
             cluster_answer if "container.googleapis.com" in url and cluster_answer is not None
-            else MagicMock(status_code=404))
+            else _fd102_listing_answer(url) or MagicMock(status_code=404))
         if apply_report is not None or apply_error is not None:
             with patch("k8s_manifest_apply.apply_workspace_manifests", return_value=apply_report,
                        side_effect=apply_error) as applied:
@@ -1777,6 +1788,9 @@ def _w7_deploy(tf_svc, ws, apply_errs, plan_changes, get=None, import_ok=True, p
         return {"success": True, "exit_code": 0, "stdout": "", "stderr": ""}
 
     def _get(url, *a, **k):
+        listing = _fd102_listing_answer(url)   # FD-102: the URL confirmation's listing (not an adoption read)
+        if listing is not None:
+            return listing
         gets.append(url)
         status, body = (get or (lambda u: (404, {})))(url)
         resp = MagicMock(status_code=status, text="")

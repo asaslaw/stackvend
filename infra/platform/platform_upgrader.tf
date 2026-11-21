@@ -94,20 +94,22 @@ locals {
   # ---- Step 0: BYTE COPIES of scripts/upgrade/verify.sh + guard.py (builder B2's frozen reference, tested with
   # fixture repositories). They live under infra/platform/ so any change is a platform change
   # (scripts/sync_upstream_needs_apply.py APPLY_REQUIRED_PREFIXES) and needs apply.sh; tests/test_selfup_platform_upgrader.py
-  # pins copy == reference. Embedded base64 (no `$` for Cloud Build's substitution to touch) and checked by SHA-256
-  # after decoding in the build.
+  # pins copy == reference. Embedded as gzip + base64 (base64gzip; no `$` for Cloud Build's substitution to touch) and
+  # checked by SHA-256 after decoding and decompressing in the build. Gzip because Cloud Build caps every step `env`
+  # string at 65,536 characters and guard.py alone is 72,216 as plain base64 (FD-148; tests/test_fd148_step0_env_size.py).
   platform_upgrade_step0_dir       = "${path.module}/upgrade_step0"
   platform_upgrade_step0_verify_sh = fileexists("${local.platform_upgrade_step0_dir}/verify.sh") ? file("${local.platform_upgrade_step0_dir}/verify.sh") : ""
   platform_upgrade_step0_guard_py  = fileexists("${local.platform_upgrade_step0_dir}/guard.py") ? file("${local.platform_upgrade_step0_dir}/guard.py") : ""
 
   # The unpack step: no `$` anywhere (Cloud Build substitutes $NAME / ${NAME} in args), so the text below reaches bash
-  # exactly as written. Writes /workspace/step0/{verify.sh,guard.py,allowed_signers} and checks each SHA-256.
+  # exactly as written. Writes /workspace/step0/{verify.sh,guard.py,allowed_signers} and checks each SHA-256 (of the
+  # decompressed file). pipefail: a bad base64 or gzip stream fails the step before any check.
   platform_upgrade_unpack_script = join("\n", [
     "set -euo pipefail",
     "umask 022",
     "mkdir -p /workspace/step0",
-    "printenv STACKVEND_STEP0_VERIFY_SH_B64 | base64 -d > /workspace/step0/verify.sh",
-    "printenv STACKVEND_STEP0_GUARD_PY_B64 | base64 -d > /workspace/step0/guard.py",
+    "printenv STACKVEND_STEP0_VERIFY_SH_GZ_B64 | base64 -d | gunzip > /workspace/step0/verify.sh",
+    "printenv STACKVEND_STEP0_GUARD_PY_GZ_B64 | base64 -d | gunzip > /workspace/step0/guard.py",
     "printenv STACKVEND_OFFICIAL_ALLOWED_SIGNERS_B64 | base64 -d > /workspace/step0/allowed_signers",
     "echo '${sha256(local.platform_upgrade_step0_verify_sh)}  /workspace/step0/verify.sh' | sha256sum -c --quiet -",
     "echo '${sha256(local.platform_upgrade_step0_guard_py)}  /workspace/step0/guard.py' | sha256sum -c --quiet -",
@@ -322,15 +324,17 @@ resource "google_cloudbuild_trigger" "platform_upgrade" {
       machine_type = "E2_HIGHCPU_8"
     }
 
-    # Step 0a: unpack the embedded files (fixed text, no `$`, SHA-256 checked).
+    # Step 0a: unpack the embedded files (fixed text, no `$`, SHA-256 checked). Each env string must stay under Cloud
+    # Build's 65,536-character limit (FD-148): the two scripts are gzip + base64; the trust anchor stays plain base64
+    # (99 bytes; gzip would make it longer, and plain base64 keeps the official key readable in the trigger as is).
     step {
       id         = "step0-unpack"
       name       = local.platform_upgrade_step0_image
       entrypoint = "bash"
       args       = ["-c", local.platform_upgrade_unpack_script]
       env = [
-        "STACKVEND_STEP0_VERIFY_SH_B64=${base64encode(local.platform_upgrade_step0_verify_sh)}",
-        "STACKVEND_STEP0_GUARD_PY_B64=${base64encode(local.platform_upgrade_step0_guard_py)}",
+        "STACKVEND_STEP0_VERIFY_SH_GZ_B64=${base64gzip(local.platform_upgrade_step0_verify_sh)}",
+        "STACKVEND_STEP0_GUARD_PY_GZ_B64=${base64gzip(local.platform_upgrade_step0_guard_py)}",
         "STACKVEND_OFFICIAL_ALLOWED_SIGNERS_B64=${base64encode(local.platform_upgrade_allowed_signers)}",
       ]
     }
@@ -350,6 +354,10 @@ resource "google_cloudbuild_trigger" "platform_upgrade" {
         "--official-signers", "/workspace/step0/allowed_signers",
         "--workdir", "/workspace/up",
       ]
+      # Cloud Build's built-in $BUILD_ID (substituted by Cloud Build, like $_REQUEST_ID above; no Terraform escaping):
+      # guard.py records it in the progress record, and the Control Center turns it into the build-log link. The
+      # verified target's run.sh runs in this same step (exec), so it inherits it too. Never on step0-unpack.
+      env      = ["BUILD_ID=$BUILD_ID"]
       wait_for = ["step0-unpack"]
     }
   }

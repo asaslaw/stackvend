@@ -47,11 +47,40 @@ templates = Jinja2Templates(directory=str(templates_dir))
 
 
 class ConfigClientIdRequest(BaseModel):
+    # FD-103: no credential field any more. The route never verifies a Google token (a posted "credential" is
+    # ignored like any other unknown field): the first client comes only from server-side sources.
     client_id: str
-    credential: str = ""
 
 
 _CLIENT_ID_SUFFIX = ".apps.googleusercontent.com"
+# FD-103 (SEC-HOTFIX-FIRST-RUN-CLIENT): the typed refusal of the removed browser first-run setup.
+FIRST_RUN_CLIENT_OUT_OF_BAND = "FIRST_RUN_CLIENT_OUT_OF_BAND"
+
+
+def first_run_out_of_band_detail(project_id: str = "") -> dict:
+    """FD-103: the 409 body when no sign-in client is configured anywhere. The client is set out of band only: the
+    Terraform variable plus apply.sh on an install, the environment variable for local development (owner §8 Q2:
+    tfvar only, no hand-added Secret Manager version)."""
+    proj = project_id or "<project_id>"
+    return {
+        "code": FIRST_RUN_CLIENT_OUT_OF_BAND,
+        "message": ("Google sign-in has no OAuth client yet, and the client cannot be set from the browser. Set "
+                    f'cc_google_oauth_client_id = "<client-id>" in infra/platform/{proj}.tfvars and run '
+                    f"scripts/apply.sh apply. {config.apply_where(project_id)} For local development, set the "
+                    "environment variable GOOGLE_OAUTH_CLIENT_ID=<client-id> before starting the Control Center."),
+        "tfvar": "cc_google_oauth_client_id",
+        "env": "GOOGLE_OAUTH_CLIENT_ID",
+    }
+
+
+SIGN_IN_CONFIG_UNAVAILABLE = "SIGN_IN_CONFIG_UNAVAILABLE"
+
+
+def sign_in_config_unavailable_detail() -> dict:
+    """FD-103: the 503 body of /auth/google-login when the sign-in configuration cannot be read (Secret Manager or
+    Firestore error, state "unknown"). Fail loudly: never answered as "not configured"."""
+    return {"code": SIGN_IN_CONFIG_UNAVAILABLE,
+            "message": "Cannot read the sign-in configuration right now; retry in a minute."}
 
 
 @router.get("/", response_class=HTMLResponse, dependencies=[require(AUTHENTICATED)])
@@ -153,8 +182,12 @@ async def auth_google_login(request: Request):
     if not credential:
         raise HTTPException(status_code=400, detail="Missing Google ID token credential.")
 
+    # FD-103: one pass over the stores (the same reads as before); a read failure is a typed 503, never a
+    # "not configured" 401.
+    client_id_to_check, client_state = config.resolve_google_oauth_client()
+    if not client_id_to_check and client_state == "unknown":
+        raise HTTPException(status_code=503, detail=sign_in_config_unavailable_detail())
     try:
-        client_id_to_check = config.get_google_oauth_client_id()
         id_info = identity.verify_google_login_credential(credential, client_id_to_check)
         verified_email = id_info["email"].strip().lower()
     except Exception as verify_err:
@@ -246,20 +279,28 @@ def _persist_client_id(clean_id: str) -> None:
 @router.post("/auth/config-client-id", dependencies=[require(PUBLIC)])
 def config_client_id(req: ConfigClientIdRequest, request: Request):
     """
-    First run (no client ID configured anywhere): the caller must present a Google ID token minted FOR the
-    client ID being registered, for a verified email that is already ADMIN (ADMIN_EMAIL or Firestore).
-    Once configured: ADMIN session / IAP identity only. Empty or malformed IDs are always rejected.
-    First run requires a definitive "absent" (Secret Manager NotFound AND no Firestore value); if the
-    configuration state cannot be read, the request fails closed with 503.
+    Administrator rotation of an existing (not Terraform-pinned) Control Center OAuth client.
+    FD-103 (SEC-HOTFIX-FIRST-RUN-CLIENT): no request can set the FIRST client or mint a session here. Route order,
+    exactly: pinned -> 409 | no session and no IAP identity -> 401 | not ADMIN -> 403 | malformed id -> 400 |
+    state unknown -> 503 | configured -> rotation | absent -> IAP refusal 403 | absent -> typed 409
+    FIRST_RUN_CLIENT_OUT_OF_BAND (no token verification, no write, no cookie).
     """
     # Lane 19 L19-0c: a Terraform-pinned client (env GOOGLE_OAUTH_CLIENT_ID from cc_google_oauth_client_id) is never
     # changed here: this route writes Secret Manager castor-oauth-client-id, which tf-applier copies into tenants.
+    proj = getattr(config, "PROJECT_ID", "") or os.getenv("PROJECT_ID", "")
     if getattr(config, "GOOGLE_OAUTH_CLIENT_ID_ENV_PINNED", False):
-        proj = getattr(config, "PROJECT_ID", "") or os.getenv("PROJECT_ID", "")
         raise HTTPException(status_code=409, detail=(
             "The Control Center OAuth client is pinned by Terraform (cc_google_oauth_client_id). Change it in "
             f"infra/platform/{proj or '<project_id>'}.tfvars and run scripts/apply.sh apply. "
             + config.apply_where(proj)))
+    # FD-103 §8 Q3: an administrator (session or IAP identity) before anything else is read; strangers cause no
+    # Secret Manager or Firestore read.
+    email = extract_user_email(request)
+    if not email:
+        raise HTTPException(status_code=401, detail="Platform Administrator sign-in required to change the OAuth client ID.")
+    rec = resolve_access(email, getattr(request.state, "auth_method", ""))
+    if not rec or rec.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Platform Administrator sign-in required to change the OAuth client ID.")
     clean_id = req.client_id.strip()
     if (not clean_id.endswith(_CLIENT_ID_SUFFIX) or len(clean_id) > 255
             or any(c.isspace() for c in clean_id) or clean_id == _CLIENT_ID_SUFFIX):
@@ -268,32 +309,17 @@ def config_client_id(req: ConfigClientIdRequest, request: Request):
     state = config.oauth_client_id_state()  # FD-4E F1: a read error must never look like "first run"
     if state == "unknown":
         raise HTTPException(status_code=503, detail="Cannot confirm OAuth configuration state; retry.")
-    if state == "configured":
-        email = extract_user_email(request)
-        rec = resolve_access(email, getattr(request.state, "auth_method", "")) if email else None
-        if not rec or rec.role != UserRole.ADMIN:
-            raise HTTPException(status_code=403 if email else 401,
-                                detail="Platform Administrator sign-in required to change the OAuth client ID.")
+    if state == "configured":  # administrator rotation (the ADMIN check above is the one rotation always had)
         _persist_client_id(clean_id)
         logger.info(f"OAuth client ID rotated by administrator '{email}'.")
         return {"status": "SUCCESS", "configured": True}
 
-    _refuse_gis_session_behind_iap(403)  # row 41: first-run GIS proof would mint a session cookie
-    if not req.credential.strip():
-        raise HTTPException(status_code=401, detail="First-run setup requires signing in with the new client ID.")
-    try:
-        info = identity.verify_google_login_credential(req.credential.strip(), clean_id)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"First-run identity proof failed: {e}")
-    email = info["email"].strip().lower()
-    rec = resolve_access(email, "google_login")
-    if not rec or rec.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail=(
-            "Only the platform administrator can complete first-run setup. If ADMIN_EMAIL is unset, store the client ID with: "
-            "printf %s '<client-id>' | gcloud secrets versions add castor-oauth-client-id --data-file=-"))
-    _persist_client_id(clean_id)
-    logger.info(f"First-run OAuth client ID configured by administrator '{email}'.")
-    return _session_response(email, rec.role.value)
+    _refuse_gis_session_behind_iap(403)  # row 41 (unchanged): no Google Sign-In client behind IAP
+    # FD-103: state "absent". The first client comes only from the Terraform pin (cc_google_oauth_client_id, owner
+    # §8 Q2; GOOGLE_OAUTH_CLIENT_ID for local development). Secret Manager and Firestore are only read, as sources an
+    # install may already hold; nothing is verified, written or issued here.
+    logger.warning("Refused browser first-run OAuth client setup (FIRST_RUN_CLIENT_OUT_OF_BAND).")
+    raise HTTPException(status_code=409, detail=first_run_out_of_band_detail(proj))
 
 
 @router.post("/auth/logout", dependencies=[require(PUBLIC)])
@@ -312,6 +338,5 @@ def health_check():
         "status": "healthy",
         "service": "product-control-center-ui",
         "auth_mode": "GOOGLE_OAUTH_VERIFIED",
-        "has_google_oauth_client_id": bool(config.GOOGLE_OAUTH_CLIENT_ID),
         "environment": os.getenv("ENVIRONMENT", "prod"),
     }

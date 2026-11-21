@@ -10,7 +10,9 @@ GET /api/settings/platform-version   (ADMIN) the deployed version record (system
                                      Terraform line (FD-4DA-STAMP; SELFUP-STAMP-RETIRE: no stamp = "unknown", fail
                                      closed). When a stamp exists and differs from the services' release:
                                      "Platform update pending: run upgrade.sh" (platform older) or "Services are
-                                     behind the platform: redeploy the services" (platform newer).
+                                     behind the platform: redeploy the services" (platform newer). FD-148: no
+                                     banner when the newest SUCCEEDED Update StackVend run of the services' release
+                                     verified a min_platform_release at or below the stamp (display only).
 GET /api/settings/platform-updates   (ADMIN) the newest release from the release source (GitHub, unauthenticated,
                                      cached 1 h, failures never cached) with its release-manifest.json and the apply.sh
                                      guard for display. Discovery is display only: nothing read from GitHub is trusted.
@@ -54,7 +56,7 @@ import release_info
 import release_source as rsrc
 from authz import ADMIN, require
 from config import PROJECT_ID, DynamicHTTPException as HTTPException, apply_where
-from db import get_db, get_guard_db
+from db import GUARD_DB_ENV, get_db, get_guard_db
 from schemas import UserRole
 from shared import release_manifest as rm
 
@@ -188,6 +190,78 @@ def _read_record() -> Tuple[Optional[Dict[str, Any]], str]:
     return data, ""
 
 
+UPGRADE_PROGRESS = "platform_upgrades_progress"  # default database, written by the upgrader (platform_upgrade.PROGRESS)
+UPGRADE_REQUESTS = "platform_upgrades"           # guard database, written by the Control Center (platform_upgrade.REQUESTS)
+UPGRADE_PROGRESS_SCAN = 25
+
+
+def _separate_guard_db_configured() -> bool:
+    """A guard database other than the default one is configured (db.GUARD_DB_ENV set, not "(default)")."""
+    name = (os.getenv(GUARD_DB_ENV) or "").strip()
+    return bool(name) and name != "(default)"
+
+
+def _commit40(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 40 and set(value) <= set("0123456789abcdef")
+
+
+def _succeeded_upgrade_floor(services_release: Optional[str], services_commit: Optional[str]) -> Optional[str]:
+    """FD-148: the min_platform_release step 0 verified for what the services run. Taken from the newest (by
+    started_at) SUCCEEDED upgrade whose progress `verified.release` is the services' release
+    (platform_upgrades_progress/{id}.verified, infra/platform/upgrade_step0/guard.py `report --verified-file`), and
+    used only when that record also matches: its `verified.commit` is the services' recorded commit, and the guard
+    database holds the request platform_upgrades/{same id} with the same target_tag and expected_commit. None
+    otherwise (no record, unreadable, mismatched, not SemVer): the earlier rule then stays.
+
+    DISPLAY ONLY: the progress record lives in the default database, which every agent service account can write
+    (review M-11); requiring the matching guard-database request means a forgery also needs a guard-database writer
+    (the Control Center or the provisioner). That only holds when a separate guard database is configured
+    (db.GUARD_DB_ENV): without one, get_guard_db falls back to the default database, so None (the banner stays).
+    Even then the only effect is hiding the "Platform update pending" banner: this never starts, allows or skips
+    anything (the upgrader's step 0 re-checks the platform stamp)."""
+    if rm.parse_semver(services_release) is None or not _commit40(services_commit):
+        return None
+    if not _separate_guard_db_configured():
+        return None
+    db = get_db()
+    if not db:
+        return None
+    try:
+        docs = list(db.collection(UPGRADE_PROGRESS).order_by("started_at", direction="DESCENDING")
+                    .limit(UPGRADE_PROGRESS_SCAN).stream())
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"could not read the upgrade progress records ({type(e).__name__}); "
+                       "the platform-pending banner uses the earlier rule")
+        return None
+    for snap in docs:
+        data = snap.to_dict() if hasattr(snap, "to_dict") else None
+        verified = data.get("verified") if isinstance(data, dict) else None
+        if not isinstance(verified, dict) or data.get("status") != "SUCCEEDED":
+            continue
+        release = rm.parse_semver(verified.get("release"))
+        if release is None or rm.compare(release, rm.parse_semver(services_release)) != 0:
+            continue
+        # the newest SUCCEEDED run of this release decides: any mismatch below keeps the banner
+        floor = verified.get("min_platform_release")
+        if verified.get("commit") != services_commit or rm.parse_semver(floor) is None:
+            return None
+        request_id = getattr(snap, "id", None)
+        if not isinstance(request_id, str) or len(request_id) != 32:
+            return None
+        try:
+            rsnap = _guard_db().collection(UPGRADE_REQUESTS).document(request_id).get()
+        except Exception as e:  # noqa: BLE001 - HTTPException (no guard database) included
+            logger.warning(f"could not read upgrade request {request_id} ({type(e).__name__}); "
+                           "the platform-pending banner uses the earlier rule")
+            return None
+        req = rsnap.to_dict() if getattr(rsnap, "exists", False) else None
+        if (not isinstance(req, dict) or req.get("expected_commit") != services_commit
+                or not isinstance(req.get("target_tag"), str) or req.get("target_tag") != verified.get("target_tag")):
+            return None
+        return floor
+    return None
+
+
 # ------------------------------------------------------------------------------------------------ version view (pure)
 PENDING_TEXT = "Platform update pending: run upgrade.sh"  # the platform Terraform is older than the services
 SERVICES_BEHIND_TEXT = "Services are behind the platform: redeploy the services (scripts/deploy-services.sh --all-jobs)"
@@ -201,6 +275,18 @@ def pending_direction(platform_release: Optional[str], services_release: Optiona
         return "DIFFERENT", (f"Platform ({platform_release}) and services ({services_release}) releases differ: "
                              "check which one was deployed last")
     return ("PLATFORM_BEHIND", PENDING_TEXT) if rm.compare(pv, sv) < 0 else ("SERVICES_BEHIND", SERVICES_BEHIND_TEXT)
+
+
+PLATFORM_COMPATIBLE = "PLATFORM_COMPATIBLE"
+
+
+def platform_meets_floor(platform_release: Optional[str], floor: Optional[str]) -> bool:
+    """FD-148: the platform stamp is at or above the min_platform_release verified for the running services' release
+    (_succeeded_upgrade_floor). A button update of a release that needs no apply.sh leaves the stamp older than the
+    services by design (only apply.sh writes it); a release that needs apply.sh has min_platform_release == release
+    (scripts/release/check_manifest.py), so an older stamp stays behind. Anything unknown -> False."""
+    pv, fv = rm.parse_semver(platform_release), rm.parse_semver(floor)
+    return pv is not None and fv is not None and rm.compare(pv, fv) >= 0
 
 
 # SAT-48: why there is no version record, as a typed state with one plain sentence (never a bare "unknown"). Decided
@@ -256,7 +342,8 @@ def control_center_build_text(own_release: Dict[str, Any]) -> str:
 
 
 def build_version_view(record: Optional[Dict[str, Any]], record_error: str, live: Dict[str, Dict[str, Any]],
-                       own_release: Dict[str, Any]) -> Dict[str, Any]:
+                       own_release: Dict[str, Any],
+                       upgrade_floor: Optional[Callable[[str, Optional[str]], Optional[str]]] = None) -> Dict[str, Any]:
     recorded = (record or {}).get("components") or {}
     components, pairs, unknown = [], {}, []
     for name, kind, _ in rm.COMPONENTS:
@@ -311,6 +398,17 @@ def build_version_view(record: Optional[Dict[str, Any]], record_error: str, live
     pending = bool(stamp is not None and stamp.present and platform.get("state") == "STAMPED" and services_release
                    and services_release != platform["release"])
     direction, pending_text = pending_direction(platform["release"], services_release) if pending else ("", "")
+    if direction == "PLATFORM_BEHIND" and upgrade_floor is not None:
+        # FD-148: older stamp, but at or above what the running release needs (read only in this case): no banner.
+        # One release from one commit only; any failure of the lookup keeps the banner.
+        services_commit = next(iter(pairs))[1] if len(pairs) == 1 else None
+        try:
+            compatible = platform_meets_floor(platform["release"], upgrade_floor(services_release, services_commit))
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"platform floor lookup failed ({type(e).__name__}); the banner stays")
+            compatible = False
+        if compatible:
+            pending, direction, pending_text = False, PLATFORM_COMPATIBLE, ""
     rec_meta = {k: (record or {}).get(k) for k in ("release", "commit", "dirty", "source_repo", "deployed_at",
                                                    "deployed_by", "deployer", "run_id")}
     history = [h for h in ((record or {}).get("history") or []) if isinstance(h, dict)][:rm.HISTORY_LIMIT]
@@ -345,7 +443,7 @@ def get_platform_version(request: Request):
                                                      "message": "PROJECT_ID or this instance's region is not known."})
     record, record_error = _read_record()
     live = _read_live(project, region)
-    return build_version_view(record, record_error, live, release_info.current_release())
+    return build_version_view(record, record_error, live, release_info.current_release(), _succeeded_upgrade_floor)
 
 
 # ------------------------------------------------------------------------------------------------ release source
@@ -645,8 +743,10 @@ def check_tags(src: rsrc.ReleaseSource, installed: Optional[str], stamp: Optiona
     out: Dict[str, Any] = {"status": "OK", "latest": latest, "installed": installed,
                            "update_available": inst is None or rm.compare(ver, inst) > 0}
     try:
+        # The fully qualified tag ref (FD-148, r4 attacker A4): a branch named like the tag never answers instead.
         mstatus, mbody = _github("GET", f"/repos/{src.repository}/contents/{rm.MANIFEST_FILE}?ref="
-                                 + urllib.parse.quote(latest["tag"], safe=""), accept="application/vnd.github.raw+json")
+                                 + urllib.parse.quote("refs/tags/" + latest["tag"], safe=""),
+                                 accept="application/vnd.github.raw+json")
     except Exception as e:  # noqa: BLE001
         mstatus, mbody = 0, None
         out["manifest_error"] = {"code": "GITHUB_UNREACHABLE", "message": type(e).__name__}

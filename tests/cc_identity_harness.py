@@ -463,6 +463,8 @@ R["f2_fast_elapsed_under_1s"] = next(d[2] for d in _done if d[0] == "fast") < 1.
 R["f2_extract_ran_off_main_thread"] = len(_extract_on_main_thread) == 2 and not any(_extract_on_main_thread)
 
 # ================================================================ first-run OAuth client-id bootstrap
+# FD-103 (SEC-HOTFIX-FIRST-RUN-CLIENT): the browser first-run setup is gone. Route order: pinned 409 | anonymous 401 |
+# not ADMIN 403 | malformed 400 | unknown 503 | configured -> rotation | absent -> IAP 403 | absent -> typed 409.
 from google.api_core import exceptions as gexc  # noqa: E402
 
 mode("")
@@ -474,29 +476,36 @@ anon = TestClient(main.app, raise_server_exceptions=False)
 _phished = {"client_id": ATTACKER_CLIENT, "credential": google_token("owner@example.com", ATTACKER_CLIENT)}
 _sm_writes_before = _sm.add_secret_version.call_count
 
-# F1: a transient read error must never be treated as "first run" (fail closed, nothing stored),
-# even with a valid owner token minted for the attacker's client.
+# F1: a transient read error must never be treated as "first run" (fail closed, nothing stored). FD-103 §8 Q3: an
+# anonymous caller is refused (401) before any state read; an administrator reaches the state read and gets 503.
 _sm.access_secret_version.side_effect = gexc.ServiceUnavailable("Secret Manager 503 (simulated)")
 R["fr_state_sm_transient"] = config.oauth_client_id_state()
-R["fr_transient_sm_error_503"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_sm_error_anon_401"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_sm_error_admin_503"] = anon.post("/auth/config-client-id", json=_phished, cookies=OWNER_COOKIE).status_code
 _sm.access_secret_version.side_effect = gexc.PermissionDenied("403 (simulated)")
-R["fr_transient_sm_denied_503"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_sm_denied_anon_401"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_sm_denied_admin_503"] = anon.post("/auth/config-client-id", json=_phished, cookies=OWNER_COOKIE).status_code
 _sm.access_secret_version.side_effect = gexc.NotFound("secret castor-oauth-client-id not found")
 FS_FAIL.append(1)
 R["fr_state_fs_transient"] = config.oauth_client_id_state()
-R["fr_transient_fs_error_503"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_fs_error_anon_401"] = anon.post("/auth/config-client-id", json=_phished).status_code
+R["fr_transient_fs_error_admin_503"] = anon.post("/auth/config-client-id", json=_phished, cookies=OWNER_COOKIE).status_code
 FS_FAIL.clear()
 R["fr_transient_nothing_stored"] = [config.GOOGLE_OAUTH_CLIENT_ID,
                                     fake.collection("platform_config").document("auth").get().exists,
                                     _sm.add_secret_version.call_count - _sm_writes_before]
 
-# Genuine absence (Secret Manager NotFound AND no Firestore doc): first-run proceeds below.
+# Genuine absence (Secret Manager NotFound AND no Firestore doc).
 R["fr_state_absent"] = config.oauth_client_id_state()
 R["fr_precondition_unconfigured"] = config.get_google_oauth_client_id()
 R["fr_no_credential"] = anon.post("/auth/config-client-id", json={"client_id": NEW}).status_code
 R["fr_empty_id"] = anon.post("/auth/config-client-id", json={"client_id": "   "}).status_code
 R["fr_malformed_id"] = anon.post("/auth/config-client-id", json={"client_id": "evil"}).status_code
 R["fr_suffix_only_id"] = anon.post("/auth/config-client-id", json={"client_id": ".apps.googleusercontent.com"}).status_code
+R["fr_admin_empty_id"] = anon.post("/auth/config-client-id", json={"client_id": "   "}, cookies=OWNER_COOKIE).status_code
+R["fr_admin_malformed_id"] = anon.post("/auth/config-client-id", json={"client_id": "evil"}, cookies=OWNER_COOKIE).status_code
+R["fr_admin_suffix_only_id"] = anon.post(
+    "/auth/config-client-id", json={"client_id": ".apps.googleusercontent.com"}, cookies=OWNER_COOKIE).status_code
 R["fr_attacker_own_account"] = anon.post("/auth/config-client-id", json={
     "client_id": ATTACKER_CLIENT, "credential": google_token("attacker@gmail.com", ATTACKER_CLIENT)}).status_code
 R["fr_attacker_replays_owner_token"] = anon.post("/auth/config-client-id", json={
@@ -505,12 +514,21 @@ R["fr_still_unconfigured"] = config.GOOGLE_OAUTH_CLIENT_ID
 R["fr_no_firestore_write_after_attacks"] = fake.collection("platform_config").document("auth").get().exists
 R["fr_login_refused_unconfigured"] = anon.post(
     "/auth/google-login", json={"credential": google_token("owner@example.com", "999-other.apps.googleusercontent.com")}).status_code
-r = anon.post("/auth/config-client-id", json={"client_id": NEW, "credential": google_token("owner@example.com", NEW)})
-R["fr_owner_completes"] = r.status_code
-R["fr_owner_completes_cookie"] = bool(r.cookies.get("stackvend_session"))
-R["fr_configured_value"] = config.GOOGLE_OAUTH_CLIENT_ID
-R["fr_configured_persisted"] = (fake.collection("platform_config").document("auth").get().to_dict() or {}).get("google_oauth_client_id", "")
-R["fr_state_after_configured"] = config.oauth_client_id_state()
+# The former "owner completes first run" request, now with an administrator session: typed 409, nothing stored, no
+# session cookie (the posted credential is never verified).
+r = anon.post("/auth/config-client-id", json={"client_id": NEW, "credential": google_token("owner@example.com", NEW)},
+              cookies=OWNER_COOKIE)
+R["fr_admin_first_run_refused"] = r.status_code
+R["fr_admin_first_run_refused_code"] = (r.json().get("detail") or {}).get("code") if r.status_code == 409 else r.text[:200]
+R["fr_admin_first_run_refused_sets_cookie"] = "set-cookie" in r.headers
+R["fr_after_refusal_value"] = config.GOOGLE_OAUTH_CLIENT_ID
+R["fr_after_refusal_persisted"] = (fake.collection("platform_config").document("auth").get().to_dict() or {}).get("google_oauth_client_id", "")
+R["fr_after_refusal_sm_writes"] = _sm.add_secret_version.call_count - _sm_writes_before
+R["fr_state_after_refusal"] = config.oauth_client_id_state()
+# A client delivered out of band (here: an existing Firestore value) makes the install "configured"; administrator
+# rotation from there is unchanged.
+fake.collection("platform_config").document("auth").set({"google_oauth_client_id": NEW})
+R["fr_state_after_seed"] = config.oauth_client_id_state()
 after = TestClient(main.app, raise_server_exceptions=False)
 R["fr_after_unauthenticated"] = after.post("/auth/config-client-id", json={"client_id": ATTACKER_CLIENT}).status_code
 R["fr_after_firstrun_proof_rejected"] = after.post("/auth/config-client-id", json={

@@ -26,6 +26,7 @@ except ImportError:
 
 from service import TerraformService, IaCEngineDowngradeBlockedError, DestroyPolicy, ERROR_DESTROY_REQUIRES_APPROVAL
 from service import SYNC_DEPLOY_TIME_BUDGET_S, deploy_url_summary
+from service import callback_outputs   # FD-102: the outcome's outputs are the confirmed service URL only
 from service import SYNC_DEPLOY_RESPONSE_MARGIN_S, SYNC_REQUEST_LIMIT_S   # FD-7L 5b: the sync request's deadline
 from service import install_runner_identity_mode   # FD-7L: the runner's one mode reader (2b F5 / FD-7L-F4)
 from shared import runner_identity as ri   # FD-7L: the install's mode, read only through install_runner_identity_mode()
@@ -757,8 +758,8 @@ def _run_deploy_in_process(req: AsyncDeployRequest, trace_id: str, workspace_cle
             if res_status != "SUCCESS":
                 err_msg = res.get("error") or res.get("stderr") or res.get("stdout") or f"Terraform deployment failed with status {res_status}"
                 agent.set_summary(f"Deployment failed: {err_msg[:120]}", status="FAILED")
-                outcome["outputs"] = res
                 outcome.update(res)
+                outcome["outputs"] = callback_outputs(res)   # FD-102: after update(res), never the output map
                 # FD-4AI-c F1 / FD-4D-c-e: status and error are set AFTER outcome.update(res), so the result's own word
                 # and its own "error" (even None) never override them. err_msg is the result's error when it has one.
                 outcome["error"] = err_msg
@@ -768,8 +769,8 @@ def _run_deploy_in_process(req: AsyncDeployRequest, trace_id: str, workspace_cle
                     f"Deployed successfully. URL: {deploy_url_summary(res)}",
                     status="SUCCESS",
                 )
-                outcome["outputs"] = res
                 outcome.update(res)
+                outcome["outputs"] = callback_outputs(res)   # FD-102: after update(res), never the output map
                 outcome["status"] = "SUCCESS"   # FD-4AI-c F1: after update(res)
 
 
