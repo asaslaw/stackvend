@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # STACKVEND UPGRADER, BUILD (plan §3.5 BUILDING, §3.6): every component of the verified tree is built with the
-# pinned buildpacks CLI and builder (scripts/upgrade/builder-pins.json, by digest) and pushed to castor-docker-repo
-# as <component>:<release>-<commit12>; its digest is read back from the registry. Nothing is deployed here, and
+# pinned buildpacks CLI, builder, run image and lifecycle (scripts/upgrade/builder-pins.json, by digest; the
+# platform builder and run image are the ones `gcloud run deploy --source` uses, FD-148) and pushed to castor-docker-repo
+# as <component>:<release>-<commit12>-<request id, first 12>, a tag that must not exist before the build; its digest is
+# the one in pack's report.toml (never re-read from the registry by tag). Nothing is deployed here, and
 # nothing is deployed unless EVERY build succeeded. Each build carries release.json (scripts/common/release_record.py
 # stamp --builder upgrader; computed before anything is written into the tree).
 # Usage: SV_UP_WORK=<dir> bash build.sh            Writes SV_UP_WORK/built.json {component: image@sha256:...}.
@@ -15,9 +17,12 @@ W="${SV_UP_WORK}"
 fail() { echo "stackvend-upgrade: FAILED $1: $2" >&2; exit "$3"; }
 
 pins="$(up_stage_py pins --file "${SV_UP_DIR}/builder-pins.json")" || exit $?
-read -r PACK_VERSION PACK_SHA BUILDER_DEFAULT BUILDER_QA <<EOF
+read -r PACK_VERSION PACK_SHA BUILDER_DEFAULT BUILDER_QA RUN_IMAGE LIFECYCLE_IMAGE <<EOF
 ${pins}
 EOF
+# FD-148: stage.py already refuses these; a short line must never build with pack's floating defaults
+[ -n "${RUN_IMAGE}" ] && [ -n "${LIFECYCLE_IMAGE}" ] \
+    || fail BUILDER_PIN_MISSING "builder-pins.json run_images.default / lifecycle.image is empty" 81
 
 # release.json first: dirty / commit are computed before any file is written into the checkout
 repository="$(up_json_get "${W}/verified.json" repository)"
@@ -43,14 +48,43 @@ is_skipped() {
     return 1
 }
 
+# FD-148 (attacker F2): each request builds under its own tag (release, commit and the request id), and that tag must
+# not exist before the build: an image planted under it is refused (IMAGE_TAG_EXISTS) before anything is built. A
+# retry is a new request, so it never collides with the images of the request it retries.
+image_of() { echo "${UP_AR}/$1:${UP_RELEASE}-${UP_COMMIT12}-${UP_REQUEST_ID:0:12}"; }
+for e in "${SERVICES[@]}" "${JOBS[@]}"; do
+    name="${e%%:*}"
+    is_skipped "${name}" && continue
+    up_stage_py tag-absent --image "$(image_of "${name}")" || exit $?
+done
+
 build_one() {
-    local name="$1" dir="$2" builder="$3" image="${UP_AR}/$1:${UP_RELEASE}-${UP_COMMIT12}"
+    local name="$1" dir="$2" builder="$3" image
+    image="$(image_of "$1")"
     sv_component_prebuild "${name}" "${dir}" || return 1
     cp "${W}/release.json" "${dir}/release.json" || return 1
     up_stage_py docker-config --region "${UP_REGION}" --out "${W}/docker/${name}" || return 1
-    DOCKER_CONFIG="${W}/docker/${name}" "${PACK}" build "${image}" --builder "${builder}" --path "${dir}" \
-        --publish --pull-policy if-not-present || return 1
-    up_stage_py digest --image "${image}" > "${W}/build/${name}.ref" || return 1
+    mkdir -p "${W}/report/${name}" || return 1
+    # checked again right before this component's build (the up-front pass above refuses before anything is built;
+    # this narrows the window for an image planted meanwhile)
+    up_stage_py tag-absent --image "${image}" || return 1
+    # FD-148 builder parity with `gcloud run deploy --source`:
+    # --run-image: the run image those builds use (the builder's own default run image is a different one).
+    # --lifecycle-image: pack does not trust these builders, so it runs analyze / restore / export in this pinned
+    #   lifecycle image instead of pulling buildpacksio/lifecycle by tag.
+    # --env: the two settings --source passes that choose where the language runtime comes from (the
+    #   serverless-runtimes runtime images of the install's region; the build log names that source); the other
+    #   GOOGLE_* values it passes only label the image or tune extraction.
+    # --report-output-dir: the digest deployed is the one pack exported (report.toml), never a re-read of the tag.
+    # NEVER add pack's trust-builder flag (the builder's own lifecycle would get the registry credentials) or its
+    # network flag (build containers must not reach the metadata server and the build identity's token).
+    DOCKER_CONFIG="${W}/docker/${name}" "${PACK}" build "${image}" --builder "${builder}" \
+        --run-image "${RUN_IMAGE}" --lifecycle-image "${LIFECYCLE_IMAGE}" \
+        --env "GOOGLE_RUNTIME_IMAGE_REGION=${UP_REGION}" --env GOOGLE_USE_SERVERLESS_RUNTIMES_TARBALLS=true \
+        --report-output-dir "${W}/report/${name}" \
+        --path "${dir}" --publish --pull-policy if-not-present || return 1
+    up_stage_py report-digest --report "${W}/report/${name}/report.toml" --image "${image}" \
+        > "${W}/build/${name}.ref" || return 1
 }
 
 PARALLEL_LIMIT="${PARALLEL_LIMIT:-4}"

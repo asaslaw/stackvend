@@ -36,7 +36,7 @@ is hidden), UPDATE_CHECK_OFF, RELEASE_SOURCE_INVALID, SOURCE_SETTING_CHANGED, UP
 NO_TARGET (with `reason`: the last check is not OK + update_available + guard ALLOW), TARGET_CHANGED,
 WORKLOAD_RUNS_ACTIVE, REQUEST_ID_IN_USE, NOT_RETRYABLE, ROLLBACK_NOT_OFFERED, LEASE_ACTIVE, NO_LEASE,
 CONFIRMATION_MISMATCH (422), EXECUTIONS_UNKNOWN / MAINTENANCE_UNAVAILABLE / GUARD_DATABASE_UNAVAILABLE (503),
-TAG_UNRESOLVED / PUBLISH_FAILED (502).
+TAG_UNRESOLVED / GITHUB_RATE_LIMITED / PUBLISH_FAILED (502).
 
 Maintenance rules (plan §3.9, §6 F-BUILD): starting turns maintenance mode on and records the previous value. When the
 request ends it is restored to that value if the install is in a known state: SUCCEEDED, ROLLED_BACK, or a request
@@ -54,6 +54,7 @@ import logging
 import os
 import time
 import urllib.parse
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -493,14 +494,25 @@ def _updates(request: Request) -> Dict[str, Any]:
 
 
 def _resolve_commit(repository: str, tag: str) -> str:
-    """The commit the release tag points at (GitHub, unauthenticated): pinned in the request; step 0 refuses when the
-    signed tag no longer resolves to it (SOURCE_CHANGED). The qualified ref `tags/<tag>` (RT L-2): a branch with the
-    same name must never shadow the tag."""
+    """The commit GitHub answered at submit for the release tag (unauthenticated): a time-of-check pin recorded in the
+    request, not a verification. Step 0 of the upgrader is the gate: it verifies the signed tag and refuses when the
+    tag no longer resolves to this commit (SOURCE_CHANGED).
+
+    The fully qualified ref `refs/tags/<tag>` (FD-148; RT L-2): GitHub answers 422 for the short `tags/<tag>` form,
+    and a branch with the same name must never shadow the tag (`commits/refs/tags/<branch>` is 422). 403 / 429 is
+    GitHub's rate limit (GITHUB_RATE_LIMITED, as in the update check); any other answer is TAG_UNRESOLVED."""
     try:
-        status, body = pr._github("GET", f"/repos/{repository}/commits/tags/" + urllib.parse.quote(tag, safe=""))
+        status, body = pr._github("GET", f"/repos/{repository}/commits/refs/tags/" + urllib.parse.quote(tag, safe=""))
     except Exception as e:  # noqa: BLE001
         raise _err(502, "TAG_UNRESOLVED", f"GitHub could not be reached to resolve {tag} ({type(e).__name__}); "
                    "nothing was started. Retry.")
+    if status in (403, 429):
+        # 429 is always GitHub's rate limit. 403 is how GitHub answers an exhausted unauthenticated limit, but it is
+        # also a plain refusal, and pr._github returns no headers (x-ratelimit-remaining) to tell them apart: the
+        # message says both rather than guess.
+        what = "rate-limited (HTTP 429)" if status == 429 else "rate-limited or refused (HTTP 403)"
+        raise _err(502, "GITHUB_RATE_LIMITED", f"GitHub {what} the request to resolve {tag}; nothing was started. "
+                   "Try again later.")
     sha = body.get("sha") if isinstance(body, dict) else None
     if status != 200 or not _is_hex(sha, 40):
         raise _err(502, "TAG_UNRESOLVED", f"GitHub did not resolve {tag} to a commit (HTTP {status}); nothing was "
@@ -561,8 +573,26 @@ def button_state(installed: bool, source_view: Dict[str, Any], updates: Optional
 
 
 # ------------------------------------------------------------------------------------------------ views
+def _build_id(value: Any) -> str:
+    """The progress record's Cloud Build id when it is exactly one (a canonical lowercase UUID, parsed by `uuid`),
+    else "" (a pre-FD-148 trigger has none). Anything else is never shown or linked, and is logged (type and length
+    only, never the value) because only the upgrader writes this field."""
+    if value is None or value == "":
+        return ""
+    if isinstance(value, str) and len(value) == 36:
+        try:
+            if str(uuid.UUID(value)) == value:
+                return value
+        except ValueError:
+            pass
+    logger.warning("platform upgrade progress build_id rejected (not a Cloud Build id): type=%s length=%s",
+                   type(value).__name__, len(value) if isinstance(value, (str, list, dict)) else "-")
+    return ""
+
+
 def _build_url(build_id: Any) -> str:
-    if not isinstance(build_id, str) or not build_id or not set(build_id) <= set("0123456789abcdef-"):
+    build_id = _build_id(build_id)
+    if not build_id:
         return ""
     region = pr._region()
     return (f"https://console.cloud.google.com/cloud-build/builds;region={urllib.parse.quote(region, safe='')}/"
@@ -604,6 +634,7 @@ def _components(progress: Dict[str, Any]) -> List[Dict[str, Any]]:
 def request_view(rid: str, req: Dict[str, Any], progress: Optional[Dict[str, Any]], lease: Optional[str],
                  holds_lease: bool) -> Dict[str, Any]:
     p = progress or {}
+    build_id = _build_id(p.get("build_id"))
     status = p.get("status") if isinstance(p.get("status"), str) else None
     if status is None:
         if req.get("status") in (REQ_NOT_SENT, REQ_CANCELLED):
@@ -627,7 +658,7 @@ def request_view(rid: str, req: Dict[str, Any], progress: Optional[Dict[str, Any
         "retry_of": req.get("retry_of") or "", "status": status, "terminal": terminal,
         "stage": p.get("stage") or "", "code": p.get("code") or "", "message": str(p.get("message") or "")[:2000],
         "steps": [s for s in (p.get("steps") or []) if isinstance(s, str)][:20] if isinstance(p.get("steps"), list) else [],
-        "build_id": p.get("build_id") or "", "build_url": _build_url(p.get("build_id")),
+        "build_id": build_id, "build_url": _build_url(build_id),
         "started_at": p.get("started_at"), "updated_at": p.get("updated_at"),
         "terraform_ready": p.get("terraform_ready") if isinstance(p.get("terraform_ready"), str) else "",
         "components": _components(p) if progress is not None else [],

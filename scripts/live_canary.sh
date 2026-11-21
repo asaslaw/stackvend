@@ -4,11 +4,14 @@
 # ==============================================================================
 # Sends one example workload (default: example 01, Cloud Run + Pub/Sub event router) through a dev install and
 # follows it read-only through every stage: workflow execution, workload record, pipeline stage, QA job and verdict,
-# Cloud Build in the child project, the tf-applier execution, the final service URL (from the platform records,
-# never from listing Cloud Run in the child project) and a /health check that follows the workload's access mode
-# (public: anonymous GET; private IAM: your identity token; private IAP: /health is NOT probed, because a gcloud user
-# identity token cannot pass Direct IAP: the canary only checks that an anonymous request is redirected to Google
-# sign-in and reports HEALTH_NOT_PROBED_PRIVATE_IAP, exit 6, never a pass).
+# Cloud Build in the child project, the tf-applier execution, the final service URL (from the platform records; FD-102:
+# refused unless it is a printable https://<host> URL that the Cloud Run API lists in the child project, which must be
+# inside the install's managed-workloads folder, so the canary needs read access to the child project) and a /health
+# check that follows the workload's access mode (public: anonymous GET; private IAM: only an identity token bound to
+# the service URL, which gcloud mints only for a service-account login, sent in X-Serverless-Authorization; a user
+# login is reported HEALTH_NOT_PROBED_PRIVATE_IAM, exit 6, and its default identity token is never sent; private IAP:
+# /health is NOT probed, because a gcloud user identity token cannot pass Direct IAP: the canary only checks that an
+# anonymous request is redirected to Google sign-in and reports HEALTH_NOT_PROBED_PRIVATE_IAP, exit 6, never a pass).
 # One line per stage transition, with UTC timestamps; a per-stage summary at the end.
 #
 # Submission: the operator submits the workload in the Control Center (Workloads Catalog -> New Workload), the same
@@ -18,7 +21,7 @@
 # values and the spec text, waits for the workload record to appear, then follows it.
 #
 # Read-only everywhere: no writes, no deletes, no retries, no approvals. Tokens come from the operator's gcloud
-# login and are never printed or put on a command line.
+# login and are never printed or put on a command line. curl ignores ~/.curlrc (-q) and never follows a redirect.
 #
 # Usage:
 #   scripts/live_canary.sh --project <host project> [--region us-central1] [--product-id <new id>]
@@ -36,10 +39,12 @@
 #                        it can then PASS (exit 0); a missing permission is ERROR (permission denied), exit 5
 #
 # Exit codes: 0 pass; 1 the pipeline failed; 2 usage; 3 timed out (or never submitted); 4 deployed but /health
-# failed (or a PRIVATE_IAP service is not behind IAP); 5 a prerequisite is missing (gcloud, curl, python3, a gcloud
-# login, read access to the records; with --child-checks, read access to the child project's Cloud Run service and
-# Cloud Logging); 6 deployed, health not probeable from the command line
-# (HEALTH_NOT_PROBED_PRIVATE_IAP: IAP is in front; check /health in a browser).
+# failed (or a PRIVATE_IAP service is not behind IAP, a PRIVATE_IAM service answers anonymously, or the service URL
+# was refused or not confirmed); 5 a prerequisite is missing (gcloud, curl, python3, a gcloud login, read access to
+# the records, the host's vending service or the child project; with --child-checks, the child project's Cloud
+# Logging) or a record value was refused; 6 deployed, health not probed from the command line
+# (HEALTH_NOT_PROBED_PRIVATE_IAP: IAP is in front, check /health in a browser; HEALTH_NOT_PROBED_PRIVATE_IAM: a user
+# login; HEALTH_NOT_PROBED_NO_ACCESS_RECORD: no access record and the service refused an anonymous request).
 #
 # Bash 3.2 compatible (macOS /bin/bash). Needs gcloud, curl and python3 (standard library only).
 # ==============================================================================

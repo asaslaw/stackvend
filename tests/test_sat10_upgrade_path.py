@@ -26,6 +26,10 @@ REPO = L5.REPO
 UPGRADE = os.path.join(REPO, "scripts", "upgrade.sh")
 SMOKE = os.path.join(REPO, "scripts", "common", "upgrade_smoke.py")
 TAG = "v0.9.1"
+OLD_TAG = "v0.9.0"
+RENAMED_KINDS = ("renamed", "renamed-decoy", "renamed-unsigned", "hostile-name", "hostile-tagger")
+# A tagger name with a raw ESC sequence and a literal backslash escape that `echo -e` would turn into one.
+HOSTILE_TAGGER = "Evil\x1b[2J\\033[31mX"
 
 _spec = importlib.util.spec_from_file_location("upgrade_smoke", SMOKE)
 smoke = importlib.util.module_from_spec(_spec)
@@ -162,6 +166,62 @@ class TestUpgradeScriptStatic(unittest.TestCase):
         self.assertLess(self.src.index('UP_STAGE="FETCH"'), self.src.index('UP_STAGE="VERIFY"'))
         self.assertFalse("signatures are not checked" in self.src.lower(), "stale 'not checked' text")
 
+    def test_inner_tag_name_is_checked_before_the_signature_and_the_checkout(self):
+        """FD-132 (R8-04): the annotated tag's own name (git's header parser, `%(tag)`) must equal the requested tag,
+        checked in the VERIFY stage before verify-tag (so "good" is never printed for a misnamed tag) and before the
+        checkout; verify-tag names the full ref."""
+        for needle in ('[[ "${tag_oid}" =~ ^[0-9a-f]{40}$ ]] || tag_oid=""', 'cat-file -t "${tag_oid}"',
+                       "for-each-ref --format='%(objectname) %(tag)' \"refs/tags/${tag}\"",
+                       '[ "${ref_line%% *}" != "${tag_oid}" ] || inner_name="${ref_line#* }"',
+                       'up_remove_fetched_tag "${tag}" "${tag_before}" "${tag_oid}"',
+                       '[ "${inner_name}" != "${tag}" ]', "up_fail UPGRADE_TAG_NAME_MISMATCH",
+                       'verify-tag "refs/tags/${tag}"', "verify-tag refs/tags/${tag}\"",
+                       'fetch --no-tags --no-recurse-submodules',
+                       "tagger=\"$(printf '%s' \"${tagger}\" | LC_ALL=C tr -cd 'A-Za-z0-9 @.,:<>+_-')\"",
+                       "author=\"$(printf '%s' \"${author}\" | LC_ALL=C tr -cd 'A-Za-z0-9 @.,:<>+_-')\""):
+            self.assertIn(needle, self.src)
+        check = self.src.index("up_fail UPGRADE_TAG_NAME_MISMATCH")
+        self.assertLess(self.src.index('UP_STAGE="VERIFY"'), check)
+        self.assertLess(check, self.src.index('verify-tag "refs/tags/${tag}"'))
+        self.assertLess(check, self.src.index('UP_STAGE="CHECKOUT"'))
+
+    @unittest.skipUnless(shutil.which("git"), "needs git")
+    def test_remove_fetched_tag_only_when_fetched_and_only_that_object(self):
+        """up_remove_fetched_tag: removes refs/tags/<tag> only when the checkout had no such tag before the fetch
+        ($2 empty) and only while it still names the object id read after the fetch ($3); an empty or malformed $3
+        removes nothing (an empty old value would make `update-ref -d` unconditional)."""
+        import tempfile
+        start = self.src.index("up_remove_fetched_tag() {")
+        func = self.src[start:self.src.index("\n}\n", start) + 3]
+        tmp = tempfile.mkdtemp(prefix="fd132-remove-")
+        try:
+            env = hermetic_guard.child_env(extra={"HOME": tmp, **GIT_ID})
+
+            def git(*args):
+                return subprocess.run(["git", "-C", tmp, *args], env=env, text=True, capture_output=True,
+                                      check=True).stdout.strip()
+
+            git("init", "-q")
+            git("commit", "-q", "--allow-empty", "-m", "a")
+            git("tag", "-a", TAG, "-m", "x")
+            oid = git("rev-parse", f"refs/tags/{TAG}")
+            other = git("rev-parse", "HEAD")
+
+            def run(before, after):
+                script = f'REPO_ROOT={json.dumps(tmp)}\n{func}\nup_remove_fetched_tag {TAG} "{before}" "{after}"'
+                rc = subprocess.run(["/bin/bash", "-c", script], env=env, capture_output=True).returncode
+                exists = subprocess.run(["git", "-C", tmp, "rev-parse", "--verify", "--quiet", f"refs/tags/{TAG}"],
+                                        env=env, capture_output=True).returncode == 0
+                return rc, exists
+
+            self.assertEqual(run(oid, oid), (1, True))        # the tag was already here: kept
+            self.assertEqual(run("", ""), (1, True))          # no object id read: nothing removed
+            self.assertEqual(run("", "zz" * 20), (1, True))   # malformed id: nothing removed
+            self.assertEqual(run("", other), (1, True))       # the ref names another object: nothing removed
+            self.assertEqual(run("", oid), (0, False))        # fetched by this run, still that object: removed
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_old_git_and_openssh_are_refused_in_preflight_by_exact_version(self):
         """Code review M-2: git < 2.34 or OpenSSH < 8.2 would misreport a good signature as invalid."""
         for needle in ("up_version_at_least \"${git_version}\" '^git version ([0-9]+)\\.([0-9]+)' 2 34",
@@ -289,6 +349,8 @@ class TestUpgradeScript(L5._Harness):
             self.sign_tag(origin, "other")
         elif tag == "annotated":
             self.git(origin, "tag", "-a", TAG, "-m", "release")
+        elif tag in RENAMED_KINDS:
+            self._publish_under_another_name(origin, tag)
         else:
             self.git(origin, "tag", TAG)
         self.sha_b = self.git(origin, "rev-parse", "HEAD")
@@ -301,6 +363,31 @@ class TestUpgradeScript(L5._Harness):
         self.platform = os.path.join(self.repo, "infra", "platform")
         self.write(os.path.join("infra", "platform", f"{PROJ}.tfvars"), L5._tfvars(extra=tfvars_extra))
         self.origin = origin
+
+    def _publish_under_another_name(self, origin, kind):
+        """FD-132 (R8-04): a tag object made for OLD_TAG (or one with a hostile name) published as refs/tags/TAG.
+        "renamed": SSH-signed with the trusted release key; "renamed-decoy": the same, and its message holds a
+        `tag v0.9.1` line; "renamed-unsigned": annotated, unsigned; "hostile-name": a hand-made tag object whose own
+        name is TAG followed by terminal control characters; "hostile-tagger": a hand-made, correctly named, unsigned
+        tag object whose tagger name holds terminal control characters."""
+        if kind in ("hostile-name", "hostile-tagger"):
+            name, tagger = (f"{TAG}\x1b[2J\\033[31mx", "Test") if kind == "hostile-name" else (TAG, HOSTILE_TAGGER)
+            body = (f"object {self.git(origin, 'rev-parse', 'HEAD')}\ntype commit\ntag {name}\n"
+                    f"tagger {tagger} <test@example.com> 1700000000 +0000\n\nrelease\n")
+            env = hermetic_guard.child_env(extra={"HOME": os.path.join(self.tmp, "home"), **GIT_ID})
+            oid = subprocess.run(["git", "hash-object", "-t", "tag", "-w", "--literally", "--stdin"], cwd=origin,
+                                 env=env, input=body, text=True, capture_output=True, check=True).stdout.strip()
+        else:
+            if kind == "renamed":
+                self.sign_tag(origin, "release", name=OLD_TAG)
+            elif kind == "renamed-decoy":
+                self.git(origin, "-c", "gpg.format=ssh", "-c", f"user.signingkey={self.keygen('release')[0]}", "tag",
+                         "-s", OLD_TAG, "-m", f"release {OLD_TAG}\n\ntag {TAG}", "HEAD")
+            else:
+                self.git(origin, "tag", "-a", OLD_TAG, "-m", f"release {OLD_TAG}", "HEAD")
+            oid = self.git(origin, "rev-parse", f"refs/tags/{OLD_TAG}")
+            self.git(origin, "tag", "-d", OLD_TAG)
+        self.git(origin, "update-ref", f"refs/tags/{TAG}", oid)
 
     def services(self, stamp=_RELEASE_STAMP, ready="True"):
         """The fake `gcloud run services list`. By default the Control Center carries the stamp the release's apply
@@ -416,14 +503,39 @@ class TestUpgradeScript(L5._Harness):
         self.assertEqual(self.steps(), ["apply.sh(B) plan", "apply.sh(B) apply", "deploy-services.sh(B) --all-jobs",
                                         "gcloud run services list"])
 
-    def _refused_unsigned(self, kind):
+    def _refused_unsigned(self, kind, tag_already_local=False):
         self.build(tag=kind)
+        if tag_already_local:
+            self.git(self.repo, "fetch", "-q", "--no-tags", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}")
         rc, text = self.upgrade()
         self.assertEqual(rc, 1, text)
         self.assert_refused_before_checkout(text, "UPGRADE_SIGNATURE_INVALID", "VERIFY")
-        self.assert_one_next_command(
-            text, f"git -C {self.root} -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="
-                  f"scripts/release/allowed_signers verify-tag {TAG}")
+        if tag_already_local:
+            self.assertIn("the tag was already in this checkout before this run and is kept", text)
+            self.assertEqual(self.local_tags(), TAG)
+            self.assert_one_next_command(
+                text, f"git -C {self.root} -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="
+                      f"scripts/release/allowed_signers verify-tag refs/tags/{TAG}")
+        else:
+            # a tag this run fetched is removed again: a later, corrected publish is not blocked at the fetch
+            self.assertIn("the tag this run fetched was removed again", text)
+            self.assertEqual(self.local_tags(), "")
+            self.assert_one_next_command(text, f"git -C {self.root} ls-remote --tags origin {TAG}")
+
+    def test_unsigned_tag_that_was_already_local_is_kept(self):
+        self._refused_unsigned("annotated", tag_already_local=True)
+
+    def test_refused_signature_does_not_block_a_corrected_publish(self):
+        """After a refusal the fetched tag is gone, so the same run after a corrected (signed) publish succeeds."""
+        self.build(tag="annotated")
+        self.services()
+        rc, text = self.upgrade()
+        self.assertEqual(rc, 1, text)
+        self.git(self.origin, "tag", "-d", TAG)
+        self.sign_tag(self.origin, "release", target=self.sha_b)
+        rc, text = self.upgrade()
+        self.assertEqual(rc, 0, text)
+        self.assertIn(f"Signature of {TAG}: good", text)
 
     def test_unsigned_annotated_tag_is_refused(self):
         self._refused_unsigned("annotated")
@@ -443,6 +555,83 @@ class TestUpgradeScript(L5._Harness):
         rc, text = self.upgrade()
         self.assertEqual(rc, 1, text)
         self.assert_refused_before_checkout(text, "UPGRADE_SIGNATURE_INVALID", "VERIFY")
+
+    # -- inner tag name (FD-132, R8-04) ------------------------------------------------------------------------------
+    def _refused_renamed(self, kind, args=(TAG,), shown=f"'{OLD_TAG}'", tag_already_local=False):
+        self.build(tag=kind)
+        self.services()
+        if tag_already_local:
+            self.git(self.repo, "fetch", "-q", "--no-tags", "origin", f"refs/tags/{TAG}:refs/tags/{TAG}")
+        rc, text = self.upgrade(args=args)
+        self.assertEqual(rc, 1, text)
+        self.assert_refused_before_checkout(text, "UPGRADE_TAG_NAME_MISMATCH", "VERIFY")
+        self.assertIn(f"The tag object fetched as {TAG} is named {shown} inside", text)
+        self.assertNotIn("Signature of", text)  # checked before the signature: "good" is never printed
+        self.assertNotIn("[WARNING]", text)
+        self.assertEqual(text.count("[ERROR]"), 1, text)
+        if tag_already_local:
+            self.assertIn("the tag was already in this checkout before this run and is kept", text)
+            self.assertEqual(self.local_tags(), TAG)
+            self.assert_one_next_command(
+                text, f"git -C {self.root} for-each-ref --format='%(refname) %(tag)' refs/tags/{TAG}")
+        else:
+            self.assertIn("the tag this run fetched was removed again", text)
+            self.assertEqual(self.local_tags(), "")  # the refused object is not left under the release's name
+            self.assert_one_next_command(text, f"git -C {self.root} ls-remote --tags origin {TAG}")
+        return text
+
+    def test_a_misnamed_tag_that_was_already_local_is_kept(self):
+        """Only a tag this run fetched is removed again; one the checkout already had is left alone."""
+        self._refused_renamed("renamed", tag_already_local=True)
+
+    def _hostile_tagger(self, args):
+        self.build(tag="hostile-tagger")
+        self.services()
+        rc, text = self.upgrade(args=args)
+        self.assertIn(f"Release {TAG}: commit {self.sha_b}; tagged by Evil2J033", text)
+        for bad in ("\x1b[2J", "\x1b[31mX", "\\033[31m"):
+            self.assertNotIn(bad, text)
+        return rc, text
+
+    def test_hostile_tagger_is_not_echoed(self):
+        """The tagger of the fetched, unverified tag reaches `echo -e` only after unsafe characters are dropped."""
+        rc, text = self._hostile_tagger((TAG,))
+        self.assertEqual(rc, 1, text)
+        self.assert_refused_before_checkout(text, "UPGRADE_SIGNATURE_INVALID", "VERIFY")
+
+    def test_hostile_tagger_is_not_echoed_with_trust_unsigned(self):
+        rc, text = self._hostile_tagger((TAG, "--trust-unsigned"))
+        self.assertEqual(rc, 0, text)
+
+    def test_older_signed_release_under_a_newer_name_is_refused(self):
+        """A correctly signed tag object made for v0.9.0, published as v0.9.1: the signature alone would pass."""
+        self._refused_renamed("renamed")
+
+    def test_decoy_tag_line_in_the_message_is_ignored(self):
+        """The name comes from the object's header; a `tag v0.9.1` line in the (signed) message changes nothing."""
+        self._refused_renamed("renamed-decoy")
+
+    def test_trust_unsigned_does_not_skip_the_name_check(self):
+        self._refused_renamed("renamed-unsigned", args=(TAG, "--trust-unsigned"))
+
+    def test_unsigned_misnamed_tag_is_refused_by_name_first(self):
+        self._refused_renamed("renamed-unsigned")
+
+    def test_hostile_inner_name_is_not_printed(self):
+        """A name that is not a release tag (here with terminal control characters) is never echoed."""
+        text = self._refused_renamed("hostile-name", shown="a name that is not a release tag")
+        self.assertNotIn("\x1b[2J", text)
+        self.assertNotIn("\x1b[31mx", text)
+
+    def test_correctly_named_signed_tag_still_upgrades(self):
+        """Do No Harm: the annotated, signed tag named as requested runs every step as before."""
+        self.build()
+        self.services()
+        rc, text = self.upgrade()
+        self.assertEqual(rc, 0, text)
+        self.assertNotIn("UPGRADE_TAG_NAME_MISMATCH", text)
+        self.assertEqual(self.steps(), ["apply.sh(B) plan", "apply.sh(B) apply", "deploy-services.sh(B) --all-jobs",
+                                        "gcloud run services list"])
 
     def test_no_trusted_keys_in_the_checkout_is_refused_before_fetch(self):
         """Before the owner commits the official release key, the file does not exist: a typed refusal, nothing

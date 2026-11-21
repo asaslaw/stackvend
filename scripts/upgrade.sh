@@ -18,7 +18,9 @@
 #   1. fetch the tag from the remote (an existing local tag that differs is refused, never overwritten) and verify
 #      its SSH signature against scripts/release/allowed_signers of THIS (installed) checkout, before anything of the
 #      release runs: `git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=... verify-tag <tag>`. An unsigned tag, a
-#      lightweight tag or a tag signed by any other key is refused unless --trust-unsigned.
+#      lightweight tag or a tag signed by any other key is refused unless --trust-unsigned. An annotated tag must
+#      also carry the requested name inside the tag object (its `tag` header; FD-132): an older signed release
+#      published under a newer name is refused, also with --trust-unsigned.
 #   2. check out the tag (detached) and run the release's read-only `apply.sh plan`
 #   3. ask you to confirm (y/N)
 #   4. `apply.sh apply` (it shows the plan again and asks for the project id)
@@ -29,7 +31,9 @@
 # Step 2 already runs the release's own scripts (apply.sh plan) with your credentials, before the confirm: that is
 # why step 1 verifies the signature first, with the trusted keys of the checkout you installed from (never the
 # release's own list). Only SSH signatures count (OpenPGP / X.509 verification is switched off for the check). The
-# tag is not compared with the installed release (a downgrade runs the same way; the plan shows every change).
+# signature covers the tag object, and git verify-tag does not compare the object's own name with the ref it was
+# fetched under, so that name is checked separately. The tag is not compared with the installed release (a downgrade
+# under the tag's own name runs the same way; the plan shows every change).
 # Refuses before anything changes: a dirty working tree (`git status --porcelain` not empty), a target that does
 # not match its vars file or a REGION that differs from it (the same guards as scripts/apply.sh), no terminal, no
 # scripts/release/allowed_signers in this checkout (unless --trust-unsigned).
@@ -173,31 +177,83 @@ sv_upgrade_main() {
     # ---- 1. fetch the tag. A local tag that differs from the remote's is refused by git (no '+'), never moved. ----
     UP_STAGE="FETCH"
     sv_info "1/6 Fetching ${tag} from ${remote}..."
-    git -C "${REPO_ROOT}" fetch --no-tags "${remote}" "refs/tags/${tag}:refs/tags/${tag}" >&2 \
+    # Whether this checkout already had the tag: a tag this run fetched is removed again when it is refused (by name
+    # or by signature, below), so one bad publish does not block later runs at the fetch; a tag that was already here
+    # is left alone.
+    local tag_before
+    tag_before="$(git -C "${REPO_ROOT}" rev-parse --verify --quiet "refs/tags/${tag}")" || tag_before=""
+    git -C "${REPO_ROOT}" fetch --no-tags --no-recurse-submodules "${remote}" "refs/tags/${tag}:refs/tags/${tag}" >&2 \
         || up_fail UPGRADE_FETCH_FAILED "Could not fetch tag ${tag} from '${remote}' (it does not exist there, the network failed, or your local tag ${tag} points somewhere else). In a fork, the release tags are on the official repository: add it as a remote and pass --remote=<name>." \
             "git -C ${UP_ROOT_Q} ls-remote --tags ${remote} ${tag}"
-    local target tagger author
+    # The fetched tag's object id, read once: the name check and the removal below use this value, not the ref again.
+    local target tagger author tag_oid
+    tag_oid="$(git -C "${REPO_ROOT}" rev-parse --verify --quiet "refs/tags/${tag}")" || tag_oid=""
+    [[ "${tag_oid}" =~ ^[0-9a-f]{40}$ ]] || tag_oid=""
     target="$(git -C "${REPO_ROOT}" rev-parse --verify --quiet "refs/tags/${tag}^{commit}")" || target=""
     [[ "${target}" =~ ^[0-9a-f]{40}$ ]] \
         || up_fail UPGRADE_TAG_NOT_FOUND "Tag ${tag} does not name a commit after the fetch." "git -C ${UP_ROOT_Q} show --no-patch ${tag}"
     # What is about to run (step 2 runs the release's own scripts before the confirm; the signature is checked next).
     tagger="$(git -C "${REPO_ROOT}" for-each-ref --format='%(if)%(taggername)%(then)%(taggername) %(taggeremail) %(taggerdate:iso)%(end)' "refs/tags/${tag}")" || tagger=""
     author="$(git -C "${REPO_ROOT}" log -1 --format='%an %ae %ad' --date=iso "${target}")" || author=""
+    # Both are text of the fetched, not yet verified tag and commit, and sv_info prints with `echo -e`: keep only
+    # characters a name, an e-mail address and an ISO date need, so neither terminal control characters nor
+    # backslash escapes reach the terminal.
+    tagger="$(printf '%s' "${tagger}" | LC_ALL=C tr -cd 'A-Za-z0-9 @.,:<>+_-')"
+    author="$(printf '%s' "${author}" | LC_ALL=C tr -cd 'A-Za-z0-9 @.,:<>+_-')"
     sv_info "Release ${tag}: commit ${target}; tagged by ${tagger:-(lightweight tag, no tagger)}; commit by ${author:-unknown}."
 
     # ---- 1. verify the tag's SSH signature with the installed checkout's trusted keys, before anything runs ----
     UP_STAGE="VERIFY"
+    # The name inside an annotated tag object must be the tag that was asked for (FD-132, R8-04; step 0 of the update
+    # button has the same check, infra/platform/upgrade_step0/verify.sh). The signature covers that name, but
+    # `git verify-tag` does not compare it with the ref, so an older signed release republished under a newer name
+    # would pass. git reads the name from the object's header (`%(tag)`), never from the message, which is free text.
+    # Checked before the signature so that "good" is never printed for a misnamed tag; a lightweight tag has no name
+    # and is left to the signature check (refused) or to --trust-unsigned (warned).
+    local tag_type inner_name shown_name ref_line
+    tag_type=""
+    [ -z "${tag_oid}" ] || tag_type="$(git -C "${REPO_ROOT}" cat-file -t "${tag_oid}" 2>/dev/null)" || tag_type=""
+    if [ "${tag_type}" = "tag" ]; then
+        # git's own header parser (`%(tag)`), bound to the object id read above: the ref must still name that object.
+        ref_line="$(git -C "${REPO_ROOT}" for-each-ref --format='%(objectname) %(tag)' "refs/tags/${tag}" 2>/dev/null)" || ref_line=""
+        inner_name=""
+        [ "${ref_line%% *}" != "${tag_oid}" ] || inner_name="${ref_line#* }"
+        if [ "${inner_name}" != "${tag}" ]; then
+            # The name is printed only when it is a release tag name (it is text of the fetched object).
+            shown_name="a name that is not a release tag"
+            if [[ "${inner_name}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+                shown_name="'${inner_name}'"
+            fi
+            local kept="the tag was already in this checkout before this run and is kept"
+            if [ -z "${tag_before}" ]; then
+                if up_remove_fetched_tag "${tag}" "${tag_before}" "${tag_oid}"; then
+                    up_fail UPGRADE_TAG_NAME_MISMATCH "The tag object fetched as ${tag} is named ${shown_name} inside: an older or other release published under the name ${tag} is refused (also with --trust-unsigned). Nothing was applied and the checkout is unchanged (the tag this run fetched was removed again). See what '${remote}' publishes as ${tag}:" \
+                        "git -C ${UP_ROOT_Q} ls-remote --tags ${remote} ${tag}"
+                fi
+                kept="the tag this run fetched could not be removed again"
+            fi
+            up_fail UPGRADE_TAG_NAME_MISMATCH "The tag object fetched as ${tag} is named ${shown_name} inside: an older or other release published under the name ${tag} is refused (also with --trust-unsigned). Nothing was applied and the checkout is unchanged (${kept}; 'git tag -d ${tag}' there removes it). Look at the tag's own name:" \
+                "git -C ${UP_ROOT_Q} for-each-ref --format='%(refname) %(tag)' refs/tags/${tag}"
+        fi
+    fi
     # Only SSH signatures can pass: the OpenPGP and X.509 verifiers are replaced by `false` for this one command (a
     # PGP-signed tag would otherwise be checked against the operator's own GnuPG keyring).
-    verify_cmd="git -C ${UP_ROOT_Q} -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag ${tag}"
+    verify_cmd="git -C ${UP_ROOT_Q} -c gpg.format=ssh -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag refs/tags/${tag}"
     if [ -n "${UP_SIGNERS}" ] && git -C "${REPO_ROOT}" -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen \
             -c gpg.ssh.allowedSignersFile="${UP_SIGNERS}" -c gpg.openpgp.program=false -c gpg.x509.program=false \
-            verify-tag "${tag}" >&2; then
+            verify-tag "refs/tags/${tag}" >&2; then
         sv_info "1/6 Signature of ${tag}: good, by a key in scripts/release/allowed_signers of this checkout."
     elif [ "${UP_TRUST_UNSIGNED}" = "yes" ]; then
         echo -e "\033[0;31m[WARNING] --trust-unsigned: ${tag} is NOT verified ($([ -n "${UP_SIGNERS}" ] && echo "not signed by a key in scripts/release/allowed_signers" || echo "this checkout has no scripts/release/allowed_signers")). Continuing only because you passed --trust-unsigned: the release's own scripts run next with your credentials.\033[0m" >&2
     else
-        up_fail UPGRADE_SIGNATURE_INVALID "${tag} is not signed by a key in scripts/release/allowed_signers of this checkout (unsigned, a lightweight tag, or signed by another key; git's message is above). Nothing was applied and the checkout is unchanged (the tag was fetched). See why:" \
+        local why="unsigned, a lightweight tag, or signed by another key; git's message is above"
+        if up_remove_fetched_tag "${tag}" "${tag_before}" "${tag_oid}"; then
+            up_fail UPGRADE_SIGNATURE_INVALID "${tag} is not signed by a key in scripts/release/allowed_signers of this checkout (${why}). Nothing was applied and the checkout is unchanged (the tag this run fetched was removed again, so a corrected publish can be fetched). See what '${remote}' publishes as ${tag}:" \
+                "git -C ${UP_ROOT_Q} ls-remote --tags ${remote} ${tag}"
+        fi
+        local state="the tag was already in this checkout before this run and is kept"
+        [ -n "${tag_before}" ] || state="the tag this run fetched could not be removed again"
+        up_fail UPGRADE_SIGNATURE_INVALID "${tag} is not signed by a key in scripts/release/allowed_signers of this checkout (${why}). Nothing was applied and the checkout is unchanged (${state}). See why:" \
             "${verify_cmd}"
     fi
     sv_info "Its own apply.sh runs the read-only plan next, before you confirm."
@@ -289,6 +345,16 @@ up_set_rerun() {
     [ "$3" = "origin" ] || cmd="${cmd} --remote=$3"
     [ "${UP_TRUST_UNSIGNED}" != "yes" ] || cmd="${cmd} --trust-unsigned"
     UP_RERUN="${cmd}"
+}
+
+# Removes refs/tags/$1 again when this run fetched it: $2 is the tag's object id before the fetch (empty when the
+# checkout had no such tag) and $3 the object id read right after the fetch. The delete is conditional on $3 (an
+# empty old value would make `update-ref -d` unconditional, so an empty or malformed $3 removes nothing). Success
+# only when the tag was removed.
+up_remove_fetched_tag() {
+    [ -z "$2" ] || return 1
+    [[ "$3" =~ ^[0-9a-f]{40}$ ]] || return 1
+    git -C "${REPO_ROOT}" update-ref -d "refs/tags/$1" "$3" 2>/dev/null
 }
 
 # $1 a tool's version line, $2 an anchored regex whose groups 1 and 2 are MAJOR and MINOR, $3 $4 the minimum MAJOR

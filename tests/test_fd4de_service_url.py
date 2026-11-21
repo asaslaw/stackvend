@@ -204,12 +204,14 @@ def test_listing_longer_than_the_bound_is_not_complete(tf, tmp_path, monkeypatch
 
 
 # ------------------------------------------------------------------------------------------------ deploy
-def test_url_from_outputs_is_reported_unchanged_and_the_api_is_not_asked(tf, tmp_path):
-    """Do No Harm: today's real URL (the apply's output) is the same URL after FD-4DE."""
-    svc, calls = _svc(tf, tmp_path, outputs=json.dumps({"service_url": {"value": REAL_URI}}), listing=None)
+def test_url_from_outputs_is_reported_unchanged_once_the_api_confirms_it(tf, tmp_path):
+    """Do No Harm: today's real URL (the apply's output) is the same URL after FD-4DE. FD-102: it is recorded only
+    once the Cloud Run listing (one, shared) confirms it (tests/test_fd102_service_url_confirmed.py)."""
+    listing = ([{"name": f"projects/{CHILD}/locations/us-central1/services/shop", "uri": REAL_URI}], None)
+    svc, calls = _svc(tf, tmp_path, outputs=json.dumps({"service_url": {"value": REAL_URI}}), listing=listing)
     res = _deploy(svc)
     assert res["status"] == "SUCCESS" and res["service_url"] == REAL_URI
-    assert res["service_url_unknown_reason"] is None and calls["list"] == []
+    assert res["service_url_unknown_reason"] is None and calls["list"] == [(CHILD, "us-central1")]
     assert not [w for w in res.get("warnings") or [] if w.get("code") == tf.SERVICE_URL_UNKNOWN]
 
 
@@ -341,15 +343,19 @@ def test_signin_domains_are_the_hosts_the_api_lists_never_built_ones(tf, tmp_pat
 
 def test_signin_domains_listing_failure_is_a_typed_warning(tf, tmp_path, monkeypatch):
     """RT N1: the listing fails in the sign-in step (URL from the outputs): the known hosts are still authorized and
-    the result carries SIGNIN_DOMAINS_INCOMPLETE with the typed reason; the deploy stays SUCCESS."""
+    the result carries SIGNIN_DOMAINS_INCOMPLETE with the typed reason; the deploy stays SUCCESS. FD-102: the
+    outputs URL cannot be confirmed without the listing, so it is reported unknown (CLOUD_RUN_API_UNAVAILABLE)."""
     svc, calls, patched = _public_app_svc(
         tf, tmp_path, monkeypatch, listing=(None, "CLOUD_RUN_API_UNAVAILABLE"),
         outputs=json.dumps({"service_url": {"value": REAL_URI}}))
     res = _deploy(svc)
-    assert res["status"] == "SUCCESS" and res["service_url"] == REAL_URI and res["service_url_unknown_reason"] is None
+    assert res["status"] == "SUCCESS" and res["service_url"] == ""
+    assert res["service_url_unknown_reason"] == "CLOUD_RUN_API_UNAVAILABLE"
     warn = _codes(res, tf.SIGNIN_DOMAINS_INCOMPLETE)
     assert len(warn) == 1 and warn[0]["reason"] == "CLOUD_RUN_API_UNAVAILABLE"
-    assert _codes(res, tf.SERVICE_URL_UNKNOWN) == []
+    assert [w["reason"] for w in _codes(res, tf.SERVICE_URL_UNKNOWN)] == ["CLOUD_RUN_API_UNAVAILABLE"]
+    assert len(calls["list"]) == 1                      # the one failed listing is not retried
+    # the run.app host still reaches the list through the raw-output loop (FD-146, out of FD-102's scope)
     assert {"shop-k3j2h1-uc.a.run.app", "localhost", f"{CHILD}.firebaseapp.com"} <= set(patched[-1])
     assert not any("987654" in d for d in patched[-1])
 

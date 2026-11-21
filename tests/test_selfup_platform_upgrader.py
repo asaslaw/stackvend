@@ -426,16 +426,18 @@ class TestTrigger(unittest.TestCase):
             self.assertNotIn("script", s)              # Cloud Build's `$` handling in `script` is not relied on
         self.assertEqual([_s(a) for a in unpack["args"]], ["-c", "${local.platform_upgrade_unpack_script}"])
         self.assertEqual([_s(e) for e in unpack["env"]], [
-            "STACKVEND_STEP0_VERIFY_SH_B64=${base64encode(local.platform_upgrade_step0_verify_sh)}",
-            "STACKVEND_STEP0_GUARD_PY_B64=${base64encode(local.platform_upgrade_step0_guard_py)}",
+            # FD-148: gzip + base64 (Cloud Build caps each env string at 65,536; tests/test_fd148_step0_env_size.py)
+            "STACKVEND_STEP0_VERIFY_SH_GZ_B64=${base64gzip(local.platform_upgrade_step0_verify_sh)}",
+            "STACKVEND_STEP0_GUARD_PY_GZ_B64=${base64gzip(local.platform_upgrade_step0_guard_py)}",
             "STACKVEND_OFFICIAL_ALLOWED_SIGNERS_B64=${base64encode(local.platform_upgrade_allowed_signers)}",
         ])
-        # The request id is its own argv element (no shell parses it); the only `$` in the build is that substitution.
+        # The request id is its own argv element (no shell parses it); the only `$` in the build are Cloud Build's
+        # substitutions: $_REQUEST_ID here and $BUILD_ID in the verify step's env (FD-148, the Control Center's build link).
         self.assertEqual([_s(a) for a in verify["args"]], [
             "/workspace/step0/verify.sh", "run", "--request-id", "$_REQUEST_ID", "--project", "${var.project_id}",
             "--region", "${var.region}", "--guard-database", "${google_firestore_database.stackvend_guard.name}",
             "--official-signers", "/workspace/step0/allowed_signers", "--workdir", "/workspace/up"])
-        self.assertNotIn("env", verify)
+        self.assertEqual(verify["env"], ["BUILD_ID=$BUILD_ID"])
         self.assertEqual(verify["wait_for"], ["step0-unpack"])
         self.assertNotIn("secret", json.dumps(build).lower())  # no secret in the build
 
@@ -447,6 +449,8 @@ class TestTrigger(unittest.TestCase):
         self.assertNotIn("$", body.replace("join(", ""))
         for f in ("verify.sh", "guard.py", "allowed_signers"):
             self.assertIn(f"HASH  /workspace/step0/{f}' | sha256sum -c --quiet -", body)
+        for v, f in (("VERIFY_SH", "verify.sh"), ("GUARD_PY", "guard.py")):   # FD-148: gzipped, checked after gunzip
+            self.assertIn(f"printenv STACKVEND_STEP0_{v}_GZ_B64 | base64 -d | gunzip > /workspace/step0/{f}", body)
         self.assertIn('"set -euo pipefail"', body)
 
     def test_trust_anchor_and_step0_come_from_fixed_repository_files(self):

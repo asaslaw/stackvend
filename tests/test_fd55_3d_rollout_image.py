@@ -102,7 +102,9 @@ def _svc(tf, tmp_path, *, state, apps=(), build=True, apply_ok=True, show_ok=Tru
     svc._ensure_provider_mirror = lambda *a, **k: "/nonexistent/terraform.rc"
     svc._compliance_gate_check = lambda *a, **k: {"passed": True, "evidence": {}}
     svc._validate_no_engine_downgrade = lambda *a, **k: None
-    svc._list_cloud_run_services = lambda *a, **k: ([], None)
+    # FD-102: the outputs URL is recorded only when the Cloud Run listing confirms it (it does here)
+    svc._list_cloud_run_services = lambda *a, **k: (
+        [{"name": "projects/p/locations/us-central1/services/shop", "uri": "https://shop-x.a.run.app"}], None)
     svc._rollout_cloud_run_revision = _rollout
     svc._run_subprocess = _subp
     return svc, calls

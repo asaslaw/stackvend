@@ -13,6 +13,14 @@ env:
   UPSTREAM_SYNC: ${{ vars.STACKVEND_UPSTREAM_SYNC }}
   UPSTREAM_REPO: ${{ vars.STACKVEND_UPSTREAM_REPO }}
 
+# `shell: bash` runs every script as `bash --noprofile --norc -eo pipefail {0}`: it stops on the first failed
+# command, inside pipes too (the tests run them with `bash -eo pipefail`).
+# FD-104: the tag verification needs git >= 2.36 (`ls-tree --format`) and OpenSSH >= 8.9 (`ssh-keygen -Y
+# find-principals`, SSH verify-tag); an older runner fails closed (nothing is merged or pushed).
+defaults:
+  run:
+    shell: bash
+
 jobs:
   sync-notice:
     runs-on: ubuntu-latest
@@ -54,9 +62,11 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
-          # Optional STACKVEND_SYNC_TOKEN (needs workflow write access) lets the sync push releases
-          # that change .github/workflows/**; without it the default GITHUB_TOKEN is used.
-          token: ${{ secrets.STACKVEND_SYNC_TOKEN || github.token }}
+          # FD-104: the checkout uses the default token and leaves no credential in .git/config. The optional
+          # STACKVEND_SYNC_TOKEN (needs workflow write access, to push releases that change .github/workflows/**)
+          # reaches only the "Push Sync Branch and Open Pull Request" step, where only git and gh run.
+          token: ${{ github.token }}
+          persist-credentials: false
 
       - name: Validate Upstream Slug
         id: validate
@@ -66,7 +76,7 @@ jobs:
             echo "valid=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
-          if [ -z "${UPSTREAM_REPO}" ] || ! python3 scripts/sync_upstream_needs_apply.py --validate-slug "${UPSTREAM_REPO}"; then
+          if [ -z "${UPSTREAM_REPO}" ] || ! python3 -I scripts/sync_upstream_needs_apply.py --validate-slug "${UPSTREAM_REPO}"; then
             echo "Upstream sync skipped: STACKVEND_UPSTREAM_REPO is unset or not an exact owner/repo slug. Set with: gh variable set STACKVEND_UPSTREAM_REPO --body <owner>/<repo>"
             echo "valid=false" >> "${GITHUB_OUTPUT}"
             exit 0
@@ -82,7 +92,8 @@ jobs:
         id: base
         if: steps.validate.outputs.valid == 'true'
         env:
-          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           BASE_BRANCH="${DEFAULT_BRANCH}"
           if [ -z "${BASE_BRANCH}" ]; then
@@ -107,36 +118,128 @@ jobs:
           git config user.name "StackVend Sync Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch Upstream Release Tags and Check Ancestry
+      - name: Fetch, Verify and Check Ancestry of the Newest Upstream Release Tag
         id: check_tag
         if: steps.validate.outputs.valid == 'true'
         run: |
           git remote remove upstream 2>/dev/null || true
           git remote add upstream "https://github.com/${UPSTREAM_REPO}.git"
-          git fetch --no-tags --force --prune upstream "+refs/tags/*:refs/upstream-tags/*"
+          # The checkout keeps no credential (FD-104), so the upstream is read anonymously: it must be public.
+          if ! git fetch --no-tags --force --prune upstream "+refs/tags/*:refs/upstream-tags/*"; then
+            echo "::error::SYNC_UPSTREAM_FETCH_FAILED: could not fetch the tags of https://github.com/${UPSTREAM_REPO}.git without credentials; the upstream must be a public repository. Nothing was synced."
+            exit 1
+          fi
 
-          TARGET_TAG=$(git for-each-ref --format='%(refname:strip=2)' refs/upstream-tags | python3 scripts/sync_upstream_needs_apply.py --latest-tag)
+          TARGET_TAG=$(git for-each-ref --format='%(refname:strip=2)' refs/upstream-tags | python3 -I scripts/sync_upstream_needs_apply.py --latest-tag)
           if [ -z "${TARGET_TAG}" ]; then
             echo "No release tags matching vX.Y.Z found in upstream ${UPSTREAM_REPO}; skipping."
             echo "should_sync=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
-          if git merge-base --is-ancestor "refs/upstream-tags/${TARGET_TAG}" HEAD; then
+          # Snapshot the fork's helper now, from the default branch's clean checkout: the later steps run this copy
+          # (after the merge the working tree holds upstream's files, and upstream code must never run in this job).
+          # It runs as `python3 -I`.
+          SYNC_HELPER="${RUNNER_TEMP}/sync_upstream_needs_apply.py"
+          cp scripts/sync_upstream_needs_apply.py "${SYNC_HELPER}"
+          BASE_SHA=$(git rev-parse --verify "HEAD^{commit}")
+
+          # FD-104: verify the newest tag BEFORE the ancestry test, so an unverifiable newest tag always fails typed
+          # (never a silent "nothing to sync"). One object id, resolved once, is checked, verified, tested for
+          # ancestry and merged.
+          TAG_OID=$(git rev-parse --verify "refs/upstream-tags/${TARGET_TAG}")
+          MANUAL="Manual path: git fetch https://github.com/${UPSTREAM_REPO}.git tag ${TARGET_TAG}; check that the header of git cat-file tag ${TARGET_TAG} says tag ${TARGET_TAG}; git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen -c gpg.program=false -c gpg.openpgp.program=false -c gpg.x509.program=false -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag ${TARGET_TAG}; only then git merge ${TARGET_TAG}."
+          refuse() {
+            echo "::error::$1: upstream tag ${TARGET_TAG} (object ${TAG_OID}) $2; nothing was merged or pushed. The sync takes only the newest vX.Y.Z tag, so one unsigned or unverifiable newest tag stops it until upstream removes that tag. ${MANUAL}"
+            exit 1
+          }
+
+          # The signer list is this fork's own committed file on the default branch (BASE_SHA) and must be a plain,
+          # non-executable file; never the work tree, never anything from the tag.
+          SIGNERS="${RUNNER_TEMP}/allowed_signers"
+          SIGNERS_ENTRY=$(git ls-tree --format='%(objectmode) %(objecttype) %(objectname)' "${BASE_SHA}" -- scripts/release/allowed_signers)
+          read -r SIGNERS_MODE SIGNERS_TYPE SIGNERS_BLOB <<< "${SIGNERS_ENTRY}"
+          if [ "${SIGNERS_MODE}" != "100644" ] || [ "${SIGNERS_TYPE}" != "blob" ]; then
+            refuse SYNC_NO_TRUSTED_KEYS "cannot be verified: scripts/release/allowed_signers on the default branch (${BASE_SHA}) is missing or is not a plain non-executable file (mode ${SIGNERS_MODE:-none})"
+          fi
+          git cat-file blob "${SIGNERS_BLOB}" > "${SIGNERS}"
+          if ! python3 -I "${SYNC_HELPER}" --check-signers < "${SIGNERS}"; then
+            refuse SYNC_NO_TRUSTED_KEYS "cannot be verified: scripts/release/allowed_signers on the default branch (${BASE_SHA}) holds no key"
+          fi
+
+          TAG_TYPE=$(git cat-file -t "${TAG_OID}")
+          if [ "${TAG_TYPE}" != "tag" ]; then
+            refuse SYNC_TAG_NOT_ANNOTATED "is a lightweight tag (a ${TAG_TYPE}), not a signed annotated tag"
+          fi
+
+          git cat-file tag "${TAG_OID}" > "${RUNNER_TEMP}/tag_object.raw"
+          TAG_CHECK=0
+          python3 -I "${SYNC_HELPER}" --check-tag-object --tag "${TARGET_TAG}" \
+            --signature-out "${RUNNER_TEMP}/tag_signature.sig" --payload-out "${RUNNER_TEMP}/tag_payload.bin" \
+            < "${RUNNER_TEMP}/tag_object.raw" || TAG_CHECK=$?
+          case "${TAG_CHECK}" in
+            0) ;;
+            3) refuse SYNC_TAG_NAME_MISMATCH "is a tag object whose tag header does not name ${TARGET_TAG} (another or older tag under this name)" ;;
+            4) refuse SYNC_TAG_SIGNATURE_FORMAT "does not end with exactly one SSH signature block (unsigned, OpenPGP or X.509, or more than one signature)" ;;
+            *) refuse SYNC_TAG_SIGNATURE_FORMAT "could not be checked (tag-object check exit ${TAG_CHECK})" ;;
+          esac
+
+          if ! GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen \
+            -c gpg.program=false -c gpg.openpgp.program=false -c gpg.x509.program=false \
+            -c "gpg.ssh.allowedSignersFile=${SIGNERS}" verify-tag "${TAG_OID}"; then
+            refuse SYNC_TAG_SIGNATURE_INVALID "is not signed by a key in this fork's scripts/release/allowed_signers"
+          fi
+          TAG_COMMIT=$(git rev-parse --verify --quiet "${TAG_OID}^{commit}") \
+            || refuse SYNC_TAG_TARGET_NOT_COMMIT "is signed but does not point to a commit"
+
+          # verify-tag checks the key's validity at the tagger's time, which the signer chooses. A sync also needs
+          # the signature to verify NOW: for each principal find-principals names, `ssh-keygen -Y verify` (no
+          # time option, so the current time; namespace git) over the signed payload. A stolen key past its
+          # valid-before, or an entry that is current only for another namespace, never ships a release; for a tag
+          # already in the fork it is only a warning. tag_signers.txt lists the principals that verified now.
+          SIGNER_CURRENT=no
+          : > "${RUNNER_TEMP}/tag_signers.txt"
+          if ssh-keygen -Y find-principals -s "${RUNNER_TEMP}/tag_signature.sig" -f "${SIGNERS}" > "${RUNNER_TEMP}/tag_principals.txt"; then
+            while IFS= read -r principal; do
+              if [ -z "${principal}" ]; then
+                continue
+              fi
+              # stderr is kept: it says why a principal did not verify.
+              if ssh-keygen -Y verify -f "${SIGNERS}" -I "${principal}" -n git \
+                -s "${RUNNER_TEMP}/tag_signature.sig" < "${RUNNER_TEMP}/tag_payload.bin" > /dev/null; then
+                printf '%s\n' "${principal}" >> "${RUNNER_TEMP}/tag_signers.txt"
+                SIGNER_CURRENT=yes
+              else
+                echo "Principal ${principal} did not verify upstream tag ${TARGET_TAG} at the current time (namespace git)."
+              fi
+            done < "${RUNNER_TEMP}/tag_principals.txt"
+          fi
+          echo "Verified upstream tag ${TARGET_TAG}: object ${TAG_OID}, commit ${TAG_COMMIT}."
+
+          if git merge-base --is-ancestor "${TAG_COMMIT}" HEAD; then
+            if [ "${SIGNER_CURRENT}" != "yes" ]; then
+              echo "::warning::SYNC_SIGNER_PRINCIPAL_UNKNOWN: upstream tag ${TARGET_TAG} (object ${TAG_OID}) passed git verify-tag, but no principal of this fork's scripts/release/allowed_signers holds its key at the current time (for example a key that has expired since); the fork already contains it, so nothing is synced."
+            fi
             echo "Fork already contains release tag ${TARGET_TAG}; nothing to sync."
             echo "should_sync=false" >> "${GITHUB_OUTPUT}"
             exit 0
           else
             rc=$?
             if [ "${rc}" -ne 1 ]; then
-              echo "Failed checking merge-base ancestry for ${TARGET_TAG} (exit ${rc})." >&2
+              echo "::error::SYNC_ANCESTRY_CHECK_FAILED: git merge-base --is-ancestor failed for ${TARGET_TAG} (exit ${rc}); nothing was merged or pushed."
               exit "${rc}"
             fi
+          fi
+          if [ "${SIGNER_CURRENT}" != "yes" ]; then
+            refuse SYNC_SIGNER_KEY_NOT_CURRENT "passed git verify-tag at its tagger time, but no principal of this fork's scripts/release/allowed_signers holds its key at the current time (an expired or not yet valid key, or one not valid for the git namespace)"
           fi
 
           BRANCH_NAME="chore/sync-upstream-${TARGET_TAG}"
           echo "target_tag=${TARGET_TAG}" >> "${GITHUB_OUTPUT}"
           echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "tag_oid=${TAG_OID}" >> "${GITHUB_OUTPUT}"
+          echo "tag_commit=${TAG_COMMIT}" >> "${GITHUB_OUTPUT}"
+          echo "base_sha=${BASE_SHA}" >> "${GITHUB_OUTPUT}"
           echo "should_sync=true" >> "${GITHUB_OUTPUT}"
           echo "Latest upstream release tag ${TARGET_TAG} is not yet merged into HEAD."
 
@@ -144,12 +247,41 @@ jobs:
         id: check_pr
         if: steps.validate.outputs.valid == 'true' && steps.check_tag.outputs.should_sync == 'true'
         env:
-          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
           TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
           BASE_BRANCH: ${{ steps.base.outputs.base_branch }}
         run: |
-          EXISTING_PR=$(gh pr list --base "${BASE_BRANCH}" --head "${BRANCH_NAME}" --state open --json number --jq '.[0].number // empty')
+          # FD-104: only pull requests from this repository's own branch count. The REST list is filtered on the
+          # server by base and by `owner:branch` head, read page by page (--paginate), and each row is checked again
+          # here: its head branch, base branch and head repository must be this sync branch, the default branch and
+          # this repository (a branch of the same name elsewhere never counts). Every field is non-empty ("-" for
+          # null), so tab splitting never shifts a field.
+          # Prints the number of the first own pull request in state $1 ("open" or "closed"); with $2 = "unmerged",
+          # merged ones are skipped.
+          first_own_pr() {
+            local rows number head base repo merged
+            rows=$(gh api "repos/${GITHUB_REPOSITORY}/pulls" -X GET --paginate \
+              -f state="$1" -f base="${BASE_BRANCH}" -f head="${GITHUB_REPOSITORY_OWNER}:${BRANCH_NAME}" -f per_page=100 \
+              --jq '.[] | [.number, (.head.ref // "-"), (.base.ref // "-"), (.head.repo.full_name // "-"), (.merged_at // "-")] | @tsv') || return 1
+            while IFS=$'\t' read -r number head base repo merged; do
+              if [ "${head}" != "${BRANCH_NAME}" ] || [ "${base}" != "${BASE_BRANCH}" ] || [ "${repo}" != "${GITHUB_REPOSITORY}" ]; then
+                continue
+              fi
+              if [ "${2:-}" = "unmerged" ] && [ "${merged}" != "-" ]; then
+                continue
+              fi
+              echo "${number}"
+              return 0
+            done <<< "${rows}"
+            return 0
+          }
+          lookup_failed() {
+            echo "::error::SYNC_PR_LOOKUP_FAILED: listing the $1 pull requests of ${GITHUB_REPOSITORY} for ${BRANCH_NAME} failed; nothing was merged or pushed."
+            exit 1
+          }
+          EXISTING_PR=$(first_own_pr open) || lookup_failed open
           if [ -n "${EXISTING_PR}" ]; then
             echo "Sync PR #${EXISTING_PR} for ${TARGET_TAG} (${BRANCH_NAME}) is already open; skipping."
             echo "pr_exists=true" >> "${GITHUB_OUTPUT}"
@@ -157,7 +289,7 @@ jobs:
           fi
           # A sync PR for this exact release that was closed without merging means the release was
           # declined: skip it until upstream publishes a newer release (merged PRs do not count).
-          CLOSED_PR=$(gh pr list --base "${BASE_BRANCH}" --head "${BRANCH_NAME}" --state closed --json number,state --jq '[.[] | select(.state == "CLOSED")][0].number // empty')
+          CLOSED_PR=$(first_own_pr closed unmerged) || lookup_failed closed
           if [ -n "${CLOSED_PR}" ]; then
             echo "Sync PR #${CLOSED_PR} for ${TARGET_TAG} (${BRANCH_NAME}) was closed without merging; skipping until a newer release."
             echo "pr_exists=true" >> "${GITHUB_OUTPUT}"
@@ -171,40 +303,65 @@ jobs:
         env:
           BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
           TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
+          TAG_OID: ${{ steps.check_tag.outputs.tag_oid }}
+          TAG_COMMIT: ${{ steps.check_tag.outputs.tag_commit }}
+          BASE_SHA: ${{ steps.check_tag.outputs.base_sha }}
         run: |
-          PRE_MERGE_SHA=$(git rev-parse HEAD)
-          # Snapshot the fork's helper BEFORE the merge: after the merge the working tree holds
-          # upstream's files, and upstream code must never run while the job holds a write token.
+          # The fork's helper, snapshotted by the verify step before anything from upstream reached the work tree.
           SYNC_HELPER="${RUNNER_TEMP}/sync_upstream_needs_apply.py"
-          cp scripts/sync_upstream_needs_apply.py "${SYNC_HELPER}"
+          PRE_MERGE_SHA=$(git rev-parse --verify "HEAD^{commit}")
+          # FD-104: merge exactly the object the verify step verified, onto the head it verified against.
+          if [ "${PRE_MERGE_SHA}" != "${BASE_SHA}" ] || [ "$(git rev-parse --verify --quiet "${TAG_OID}^{commit}")" != "${TAG_COMMIT}" ]; then
+            echo "::error::SYNC_STATE_CHANGED: the checkout or the verified tag object ${TAG_OID} changed after verification; nothing was merged or pushed."
+            exit 1
+          fi
+
           git checkout -B "${BRANCH_NAME}"
-          if ! git merge "refs/upstream-tags/${TARGET_TAG}" --no-edit -m "chore: sync upstream StackVend ${TARGET_TAG}"; then
-            echo "::error::Merging upstream ${TARGET_TAG} failed (usually merge conflicts). Merge it manually: git fetch https://github.com/${UPSTREAM_REPO}.git tag ${TARGET_TAG} && git merge ${TARGET_TAG}"
+          if ! GIT_LFS_SKIP_SMUDGE=1 git merge --no-ff "${TAG_OID}^{commit}" --no-edit -m "chore: sync upstream StackVend ${TARGET_TAG}"; then
+            echo "::error::Merging upstream ${TARGET_TAG} failed (usually merge conflicts). Manual path: git fetch https://github.com/${UPSTREAM_REPO}.git tag ${TARGET_TAG}; check that the header of git cat-file tag ${TARGET_TAG} says tag ${TARGET_TAG}; git -c gpg.format=ssh -c gpg.ssh.program=ssh-keygen -c gpg.program=false -c gpg.openpgp.program=false -c gpg.x509.program=false -c gpg.ssh.allowedSignersFile=scripts/release/allowed_signers verify-tag ${TARGET_TAG}; only then git merge ${TARGET_TAG}."
             exit 1
           fi
 
           git diff --name-only --no-renames -z "${PRE_MERGE_SHA}" HEAD > "${RUNNER_TEMP}/changed_paths.bin"
-          APPLY_OUT=$(python3 "${SYNC_HELPER}" -z < "${RUNNER_TEMP}/changed_paths.bin")
+          APPLY_OUT=$(python3 -I "${SYNC_HELPER}" -z < "${RUNNER_TEMP}/changed_paths.bin")
           NEEDS_APPLY="${APPLY_OUT%%$'\n'*}"
           echo "needs_apply=${NEEDS_APPLY}" >> "${GITHUB_OUTPUT}"
           echo "needs apply.sh: ${NEEDS_APPLY}"
 
-          python3 "${SYNC_HELPER}" \
+          if ! python3 -I "${SYNC_HELPER}" \
             -z \
             --pr-body \
             --tag "${TARGET_TAG}" \
             --upstream "${UPSTREAM_REPO}" \
-            < "${RUNNER_TEMP}/changed_paths.bin" > "${RUNNER_TEMP}/pr_body.md"
+            --tag-object "${TAG_OID}" \
+            --tag-commit "${TAG_COMMIT}" \
+            --signers-file "${RUNNER_TEMP}/tag_signers.txt" \
+            < "${RUNNER_TEMP}/changed_paths.bin" > "${RUNNER_TEMP}/pr_body.md"; then
+            rm -f "${RUNNER_TEMP}/pr_body.md"
+            echo "::error::SYNC_PR_BODY_FAILED: the pull request body for ${TARGET_TAG} (object ${TAG_OID}) could not be written; nothing was pushed."
+            exit 1
+          fi
 
       - name: Push Sync Branch and Open Pull Request
         if: steps.validate.outputs.valid == 'true' && steps.check_tag.outputs.should_sync == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         env:
-          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          # FD-104: the only step that holds STACKVEND_SYNC_TOKEN. Only git and gh run here (no repository code,
+          # hooks off); git reads the token through a credential helper given on the push command line only.
+          SYNC_PUSH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.STACKVEND_SYNC_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
           BRANCH_NAME: ${{ steps.check_tag.outputs.branch_name }}
           TARGET_TAG: ${{ steps.check_tag.outputs.target_tag }}
           BASE_BRANCH: ${{ steps.base.outputs.base_branch }}
         run: |
-          git push --force-with-lease origin "${BRANCH_NAME}"
+          if [ -z "${BASE_BRANCH}" ] || [ "${BRANCH_NAME}" = "${BASE_BRANCH}" ] || [ "${BRANCH_NAME}" != "chore/sync-upstream-${TARGET_TAG}" ]; then
+            echo "::error::SYNC_PUSH_TARGET: refusing to push '${BRANCH_NAME}': the sync pushes only chore/sync-upstream-${TARGET_TAG}, never the default branch '${BASE_BRANCH}'; nothing was pushed."
+            exit 1
+          fi
+          git -c credential.helper= \
+            -c 'credential.helper=!f() { test "$1" = get || exit 0; echo username=x-access-token; echo "password=${SYNC_PUSH_TOKEN}"; }; f' \
+            -c core.hooksPath=/dev/null \
+            push --force-with-lease origin "refs/heads/${BRANCH_NAME}:refs/heads/${BRANCH_NAME}"
 
           gh pr create \
             --base "${BASE_BRANCH}" \

@@ -13,7 +13,10 @@ exit status of FAIL_CODES[<CODE>]; every command that writes a result writes JSO
               as its runtime service account (iam testIamPermissions); the git server is on its FUSE volume; the
               Artifact Registry repository exists                          -> PLATFORM_NOT_READY <component>
   docker-config --region R --out DIR         DIR/config.json with a fresh token for <region>-docker.pkg.dev
-  digest      --image REF                    the pushed image's digest reference (registry manifest HEAD)
+  tag-absent  --image REF                    the build's target tag does not exist yet (registry HEAD 404), else
+                                             IMAGE_TAG_EXISTS (FD-148)
+  report-digest --report FILE --image REF    the digest pack exported for REF (report.toml [image] digest) as a
+                                             digest reference; the tag is never re-read (FD-148)
   snapshot    --project P --region R --out FILE NAME:KIND...
               what runs now, before anything is deployed: service -> its ready revision (+ digest); job -> its image
               as a digest reference (a tag is resolved through Artifact Registry, M-3) or `unavailable`
@@ -60,6 +63,7 @@ FAIL_CODES: Dict[str, int] = {
     "TOKEN_UNAVAILABLE": 87,
     "API_FAILED": 88,
     "INTERNAL": 89,
+    "IMAGE_TAG_EXISTS": 90,
 }
 
 AR_REPOSITORY = "castor-docker-repo"
@@ -254,26 +258,90 @@ def resolve_digest(http: Http, image: str) -> str:
     return f"{repository}@{digest}"
 
 
+def _tag_ref(image: str) -> Tuple[str, str, str, str]:
+    """`<host>/<path>:<tag>` -> (repository, host, path, tag); anything else (no tag, a digest) -> USAGE."""
+    slash, colon = image.rfind("/"), image.rfind(":")
+    if "@" in image or colon <= slash or any(c.isspace() for c in image):
+        raise StageError("USAGE", f"{image} is not a tagged image reference")
+    repository, tag = image[:colon], image[colon + 1:]
+    host, _, path = repository.partition("/")
+    if not host or not path or not tag:
+        raise StageError("USAGE", f"{image} is not a registry image reference")
+    return repository, host, path, tag
+
+
+def require_tag_absent(http: Http, image: str) -> None:
+    """FD-148 (attacker F2): the build's target tag must not exist yet (registry HEAD answers 404), so an image
+    planted under that tag can never be taken for this build's. 200 -> IMAGE_TAG_EXISTS; anything else -> API_FAILED."""
+    _repository, host, path, tag = _tag_ref(image)
+    status, _, _headers = http("HEAD", f"https://{host}/v2/{path}/manifests/{tag}", None, {"Accept": _MANIFEST_ACCEPT})
+    if status == 404:
+        return
+    if status == 200:
+        raise StageError("IMAGE_TAG_EXISTS", f"{image} already exists in the registry before this build; nothing "
+                         "was built (an image under this request's tag was not made by it)")
+    raise StageError("API_FAILED", f"could not check that {image} does not exist yet (HTTP {status})")
+
+
+def report_digest(report_path: str, image: str) -> str:
+    """FD-148 (attacker F2): the digest pack itself exported (`--report-output-dir` -> report.toml, [image] digest),
+    as `<repository>@sha256:<digest>`, only from a report whose [image] tags name exactly this image; the tag is never
+    re-read from the registry. Raises DIGEST_UNKNOWN."""
+    repository = _tag_ref(image)[0]
+    try:
+        import tomllib
+    except ImportError:
+        raise StageError("INTERNAL", "python3 3.11 or later (tomllib) is needed to read pack's report.toml") from None
+    try:
+        with open(report_path, "rb") as fh:
+            doc = tomllib.load(fh)
+    except (OSError, ValueError) as e:   # tomllib.TOMLDecodeError is a ValueError
+        raise StageError("DIGEST_UNKNOWN", f"no readable pack report for {image} ({type(e).__name__})") from None
+    section = doc.get("image") if isinstance(doc, dict) else None
+    tags = section.get("tags") if isinstance(section, dict) else None
+    if not isinstance(tags, list) or image not in tags:
+        raise StageError("DIGEST_UNKNOWN", f"pack's report is not for {image} (its [image] tags do not name it)")
+    digest = section.get("digest")
+    ref = f"{repository}@{digest}" if isinstance(digest, str) else ""
+    if not isinstance(digest, str) or not digest.startswith("sha256:") or not is_digest_ref(ref):
+        raise StageError("DIGEST_UNKNOWN", f"pack's report for {image} has no sha256 image digest")
+    return ref
+
+
 # ------------------------------------------------------------------------------------------------ builder pins
-def read_pins(doc: Any) -> Tuple[str, str, str, str]:
-    """scripts/upgrade/builder-pins.json -> (pack version, pack linux tarball sha256, default builder, QA builder).
-    Builders must be digest references (never a floating tag); an empty pin -> BUILDER_PIN_MISSING (nothing is built,
-    nothing is deployed)."""
+def _semver3(value: Any) -> bool:
+    parts = value.split(".") if isinstance(value, str) else []
+    return len(parts) == 3 and all(p.isdigit() for p in parts)
+
+
+def read_pins(doc: Any) -> Tuple[str, str, str, str, str, str]:
+    """scripts/upgrade/builder-pins.json -> (pack version, pack linux tarball sha256, default builder, QA builder,
+    default run image, lifecycle image). Every image must be a digest reference (never a floating tag); an empty,
+    missing or tag-only pin -> BUILDER_PIN_MISSING (nothing is built, nothing is deployed). FD-148 builder parity: the
+    run image (every build) is the one `gcloud run deploy --source` builds use (the builder's own default run image
+    is a different one); the lifecycle image is what pack runs for an untrusted builder (otherwise pulled by tag)."""
     pack = doc.get("pack") if isinstance(doc, dict) else None
     builders = doc.get("builders") if isinstance(doc, dict) else None
-    if not isinstance(pack, dict) or not isinstance(builders, dict):
-        raise StageError("BUILDER_PIN_MISSING", "builder-pins.json has no pack / builders section")
+    run_images = doc.get("run_images") if isinstance(doc, dict) else None
+    lifecycle = doc.get("lifecycle") if isinstance(doc, dict) else None
+    if not all(isinstance(s, dict) for s in (pack, builders, run_images, lifecycle)):
+        raise StageError("BUILDER_PIN_MISSING",
+                         "builder-pins.json has no pack / builders / run_images / lifecycle section")
     version, sha = pack.get("version"), pack.get("linux_amd64_sha256")
-    parts = version.split(".") if isinstance(version, str) else []
-    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+    if not _semver3(version):
         raise StageError("BUILDER_PIN_MISSING", "builder-pins.json pack.version must be MAJOR.MINOR.PATCH")
     if not (isinstance(sha, str) and len(sha) == 64 and set(sha) <= _HEX):
         raise StageError("BUILDER_PIN_MISSING", "builder-pins.json pack.linux_amd64_sha256 must be 64 hex")
+    if not _semver3(lifecycle.get("version")):
+        raise StageError("BUILDER_PIN_MISSING", "builder-pins.json lifecycle.version must be MAJOR.MINOR.PATCH")
     default, qa = builders.get("default"), builders.get(QA_JOB)
-    for key, ref in (("default", default), (QA_JOB, qa)):
-        if not is_digest_ref(ref):
-            raise StageError("BUILDER_PIN_MISSING", f"builder-pins.json builders.{key} must be an image@sha256 digest")
-    return version, sha, default, qa
+    run_default, lifecycle_image = run_images.get("default"), lifecycle.get("image")
+    for key, ref in (("builders.default", default), (f"builders.{QA_JOB}", qa), ("run_images.default", run_default),
+                     ("lifecycle.image", lifecycle_image)):
+        # no whitespace: build.sh reads the six values as one space-separated line
+        if not is_digest_ref(ref) or any(c.isspace() for c in ref):
+            raise StageError("BUILDER_PIN_MISSING", f"builder-pins.json {key} must be an image@sha256 digest")
+    return version, sha, default, qa, run_default, lifecycle_image
 
 
 # ------------------------------------------------------------------------------------------------ components
@@ -522,7 +590,10 @@ def main(argv: Optional[List[str]] = None, http_factory: Optional[Callable[[str]
     s = sub.add_parser("docker-config")
     s.add_argument("--region", required=True)
     s.add_argument("--out", required=True)
-    s = sub.add_parser("digest")
+    s = sub.add_parser("tag-absent")
+    s.add_argument("--image", required=True)
+    s = sub.add_parser("report-digest")
+    s.add_argument("--report", required=True)
     s.add_argument("--image", required=True)
     s = sub.add_parser("check")
     for f in ("--project", "--region", "--deployed", "--out"):
@@ -567,8 +638,11 @@ def main(argv: Optional[List[str]] = None, http_factory: Optional[Callable[[str]
             with os.fdopen(fd, "w") as fh:
                 json.dump({"auths": {registry_host(a.region): {"auth": auth}}}, fh)
             return 0
-        if a.cmd == "digest":
-            print(resolve_digest(http_factory(""), a.image))
+        if a.cmd == "tag-absent":
+            require_tag_absent(http_factory(""), a.image)
+            return 0
+        if a.cmd == "report-digest":
+            print(report_digest(a.report, a.image))
             return 0
         if a.cmd == "check":
             with open(a.deployed, encoding="utf-8") as fh:

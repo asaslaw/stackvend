@@ -218,8 +218,8 @@ run "enabled_before_step_b" {
       && length(google_cloudbuild_trigger.platform_upgrade[0].build[0].step) == 2
       && google_cloudbuild_trigger.platform_upgrade[0].build[0].step[0].id == "step0-unpack"
       && join("\n", google_cloudbuild_trigger.platform_upgrade[0].build[0].step[0].env) == join("\n", [
-        "STACKVEND_STEP0_VERIFY_SH_B64=${base64encode(file("${path.module}/upgrade_step0/verify.sh"))}",
-        "STACKVEND_STEP0_GUARD_PY_B64=${base64encode(file("${path.module}/upgrade_step0/guard.py"))}",
+        "STACKVEND_STEP0_VERIFY_SH_GZ_B64=${base64gzip(file("${path.module}/upgrade_step0/verify.sh"))}",
+        "STACKVEND_STEP0_GUARD_PY_GZ_B64=${base64gzip(file("${path.module}/upgrade_step0/guard.py"))}",
         "STACKVEND_OFFICIAL_ALLOWED_SIGNERS_B64=${base64encode(file("${path.module}/../../scripts/release/allowed_signers"))}",
       ])
       && !strcontains(google_cloudbuild_trigger.platform_upgrade[0].build[0].step[0].args[1], "$")
@@ -231,7 +231,8 @@ run "enabled_before_step_b" {
         "--official-signers", "/workspace/step0/allowed_signers", "--workdir", "/workspace/up",
       ])
       && length(google_cloudbuild_trigger.platform_upgrade[0].build[0].step[1].args) == 14
-      && try(length(google_cloudbuild_trigger.platform_upgrade[0].build[0].step[1].env), 0) == 0
+      && alltrue([for e in google_cloudbuild_trigger.platform_upgrade[0].build[0].step[0].env : length(e) < 65536])
+      && join("\n", google_cloudbuild_trigger.platform_upgrade[0].build[0].step[1].env) == "BUILD_ID=$BUILD_ID"
     )
     error_message = "build: unpack (embedded copies + signers, no $) then verify.sh run with the request id as its own argument, 2 h"
   }

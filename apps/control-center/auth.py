@@ -296,16 +296,18 @@ def render_forbidden_html(email: str) -> str:
 
 
 def render_sign_in_html(nonce: str = "") -> str:
-    active_client_id = (
-        config.get_google_oauth_client_id()
-        if hasattr(config, "get_google_oauth_client_id")
-        else getattr(config, "GOOGLE_OAUTH_CLIENT_ID", "")
-    )
+    # FD-103: one pass over the stores gives the client and the state. A read failure ("unknown") shows a
+    # "temporarily unavailable" notice, never the one-time setup instructions.
+    active_client_id, client_state = config.resolve_google_oauth_client()
+    config_unavailable = not active_client_id and client_state == "unknown"
     client_id_escaped = html.escape(active_client_id)
     admin_email_val = getattr(config, "DEFAULT_ADMIN_EMAIL", "") or os.getenv("ADMIN_EMAIL", "")
     admin_email_escaped = html.escape(admin_email_val)
     project_id_val = getattr(config, "PROJECT_ID", "") or os.getenv("PROJECT_ID", "")
     project_id_escaped = html.escape(project_id_val)
+    # FD-103: the first-run panel is instructions only (the install's tfvars file and the apply command).
+    project_label_escaped = html.escape(project_id_val or "<project_id>")
+    apply_where_escaped = html.escape(config.apply_where(project_id_val))
 
     template = """<!DOCTYPE html>
 <html lang="en">
@@ -317,7 +319,7 @@ def render_sign_in_html(nonce: str = "") -> str:
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script defer src="/static/vendor/alpinejs-3.14.9.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center font-sans p-6" x-data="googleAuthController(__CLIENT_ID_JS__, __PROJECT_ID_JS__)">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center font-sans p-6" x-data="googleAuthController(__CLIENT_ID_JS__, __PROJECT_ID_JS__, __CONFIG_UNAVAILABLE_JS__)">
     <div class="max-w-2xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 sm:p-10 shadow-2xl space-y-6">
         <div class="flex items-center justify-center">
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-white text-2xl shadow-lg shadow-indigo-500/20">
@@ -358,7 +360,11 @@ def render_sign_in_html(nonce: str = "") -> str:
                     </div>
                 </div>
 
-                <div x-show="!clientId" class="p-5 bg-slate-950/90 border border-slate-800 rounded-xl space-y-3.5 text-left shadow-inner">
+                <div x-show="configUnavailable" x-cloak style="display:none" class="p-5 bg-slate-950/90 border border-amber-500/30 rounded-xl text-left text-xs text-amber-300 leading-relaxed">
+                    Sign-in is temporarily unavailable: the Control Center cannot read its sign-in configuration right now. Reload this page in a minute.
+                </div>
+
+                <div x-show="!clientId &amp;&amp; !configUnavailable" class="p-5 bg-slate-950/90 border border-slate-800 rounded-xl space-y-3.5 text-left shadow-inner">
                     <div class="flex items-center justify-between">
                         <p class="text-xs text-amber-400 font-semibold flex items-center gap-1.5">
                             <span>🔑</span> Configure Google Sign-In
@@ -404,24 +410,30 @@ def render_sign_in_html(nonce: str = "") -> str:
 
                         <div class="flex items-start gap-2.5 pt-2.5 border-t border-slate-800">
                             <span class="font-bold text-indigo-400 text-xs">3.</span>
-                            <div class="flex-1">
-                                <p class="text-slate-300">Paste your generated <b>Client ID</b> below and click Save:</p>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-slate-300">Put the new <b>Client ID</b> in the install's settings file <span class="font-mono text-slate-200">infra/platform/__PROJECT_LABEL__.tfvars</span>:</p>
+                                <pre class="bg-slate-950 px-3 py-2 rounded-lg mt-1.5 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap break-all select-all">cc_google_oauth_client_id = "&lt;client-id&gt;"</pre>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5 pt-2.5 border-t border-slate-800">
+                            <span class="font-bold text-indigo-400 text-xs">4.</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-slate-300">Apply it, then reload this page:</p>
+                                <pre class="bg-slate-950 px-3 py-2 rounded-lg mt-1.5 border border-slate-800 font-mono text-xs text-slate-200 whitespace-pre-wrap break-all select-all">PROJECT_ID=__PROJECT_LABEL__ bash scripts/apply.sh apply</pre>
+                                <p class="mt-1 text-[11px] text-slate-400 leading-relaxed">__APPLY_WHERE__</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5 pt-2.5 border-t border-slate-800">
+                            <span class="font-bold text-indigo-400 text-xs">&bull;</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-slate-400 text-[11px] leading-relaxed">Local development: start the Control Center with the environment variable <span class="font-mono text-slate-200 select-all">GOOGLE_OAUTH_CLIENT_ID=&lt;client-id&gt;</span> instead.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex gap-2 pt-1">
-                        <input type="text"
-                               x-model="manualClientId"
-                               placeholder="123456789-abcdef.apps.googleusercontent.com"
-                               class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500">
-                        <button @click="saveClientId()"
-                                :disabled="!manualClientId.trim() || isSavingClientId"
-                                class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition shadow-sm whitespace-nowrap">
-                            <span x-show="!isSavingClientId">Save &amp; Sign In</span>
-                            <span x-show="isSavingClientId">Saving...</span>
-                        </button>
-                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">For security, the sign-in client cannot be set from this page.</p>
                 </div>
             </div>
         </div>
@@ -433,7 +445,6 @@ def render_sign_in_html(nonce: str = "") -> str:
 
     <script nonce="__CSP_NONCE__">
         window.handleCredentialResponse = async function(response) {
-            console.log("Global handleCredentialResponse received token:", response);
             try {
                 const res = await fetch('/auth/google-login', {
                     method: 'POST',
@@ -444,21 +455,19 @@ def render_sign_in_html(nonce: str = "") -> str:
                 if (res.ok) {
                     window.location.href = '/';
                 } else {
-                    alert(data.detail || 'Authentication failed. Please try again.');
+                    alert((data.detail && data.detail.message) || data.detail || 'Authentication failed. Please try again.');
                 }
             } catch (err) {
                 alert('Network error verifying identity: ' + err);
             }
         };
-        function googleAuthController(initialClientId, initialProjectId) {
+        function googleAuthController(initialClientId, initialProjectId, initialConfigUnavailable) {
             return {
                 clientId: initialClientId || '',
                 projectId: initialProjectId || '',
+                configUnavailable: !!initialConfigUnavailable,
                 originUrl: window.location.origin,
                 copiedOrigin: false,
-                manualClientId: '',
-                isSavingClientId: false,
-                pendingFirstRunClientId: '',
                 errorMessage: '',
                 successMessage: '',
 
@@ -504,13 +513,10 @@ def render_sign_in_html(nonce: str = "") -> str:
                     this.errorMessage = '';
                     this.successMessage = 'Verifying credential with StackVend...';
                     try {
-                        const firstRun = !!this.pendingFirstRunClientId;
-                        const res = await fetch(firstRun ? '/auth/config-client-id' : '/auth/google-login', {
+                        const res = await fetch('/auth/google-login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(firstRun
-                                ? { client_id: this.pendingFirstRunClientId, credential: response.credential }
-                                : { credential: response.credential })
+                            body: JSON.stringify({ credential: response.credential })
                         });
                         const data = await res.json();
                         if (res.ok) {
@@ -518,24 +524,12 @@ def render_sign_in_html(nonce: str = "") -> str:
                             setTimeout(() => { window.location.href = '/'; }, 600);
                         } else {
                             this.successMessage = '';
-                            this.errorMessage = data.detail || 'Authentication failed. Please try again.';
+                            this.errorMessage = (data.detail && data.detail.message) || data.detail || 'Authentication failed. Please try again.';
                         }
                     } catch (err) {
                         this.successMessage = '';
                         this.errorMessage = 'Network error verifying identity: ' + err;
                     }
-                },
-
-                async saveClientId() {
-                    const id = this.manualClientId.trim();
-                    if (!id) return;
-                    this.errorMessage = '';
-                    // First run: no server write yet. Initialise Google Sign-In with the NEW client ID; the
-                    // server stores it only after the administrator proves identity with a token for it.
-                    this.pendingFirstRunClientId = id;
-                    this.clientId = id;
-                    this.successMessage = 'Now sign in with the administrator Google account to finish setup.';
-                    this.$nextTick(() => { this.setupGoogleSignIn(); });
                 }
             }
         }
@@ -548,10 +542,13 @@ def render_sign_in_html(nonce: str = "") -> str:
     return (
         template.replace('__CLIENT_ID_JS__', html.escape(json.dumps(active_client_id)))
         .replace('__PROJECT_ID_JS__', html.escape(json.dumps(project_id_val)))
+        .replace('__CONFIG_UNAVAILABLE_JS__', html.escape(json.dumps(config_unavailable)))
         .replace('__CSP_NONCE__', html.escape(nonce))
         .replace('__CLIENT_ID__', client_id_escaped)
         .replace('__ADMIN_EMAIL__', admin_email_escaped)
         .replace('__PROJECT_ID__', project_id_escaped)
+        .replace('__PROJECT_LABEL__', project_label_escaped)
+        .replace('__APPLY_WHERE__', apply_where_escaped)
     )
 
 

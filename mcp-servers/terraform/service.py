@@ -360,9 +360,43 @@ SERVICE_URL_UNKNOWN = "SERVICE_URL_UNKNOWN"
 SERVICE_URL_API_UNAVAILABLE = "CLOUD_RUN_API_UNAVAILABLE"      # no credential, a non-200 answer, or an unreadable body
 SERVICE_URL_NOT_FOUND = "CLOUD_RUN_SERVICE_NOT_FOUND"          # the region lists no service with a `uri`
 SERVICE_URL_AMBIGUOUS = "CLOUD_RUN_SERVICE_AMBIGUOUS"          # several services and none has the workload's name
-SERVICE_URL_UNKNOWN_REASONS = (SERVICE_URL_API_UNAVAILABLE, SERVICE_URL_NOT_FOUND, SERVICE_URL_AMBIGUOUS)
+# FD-102 (register SEC-HOTFIX-SERVICE-URL-CONFIRMED): the apply's own output names a URL, but it is not a printable
+# string equal to the `uri` or one of the `urls` of a service in the complete Cloud Run listing of the child region
+SERVICE_URL_NOT_CONFIRMED = "CLOUD_RUN_URL_NOT_CONFIRMED"
+SERVICE_URL_UNKNOWN_REASONS = (SERVICE_URL_API_UNAVAILABLE, SERVICE_URL_NOT_FOUND, SERVICE_URL_AMBIGUOUS,
+                               SERVICE_URL_NOT_CONFIRMED)
 CLOUD_RUN_API = "https://run.googleapis.com/v2"
 _CLOUD_RUN_LIST_MAX_PAGES = 10
+
+
+def _without_one_trailing_slash(url: str) -> str:
+    return url[:-1] if url.endswith("/") else url
+
+
+def confirm_cloud_run_service_url(value: Any,
+                                  listed: Optional[List[Mapping[str, Any]]]) -> Tuple[str, Optional[str]]:
+    """FD-102: (the listed URL, None) when `value` is Run-API-confirmed, else ("", typed reason).
+
+    `value` is a URL the deploy did not read from the Cloud Run API (an apply output, which can be any JSON type).
+    It must be a `str` whose every character is printable (`urlsplit` silently drops tab, CR and LF, so nothing is
+    parsed before this check) and, after removing at most one trailing '/', equal the `uri` or one of the `urls` of a
+    service in `listed`, the complete Cloud Run v2 listing of the child project's region (None = the listing failed:
+    SERVICE_URL_API_UNAVAILABLE). The API's own string is returned (never the value), so from here on the URL is the
+    API's. Anything else is SERVICE_URL_NOT_CONFIRMED; no listing URL is ever substituted for an unconfirmed value."""
+    if not isinstance(value, str) or not value or not value.isprintable():
+        return "", SERVICE_URL_NOT_CONFIRMED
+    if listed is None:
+        return "", SERVICE_URL_API_UNAVAILABLE
+    wanted = _without_one_trailing_slash(value)
+    for service in listed:
+        if not isinstance(service, Mapping):
+            continue
+        urls = service.get("urls")
+        for candidate in [service.get("uri")] + (list(urls) if isinstance(urls, list) else []):
+            if (isinstance(candidate, str) and candidate and candidate.isprintable()
+                    and _without_one_trailing_slash(candidate) == wanted):
+                return candidate, None
+    return "", SERVICE_URL_NOT_CONFIRMED
 
 
 def cloud_run_service_short_name(service: Mapping[str, Any]) -> str:
@@ -399,6 +433,14 @@ def deploy_url_summary(res: Any) -> str:
         return url
     reason = res.get("service_url_unknown_reason")
     return f"unknown ({reason})" if isinstance(reason, str) and reason else "N/A"
+
+
+def callback_outputs(res: Any) -> Dict[str, str]:
+    """FD-102: the `outputs` a deploy outcome carries (callback body; `shared/callbacks.py` writes its `service_url`
+    into `pipeline_executions.outputs`): only the deploy's own `service_url`, a confirmed string or "". Never the
+    Terraform output map (which the result's `outputs` is), so a workload's output cannot become the run's URL."""
+    url = res.get("service_url") if isinstance(res, Mapping) else None
+    return {"service_url": url if isinstance(url, str) else ""}
 
 
 SIGNIN_DOMAINS_INCOMPLETE = "SIGNIN_DOMAINS_INCOMPLETE"
@@ -5445,7 +5487,7 @@ class TerraformService:
         res = self.apply_plan(product_id=product_id, trace_id=trace_id)
         is_success = res.get("status") in ("APPLIED", "SUCCESS")
         err = res.get("stderr") or res.get("error") or ""
-        service_url = res.get("outputs", {}).get("url", {}).get("value") if is_success else None
+        service_url = self._confirmed_output_url(res, product_id, target_project_id) if is_success else None
         self._sync_feature_requests(
             product_id=product_id,
             trace_id=trace_id,
@@ -5454,6 +5496,35 @@ class TerraformService:
             service_url=service_url,
         )
         return res
+
+    def _confirmed_output_url(self, res: Mapping[str, Any], product_id: str,
+                              target_project_id: Optional[str]) -> Optional[str]:
+        """FD-102: apply_infrastructure's URL (its `url` output) under the deploy's rule: only a Run-API-confirmed URL
+        (confirm_cloud_run_service_url, the child project's listing in the platform region), else None with the typed
+        SERVICE_URL_UNKNOWN reason logged. No output URL: None, and nothing is listed."""
+        outputs = res.get("outputs") if isinstance(res, Mapping) else None
+        entry = outputs.get("url") if isinstance(outputs, Mapping) else None
+        value = entry.get("value") if isinstance(entry, Mapping) else None
+        if value is None or value == "":
+            return None
+        if not isinstance(target_project_id, str) or not target_project_id:
+            # R2: no project id is built from the product id; without the run's child project nothing is listed
+            logger.warning(f"{SERVICE_URL_UNKNOWN} ({SERVICE_URL_API_UNAVAILABLE}) for '{product_id}': no target "
+                           "project, so the applied output URL cannot be confirmed and is not recorded.")
+            return None
+        project = target_project_id
+        try:
+            region = self._resolve_region()
+        except RegionUnavailable as region_err:
+            logger.warning(f"{SERVICE_URL_UNKNOWN} ({SERVICE_URL_API_UNAVAILABLE}) for '{product_id}': {region_err}")
+            return None
+        listed, list_reason = self._list_cloud_run_services(project, region)
+        confirmed, reason = confirm_cloud_run_service_url(value, listed)
+        if not confirmed:
+            logger.warning(f"{SERVICE_URL_UNKNOWN} ({list_reason or reason}) for '{product_id}' in '{project}': the "
+                           "applied output URL is not confirmed by the Cloud Run API, so it is not recorded.")
+            return None
+        return confirmed
 
     def check_drift(self, product_id: str, trace_id: str, iac_engine: Optional[str] = None) -> Dict[str, Any]:
         """Drift detection via `plan -detailed-exitcode` with the workload's resolved engine.
@@ -9193,11 +9264,6 @@ class TerraformService:
         # RT14-09: `outputs` (records, result, callback) is masked by the engine's own `sensitive` flag; the unmasked
         # map stays in memory for the URL / cluster / sign-in domain reads below and is never stored or returned.
         outputs, raw_outputs = self._read_tofu_outputs(workspace_dir, active_engine)
-        if raw_outputs and not service_url:
-            try:
-                service_url = (raw_outputs.get("service_url") or raw_outputs.get("service_uri") or raw_outputs.get("url") or {}).get("value", "")
-            except Exception:
-                service_url = ""
 
         # FD-4DE (fail-loudly rule 1.4): no URL is built from ids. A successful container deploy whose outputs name
         # no URL reads the real one from the Cloud Run v2 API; when that gives none, the URL is unknown with a typed
@@ -9205,15 +9271,31 @@ class TerraformService:
         cloud_run_listing: Dict[str, Any] = {}
 
         def _cloud_run_services() -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
-            # one listing per deploy, shared by the URL lookup and the sign-in domain step below
+            # one listing per deploy, shared by the URL confirmation, the URL lookup and the sign-in domain step
             if "result" not in cloud_run_listing:
                 cloud_run_listing["result"] = self._list_cloud_run_services(target_project_id, workload_region)
             return cloud_run_listing["result"]
 
         service_url_unknown_reason: Optional[str] = None
+        # FD-102: the URL an output names is the workload's own (its Terraform writes it), so it is recorded only when
+        # Run-API-confirmed (confirm_cloud_run_service_url), right here, before every write; then the API's string is
+        # used. An unconfirmed output records "" with its typed reason (and the SERVICE_URL_UNKNOWN warning below) and
+        # is never replaced by a URL picked from the listing. No listing is made for a failed deploy. Not covered: the
+        # sign-in domain step (3b) still authorizes the host of any output whose value contains "run.app" without this
+        # confirmation (FD-146).
+        if raw_outputs and not service_url and is_successful_deploy:
+            output_entry = (raw_outputs.get("service_url") or raw_outputs.get("service_uri")
+                            or raw_outputs.get("url"))
+            output_value = output_entry.get("value") if isinstance(output_entry, Mapping) else None
+            if output_value is not None and output_value != "":
+                listed, list_reason = _cloud_run_services()
+                service_url, service_url_unknown_reason = confirm_cloud_run_service_url(output_value, listed)
+                if service_url_unknown_reason == SERVICE_URL_API_UNAVAILABLE and list_reason:
+                    service_url_unknown_reason = list_reason   # the listing's own typed reason
+
         # RT F1: a typed topology without a `cloudrun` service (GKE, event worker only) expects no URL: no lookup, no
         # unknown reason (as a deploy with nothing to build)
-        if (not service_url and is_successful_deploy and needs_container_build
+        if (not service_url and service_url_unknown_reason is None and is_successful_deploy and needs_container_build
                 and topology_expects_service_url(service_kinds)):
             clean_pid = product_id.lower().replace("_", "-")
             listed, list_reason = _cloud_run_services()

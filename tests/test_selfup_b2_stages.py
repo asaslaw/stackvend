@@ -43,6 +43,8 @@ rm = _load("selfup_b2_stages_rm", "shared/release_manifest.py")
 rr = _load("selfup_b2_release_record", "scripts/common/release_record.py")
 
 PROJ, REGION = "proj-aaaa1", "us-central1"
+RUN_PIN = "r/run-universal@sha256:" + "c" * 64
+LIFECYCLE_PIN = "docker.io/buildpacksio/lifecycle@sha256:" + "d" * 64
 AR = f"{REGION}-docker.pkg.dev/{PROJ}/castor-docker-repo"
 RID = "1" * 32
 RID2 = "2" * 32
@@ -92,13 +94,21 @@ cp "$STUB_PACK_TGZ" "$out"
 
 PACK_STUB = r'''#!/bin/bash
 echo "pack $*" >> "$STUB_LOG"
-img="$2"; path=""; prev=""
-for x in "$@"; do [ "$prev" = "--path" ] && path="$x"; prev="$x"; done
+img="$2"; path=""; report=""; prev=""
+for x in "$@"; do [ "$prev" = "--path" ] && path="$x"; [ "$prev" = "--report-output-dir" ] && report="$x"; prev="$x"; done
 [ -f "$path/release.json" ] || { echo "no release.json in $path" >&2; exit 1; }
 [ -f "$DOCKER_CONFIG/config.json" ] || { echo "no docker config" >&2; exit 1; }
 case ",${STUB_FAIL_BUILD:-}," in *",$(basename "${img%%:*}"),"*) exit 1 ;; esac
 mkdir -p "$STUB_API_DIR/pushed"
-python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest())' "$img" | xargs -I{} touch "$STUB_API_DIR/pushed/{}"
+sha="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.argv[1].encode()).hexdigest())' "$img")"
+touch "$STUB_API_DIR/pushed/${sha}"
+# pack's report.toml (lifecycle export report): the digest the registry holds for the pushed tag
+if [ -n "$report" ]; then
+    case ",${STUB_BAD_REPORT:-}," in
+        *",$(basename "${img%%:*}"),"*) printf '[image]\ntags = ["%s"]\n' "$img" > "$report/report.toml" ;;
+        *) printf '[image]\ntags = ["%s"]\ndigest = "sha256:%s"\n' "$img" "$sha" > "$report/report.toml" ;;
+    esac
+fi
 '''
 
 
@@ -186,16 +196,20 @@ class Env:
         self.pack_tgz = os.path.join(self.tmp, "pack.tgz")
         with open(self.pack_tgz, "wb") as fh:
             fh.write(buf.getvalue())
-        self.set_pins(hashlib.sha256(buf.getvalue()).hexdigest())
+        self.pack_sha = hashlib.sha256(buf.getvalue()).hexdigest()
+        self.set_pins(self.pack_sha)
         _git(self.src, "init", "-q")
         _git(self.src, "add", "-A")
         _git(self.src, "commit", "-q", "-m", "release 0.9.2")
         self.commit = _git(self.src, "rev-parse", "HEAD").stdout.strip()
 
-    def set_pins(self, sha, builders=True):
+    def set_pins(self, sha, builders=True, **overrides):
         pins = {"pack": {"version": "0.36.0", "linux_amd64_sha256": sha},
-                "builders": {"default": "gcr.io/buildpacks/builder@sha256:" + "a" * 64 if builders else "",
-                             "qa-sandbox-test-runner": "r/universal@sha256:" + "b" * 64 if builders else ""}}
+                "builders": {"default": "r/builder-default@sha256:" + "a" * 64 if builders else "",
+                             "qa-sandbox-test-runner": "r/universal@sha256:" + "b" * 64 if builders else ""},
+                "run_images": {"default": RUN_PIN if builders else ""},
+                "lifecycle": {"version": "0.21.25", "image": LIFECYCLE_PIN if builders else ""}}
+        pins.update(overrides)
         with open(os.path.join(self.src, "scripts", "upgrade", "builder-pins.json"), "w") as fh:
             json.dump(pins, fh)
 
@@ -271,9 +285,20 @@ def test_upgrade_builds_everything_then_deploys_image_only_cc_last(env):
     assert p["status"] == "SUCCEEDED" and p["stage"] == "DONE", p
     builds = env.calls("pack build")
     assert len(builds) == 23  # 14 services + 9 jobs (C10: +3); tf-applier and stage-runner are never built
-    assert all(f":0.9.2-{env.commit[:12]} " in b and " --publish " in b for b in builds)
+    assert all(f":0.9.2-{env.commit[:12]}-{RID[:12]} " in b and " --publish " in b for b in builds)
     qa = [b for b in builds if "qa-sandbox-test-runner:" in b][0]
     assert "--builder r/universal@sha256:" in qa
+    # FD-148 builder parity: every component (the QA job too) builds on the pinned --source run image with the pinned
+    # lifecycle, the runtime source --source uses (the install's region, never a hardcoded one), and none trusts the
+    # builder
+    for b in builds:
+        assert f" --run-image {RUN_PIN} --lifecycle-image {LIFECYCLE_PIN} " in b, b
+        assert (f" --env GOOGLE_RUNTIME_IMAGE_REGION={REGION} --env GOOGLE_USE_SERVERLESS_RUNTIMES_TARBALLS=true "
+                in b), b
+        assert "--trust-builder" not in b and "--network" not in b, b
+        assert " --report-output-dir " in b, b
+        if b is not qa:
+            assert "--builder r/builder-default@sha256:" in b, b
     ups = _updates(env)
     assert len(ups) == 25   # C10: + 3 jobs; STAGE-JOB-RUNNER: + stage-runner
     assert ups[-1].startswith("gcloud run services update product-control-center-ui --image ")
@@ -407,12 +432,202 @@ def test_committed_builder_pins_are_filled_and_valid():
     assert pins is not None
 
 
+def test_fd148_committed_pins_match_the_source_deploy_builder():
+    """FD-148 builder parity (read-only from 2026-11-20 `gcloud run deploy --source` Cloud Build records and the
+    live image's labels): the platform builder and its run image are the serverless-runtimes ones,
+    never the old gcr.io/buildpacks/builder (Ubuntu 18.04, Python <= 3.11); the lifecycle is pinned too."""
+    _pack, _sha, default, qa, run_image, lifecycle = stage.read_pins(
+        json.load(open(os.path.join(UPGRADE, "builder-pins.json"))))
+    assert default == ("us-central1-docker.pkg.dev/serverless-runtimes/google-24-full/builder/universal"
+                       "@sha256:eed34031fd9ba4ecce8d844f7ef0b97ab06811649b64f4312853de8c82f3b981")
+    assert run_image == ("us-central1-docker.pkg.dev/serverless-runtimes/google-24/run/universal"
+                         "@sha256:4a040650646e5d6d193156dcba8a4452502df9b88fbb409577654569fb57216f")
+    assert lifecycle == ("mirror.gcr.io/buildpacksio/lifecycle"
+                         "@sha256:319ef7d97a2e9e1fc82cd83fcb632a223647dbfb23b0fe8bb27846bc98247d1d")
+    assert qa == default  # the QA job's --source build used the same builder
+    assert "gcr.io/buildpacks/builder" not in json.dumps(json.load(open(os.path.join(UPGRADE, "builder-pins.json")))
+                                                         ["builders"])
+
+
+def _code_lines(path):
+    """The shell lines that run (comment lines and trailing comments removed)."""
+    out = []
+    for line in open(path, encoding="utf-8").read().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        out.append(line.split(" # ", 1)[0])
+    return "\n".join(out)
+
+
+def test_fd148_build_sh_never_trusts_the_builder_and_pins_lifecycle_and_run_image():
+    """Attacker review: pack is never given --trust-builder (the builder's own lifecycle would get the registry
+    credentials) nor --network (build containers must not reach the metadata server); the comment says why."""
+    path = os.path.join(UPGRADE, "build.sh")
+    code = _code_lines(path)
+    for flag in ("--trust-builder", "--network", "trust-builder"):
+        assert flag not in code, flag
+    src = open(path, encoding="utf-8").read()
+    assert "NEVER add pack's trust-builder flag" in src and "or its\n    # network flag" in src
+    assert '--run-image "${RUN_IMAGE}" --lifecycle-image "${LIFECYCLE_IMAGE}"' in code
+    assert '--env "GOOGLE_RUNTIME_IMAGE_REGION=${UP_REGION}"' in code  # the install's region, never a literal one
+    assert '--report-output-dir "${W}/report/${name}"' in code and "report-digest --report" in code
+    assert "stage_py digest" not in code  # the tag is never re-read for the digest
+
+
+def test_fd148_negative_code_line_filter_keeps_flags():
+    """The filter above only drops comments: a flag on a code line is still seen."""
+    import tempfile as _t
+    with _t.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+        fh.write('# --network host\n"${PACK}" build x --trust-builder  # comment\npack --network host\n')
+    try:
+        code = _code_lines(fh.name)
+    finally:
+        os.unlink(fh.name)
+    assert "--trust-builder" in code and "--network host" in code and code.count("--network") == 1
+
+
+def test_fd148_report_digest_reads_packs_report(tmp_path):
+    image = f"{AR}/svc:0.9.2-abc-123"
+    good = tmp_path / "report.toml"
+    good.write_text('[image]\ntags = ["%s"]\ndigest = "sha256:%s"\n' % (image, "e" * 64))
+    assert stage.report_digest(str(good), image) == f"{AR}/svc@sha256:" + "e" * 64
+    tags = 'tags = ["%s"]\n' % image
+    bad_cases = {
+        "missing.toml": None,
+        "nodigest.toml": '[image]\n' + tags,
+        "short.toml": '[image]\n' + tags + 'digest = "sha256:%s"\n' % ("e" * 63),
+        "notsha.toml": '[image]\n' + tags + 'digest = "md5:%s"\n' % ("e" * 64),
+        "broken.toml": '[image\n',
+        "noimage.toml": tags + 'digest = "sha256:%s"\n' % ("e" * 64),
+        # the report must be for this image: its [image] tags name it exactly
+        "notags.toml": '[image]\ndigest = "sha256:%s"\n' % ("e" * 64),
+        "othertag.toml": '[image]\ntags = ["%s"]\ndigest = "sha256:%s"\n' % (image + "0", "e" * 64),
+        "tagsstring.toml": '[image]\ntags = "%s"\ndigest = "sha256:%s"\n' % (image, "e" * 64),
+        "othersvc.toml": '[image]\ntags = ["%s"]\ndigest = "sha256:%s"\n' % (f"{AR}/other:0.9.2-abc-123", "e" * 64),
+    }
+    for name, text in bad_cases.items():
+        if text is not None:
+            (tmp_path / name).write_text(text)
+        with pytest.raises(stage.StageError) as e:
+            stage.report_digest(str(tmp_path / name), image)
+        assert e.value.code == "DIGEST_UNKNOWN", name
+
+
+def test_fd148_build_one_checks_the_tag_right_before_its_build():
+    """The up-front pass refuses before anything is built; build_one checks its own tag again immediately before
+    `pack build` (narrows the window for an image planted meanwhile)."""
+    code = _code_lines(os.path.join(UPGRADE, "build.sh"))
+    upfront = code.index('up_stage_py tag-absent --image "$(image_of "${name}")" || exit $?')
+    body = code[code.index("build_one() {"):code.index("PARALLEL_LIMIT=")]
+    assert upfront < code.index("build_one() {")
+    check = body.index('up_stage_py tag-absent --image "${image}" || return 1')
+    assert check < body.index('"${PACK}" build') < body.index("report-digest --report")
+    assert body.count("tag-absent") == 1
+
+
+def test_fd148_require_tag_absent():
+    image = f"{AR}/svc:0.9.2-abc-123"
+    stage.require_tag_absent(Api({}), image)  # 404: absent
+    for status, code in ((200, "IMAGE_TAG_EXISTS"), (500, "API_FAILED"), (403, "API_FAILED")):
+        api = Api({("HEAD", "/manifests/0.9.2-abc-123"): (status, None, {})})
+        with pytest.raises(stage.StageError) as e:
+            stage.require_tag_absent(api, image)
+        assert e.value.code == code
+        assert api.calls == [("HEAD", f"https://{REGION}-docker.pkg.dev/v2/{PROJ}/castor-docker-repo/svc/manifests/"
+                                      "0.9.2-abc-123")]
+    for bad in (f"{AR}/svc", f"{AR}/svc@sha256:" + "a" * 64, "svc:tag"):
+        with pytest.raises(stage.StageError) as e:
+            stage.require_tag_absent(Api({}), bad)
+        assert e.value.code == "USAGE"
+
+
+def test_fd148_preexisting_tag_builds_and_deploys_nothing(env):
+    """A pre-planted image under this request's tag is refused before any build (typed IMAGE_TAG_EXISTS)."""
+    st = env.read_state()
+    st.setdefault("registry_tags", {})[f"{AR}/product-control-center-ui:0.9.2-{env.commit[:12]}-{RID[:12]}"] = \
+        "sha256:" + "f" * 64
+    env.write_state(st)
+    rc, out = env.run()
+    assert rc == stage.FAIL_CODES["IMAGE_TAG_EXISTS"], out
+    assert "IMAGE_TAG_EXISTS" in out and env.progress()["status"] == "FAILED_BUILDING"
+    assert env.calls("pack ") == [] and _updates(env) == []
+
+
+def test_fd148_a_report_without_digest_deploys_nothing(env):
+    rc, out = env.run(STUB_BAD_REPORT="orchestrator-gateway-service")
+    assert rc == stage.FAIL_CODES["BUILD_FAILED"], out
+    assert env.progress()["status"] == "FAILED_BUILDING" and _updates(env) == []
+
+
+def test_fd148_deployed_digest_is_packs_reported_digest(env):
+    """The deployed image is exactly the digest pack reported for this request's tag."""
+    import hashlib as _h
+    rc, out = env.run()
+    assert rc == 0, out
+    image = f"{AR}/product-control-center-ui:0.9.2-{env.commit[:12]}-{RID[:12]}"
+    expected = f"{AR}/product-control-center-ui@sha256:" + _h.sha256(image.encode()).hexdigest()
+    cc = [u for u in _updates(env) if u.startswith("gcloud run services update product-control-center-ui ")]
+    assert cc and f" --image {expected} " in cc[0], cc
+
+
 def test_empty_builder_pins_are_refused():
     """An empty pin file (a fork that has not filled it) is refused: digests are never guessed."""
     empty = {"pack": {"version": "", "linux_amd64_sha256": ""}, "builders": {"default": "", "qa-sandbox-test-runner": ""}}
     with pytest.raises(stage.StageError) as e:
         stage.read_pins(empty)
     assert e.value.code == "BUILDER_PIN_MISSING"
+
+
+def _good_pins():
+    return {"pack": {"version": "0.40.10", "linux_amd64_sha256": "a" * 64},
+            "builders": {"default": "r/b@sha256:" + "a" * 64, "qa-sandbox-test-runner": "r/q@sha256:" + "b" * 64},
+            "run_images": {"default": RUN_PIN}, "lifecycle": {"version": "0.21.25", "image": LIFECYCLE_PIN}}
+
+
+def test_fd148_negative_good_pins_are_read_unchanged():
+    """Do No Harm: a complete pin file reads back exactly, in build.sh's order."""
+    assert stage.read_pins(_good_pins()) == ("0.40.10", "a" * 64, "r/b@sha256:" + "a" * 64, "r/q@sha256:" + "b" * 64,
+                                             RUN_PIN, LIFECYCLE_PIN)
+
+
+@pytest.mark.parametrize("section,key,value", [
+    ("run_images", None, None),                                                   # no run_images section
+    ("run_images", "default", None),                                              # missing
+    ("run_images", "default", ""),                                                # empty
+    ("run_images", "default", "us-central1-docker.pkg.dev/serverless-runtimes/google-24/run/universal:public-image-next"),
+    ("run_images", "default", "r/run@sha256:" + "c" * 63),                        # short digest
+    ("run_images", "default", "r/run x@sha256:" + "c" * 64),                      # whitespace splits build.sh's read
+    ("lifecycle", None, None),                                                    # no lifecycle section
+    ("lifecycle", "image", None),
+    ("lifecycle", "image", ""),
+    ("lifecycle", "image", "docker.io/buildpacksio/lifecycle:0.21.25"),           # tag only
+    ("lifecycle", "image", "buildpacksio/lifecycle@sha256:" + "d" * 63 + "z"),     # not hex
+    ("lifecycle", "version", ""),
+    ("lifecycle", "version", "0.21"),
+    ("builders", "default", "gcr.io/buildpacks/builder:v1"),                      # tag only (unchanged rule)
+])
+def test_fd148_missing_or_tag_only_run_image_or_lifecycle_is_refused(section, key, value):
+    pins = _good_pins()
+    if key is None:
+        pins.pop(section)
+    elif value is None:
+        pins[section].pop(key)
+    else:
+        pins[section][key] = value
+    with pytest.raises(stage.StageError) as e:
+        stage.read_pins(pins)
+    assert e.value.code == "BUILDER_PIN_MISSING"
+
+
+@pytest.mark.parametrize("override", [{"run_images": {"default": ""}},
+                                      {"lifecycle": {"version": "0.21.25", "image": "buildpacksio/lifecycle:0.21.25"}}])
+def test_fd148_missing_run_image_or_lifecycle_builds_and_deploys_nothing(env, override):
+    env.set_pins(env.pack_sha, **override)
+    rc, out = env.run()
+    assert rc == stage.FAIL_CODES["BUILDER_PIN_MISSING"], out
+    assert env.progress()["status"] == "FAILED_BUILDING"
+    assert env.calls("pack ") == [] and _updates(env) == []
 
 
 def test_pack_tarball_with_the_wrong_hash_is_refused(env):

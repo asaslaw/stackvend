@@ -138,7 +138,8 @@ def test_async_deploy_success_reports_success(tf_main, sent_callbacks):
         tf_main.run_deploy_in_background(req)
     last = sent_callbacks[-1]
     assert last["status"] == "SUCCESS" and last["error"] is None and "reported_status" not in last
-    assert last["service_url"] == "https://x" and last["outputs"]["status"] == "SUCCESS"
+    assert last["service_url"] == "https://x"
+    assert last["outputs"] == {"service_url": "https://x"}   # FD-102: the deploy's URL only, never the result map
 
 
 def test_async_deploy_old_deployed_word_is_failed(tf_main, sent_callbacks):
@@ -150,14 +151,14 @@ def test_async_deploy_old_deployed_word_is_failed(tf_main, sent_callbacks):
 
 
 def test_async_deploy_failure_word_cannot_override_failed(tf_main, sent_callbacks):
-    # F1: the status is set after update(res): the result's own word stays in outputs, the outcome says FAILED.
+    # F1: the status is set after update(res): the outcome says FAILED whatever the result's own word.
     tf_main.service.deploy_workload = MagicMock(return_value={"status": "VALIDATION_FAILED", "error": "undeclared"})
     req = tf_main.AsyncDeployRequest(product_id="app", trace_id="t-fd4dc-3", callback_url="http://127.0.0.1:9/cb")
     with patch.object(tf_main, "trigger_tf_applier_job", return_value=False):
         tf_main.run_deploy_in_background(req)
     last = sent_callbacks[-1]
     assert last["status"] == "FAILED" and last["error"] == "undeclared"
-    assert "reported_status" not in last and last["outputs"]["status"] == "VALIDATION_FAILED"
+    assert "reported_status" not in last and last["outputs"] == {"service_url": ""}   # FD-102
 
 
 def test_sync_deploy_success_and_stray_deployed(tf_main):
