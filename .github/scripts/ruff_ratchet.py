@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-F821 (undefined name) / F811 (redefined unused name) ratchet for CI (FD-60, FD-4AH; red-team F10).
+F821 (undefined name) / F811 (redefined unused name) / C901 (function too complex) ratchet for CI (FD-60, FD-4AH,
+FD-85; red-team F10).
 
 The baseline is a multiset of fingerprints ``path|code|symbol`` (no line numbers, so unrelated edits do not churn it).
 CI fails on any fingerprint whose count exceeds the baseline: one lane fixing an F821 cannot hide another lane adding
@@ -12,6 +13,15 @@ one. The baseline may only shrink (.github/scripts/allowlist_guard.py compares i
 ruff runs with --isolated (no repo/user config can exclude files or disable rules), --no-cache and --ignore-noqa
 (code red-team finding 5: a `# noqa: F821` comment must not hide a new undefined name from the ratchet; the two test
 harnesses that used such comments now bind their exec()-defined names explicitly).
+
+C901 (FD-85, docs/planning/code-readability-plan.md section 2): a function whose mccabe complexity is above
+MAX_COMPLEXITY. Its fingerprint is ``path|C901|name``: no line, no score, so a listed function may grow (count-only);
+a new function above the threshold is a new fingerprint and fails. C901 findings under the paths the public export
+drops (C901_EXCLUDED, the EXCLUDES of scripts/release/fresh_history.sh; tests/test_release_onto.py checks both
+directions) are not counted, so the public tree and the private one hold the same C901 list. F821/F811 keep the full
+file set. Check mode also fails on a "fixed" C901 entry (a listed function now at or below the threshold, or gone):
+remove it with --update in the same change, so a freed slot cannot be reused later. The baseline records ``select``
+and ``max_complexity``; check mode refuses a baseline whose values differ from this script's, or that lacks either.
 
 One F811 shape is not counted: a function parameter, or an assignment local to a function, that shadows a module-level
 import (the pytest pattern ``from support import gw`` then ``def test_x(gw)``). It rebinds nothing outside the function.
@@ -32,16 +42,41 @@ import tokenize
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, ".github", "lint-baseline.json")
-SELECT = "F821,F811"
+SELECT = "F821,F811,C901"
+MAX_COMPLEXITY = 15
+# scripts/release/fresh_history.sh EXCLUDES (not exported): C901 is not counted under these paths (a directory or an
+# exact file). tests/test_release_onto.py::test_c901_excluded_matches_the_export_excludes checks both directions.
+C901_EXCLUDED = ("docs", "eval/cassettes", "eval/.deps", "eval/.tofu-mirror", "eval/.tofu-mirror-prod",
+                 "eval/.tofu-cache", "eval/.tools", "scripts/release", "tests/test_release_fresh_history.py",
+                 "tests/test_release_onto.py", "eval/baseline/manifest.json", "eval/baseline/summary.json",
+                 "eval/baseline/SCOREBOARD.md")
 _SYMBOL = re.compile(r"`([^`]+)`")
 _FUNCTIONS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
 _SCOPES = _FUNCTIONS + (ast.ClassDef, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
 
 
+class BaselineMismatch(Exception):
+    """The baseline was not written with this script's SELECT / MAX_COMPLEXITY (check mode refuses it)."""
+
+
+def _relpath(item):
+    return os.path.relpath(item["filename"], ROOT).replace(os.sep, "/")
+
+
 def fingerprint(item):
-    path = os.path.relpath(item["filename"], ROOT).replace(os.sep, "/")
     m = _SYMBOL.search(item.get("message", ""))
-    return f"{path}|{item['code']}|{m.group(1) if m else item.get('message', '')}"
+    return f"{_relpath(item)}|{item['code']}|{m.group(1) if m else item.get('message', '')}"
+
+
+def c901_excluded(path):
+    """True when a repo-relative path is one of C901_EXCLUDED or under one of them."""
+    return any(path == rel or path.startswith(rel + "/") for rel in C901_EXCLUDED)
+
+
+def drop_excluded_c901(items):
+    """Split ruff's JSON findings into (kept, number dropped). Only C901 under C901_EXCLUDED is ever dropped."""
+    kept = [i for i in items if not (i.get("code") == "C901" and c901_excluded(_relpath(i)))]
+    return kept, len(items) - len(kept)
 
 
 def _in_scope(nodes):
@@ -143,27 +178,44 @@ def run_ruff(ruff):
                            text=True).stdout.split("\0")
     files = [f for f in files if f]
     out = subprocess.run([ruff, "check", "--isolated", "--no-cache", "--ignore-noqa", "--select", SELECT,
+                          "--config", f"lint.mccabe.max-complexity={MAX_COMPLEXITY}",
                           "--output-format", "json", "--exit-zero", *files],
                          cwd=ROOT, check=True, capture_output=True, text=True).stdout
-    kept, skipped, unparseable = drop_import_shadows(json.loads(out or "[]"))
+    kept, excluded = drop_excluded_c901(json.loads(out or "[]"))
+    kept, skipped, unparseable = drop_import_shadows(kept)
     for path, exc in unparseable:
         print(f"WARNING: cannot parse {os.path.relpath(path, ROOT)} ({type(exc).__name__}: {exc}); "
               "all its F811 findings stay reported", file=sys.stderr)
-    return collections.Counter(fingerprint(i) for i in kept), skipped
+    return collections.Counter(fingerprint(i) for i in kept), skipped, excluded
 
 
-def load(path):
+def load(path, strict=True):
+    """The baseline's fingerprints. ``strict`` (check mode) raises BaselineMismatch for a missing file, or for a
+    ``select`` / ``max_complexity`` that is absent or differs from SELECT / MAX_COMPLEXITY."""
+    rel = os.path.relpath(path, ROOT)
     if not os.path.exists(path):
+        if strict:
+            raise BaselineMismatch(f"{rel} does not exist")
         return collections.Counter()
     with open(path, encoding="utf-8") as fh:
-        return collections.Counter(json.load(fh).get("fingerprints", {}))
+        data = json.load(fh)
+    if strict:
+        if data.get("select") != SELECT:
+            raise BaselineMismatch(f"{rel} has select {data.get('select', '(missing)')!r}; "
+                                   f"this script selects {SELECT!r}")
+        mc = data.get("max_complexity")
+        if type(mc) is not int or mc != MAX_COMPLEXITY:
+            raise BaselineMismatch(f"{rel} has max_complexity {data.get('max_complexity', '(missing)')!r}; "
+                                   f"this script uses {MAX_COMPLEXITY}")
+    return collections.Counter(data.get("fingerprints", {}))
 
 
 def save(path, counter):
     data = {
-        "_comment": "F821/F811 fingerprints (path|code|symbol: count) accepted on main. May only shrink. "
+        "_comment": "F821/F811/C901 fingerprints (path|code|symbol: count) accepted on main. May only shrink. "
                     "Regenerate with: python .github/scripts/ruff_ratchet.py --update",
         "select": SELECT,
+        "max_complexity": MAX_COMPLEXITY,
         "total": sum(counter.values()),
         "fingerprints": dict(sorted(counter.items())),
     }
@@ -178,14 +230,22 @@ def main():
     ap.add_argument("--baseline", default=BASELINE)
     ap.add_argument("--update", action="store_true")
     args = ap.parse_args()
-    current, skipped = run_ruff(args.ruff)
-    baseline = load(args.baseline)
+    try:
+        baseline = load(args.baseline, strict=not args.update)
+    except BaselineMismatch as exc:
+        print(f"ERROR: baseline mismatch: {exc}. Regenerate it with --update; a changed rule set or threshold is an "
+              "owner-approved re-seed (docs/planning/behavior-change-register.md, FD-85-READABILITY)",
+              file=sys.stderr)
+        return 2
+    current, skipped, excluded = run_ruff(args.ruff)
     new = current - baseline
     fixed = baseline - current
+    fixed_c901 = collections.Counter({k: n for k, n in fixed.items() if k.split("|")[1:2] == ["C901"]})
     by_code = collections.Counter(k.split("|")[1] for k in current.elements())
-    print(f"ruff {SELECT}: {sum(current.values())} finding(s) {dict(by_code)}; baseline {sum(baseline.values())}; "
-          f"new {sum(new.values())}; fixed {sum(fixed.values())}; "
-          f"not counted (F811 parameter/local shadowing a module-level import) {skipped}")
+    print(f"ruff {SELECT} (C901 above {MAX_COMPLEXITY}): {sum(current.values())} finding(s) {dict(by_code)}; "
+          f"baseline {sum(baseline.values())}; new {sum(new.values())}; fixed {sum(fixed.values())}; "
+          f"not counted (F811 parameter/local shadowing a module-level import) {skipped}; "
+          f"not counted (C901 under paths the public export drops) {excluded}")
     if args.update:
         save(args.baseline, current)
         print(f"wrote {os.path.relpath(args.baseline, ROOT)}")
@@ -195,16 +255,21 @@ def main():
         with open(summary, "a") as fh:
             fh.write(f"- ruff {SELECT}: {sum(current.values())} accepted-baseline findings, "
                      f"{sum(new.values())} new, {sum(fixed.values())} fixed\n")
-    if fixed:
+    if fixed - fixed_c901:
         print("Fixed since the baseline (shrink it with --update):")
-        for k in sorted(fixed):
+        for k in sorted(fixed - fixed_c901):
             print(f"  - {k}")
     if new:
-        print("NEW F821/F811 findings (undefined / shadowed names crash at runtime; fix them):")
+        print(f"NEW F821/F811/C901 findings (undefined / shadowed names crash at runtime; a function above complexity "
+              f"{MAX_COMPLEXITY} must be split; fix them):")
         for k in sorted(new):
             print(f"  + {k}")
-        return 1
-    return 0
+    if fixed_c901:
+        print(f"FIXED C901 entries still in the baseline ({sum(fixed_c901.values())}): remove them with --update in "
+              "this change, so a later function cannot take the freed slot:")
+        for k in sorted(fixed_c901):
+            print(f"  - {k}")
+    return 1 if new or fixed_c901 else 0
 
 
 if __name__ == "__main__":

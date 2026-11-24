@@ -127,8 +127,9 @@ Key variables from `infra/platform/variables.tf`:
 | Variable | Meaning |
 | :--- | :--- |
 | `project_id`, `region`, `zone` | Host project and location. |
-| `organization_id`, `billing_account_id` | Optional; needed for child-project vending and billing. |
-| `castor_managed_workloads_folder_id` | Parent folder for child projects. |
+| `organization_id` | Optional for the apply. Needed, with the folder, for the deletion-safety tag: without it StackVend refuses every child-project delete (`GUARD_UNCONFIGURED`). The managed-workloads folder must belong to this organization. |
+| `billing_account_id` | Optional for the apply, but required to deploy any workload: child projects are linked to this billing account. |
+| `castor_managed_workloads_folder_id` | Parent folder for child projects. Optional for the apply, but required to deploy any workload: the vend refuses without it. |
 | `bind_billing_iam` | Whether Terraform grants `roles/billing.user` on the billing account to `sa-project-provisioner` and `sa-castor-developer` (additive members; needs Billing Account Administrator). Default unset: `scripts/apply.sh` decides with a read-only permission check and skips the grant with a warning when you lack the role. An explicit `true`/`false` always wins. |
 | `github_owner`, `workloads_github_owner` | Where generated workload repositories live: a GitHub organization with the StackVend GitHub App installed (personal accounts are not supported). Services receive `workloads_github_owner` (or `github_owner` when it is empty) as `GITHUB_ORG` / `GITHUB_OWNER`. There is no built-in owner: with `vcs_provider = "GITHUB"`, leaving both empty makes the orchestrator gateway and the vending service refuse to start (`GitHubOwnerNotConfiguredError`); other services return that error on GitHub operations. |
 | `vcs_provider`, `deploy_git_server` | VCS selection (see above). |
@@ -164,7 +165,7 @@ To keep one instance running, set the existing install variable in `<project_id>
 cloud_run_min_instances = { "mcp-terraform-server" = 1 }
 ```
 
-* **Default:** `{}` (0 for every service: cold starts, no idle cost). There is no separate variable for this.
+* **Default:** `{}` (0 for every service: cold starts, no idle instance cost; the install's fixed costs are listed under [Platform network](#platform-network-internal-only-host-services)). There is no separate variable for this.
 * **Cost:** the server has 2 vCPU and 4 GiB of memory with CPU always allocated, so one warm instance costs approximately $100–120 a month per install (approximately, list prices; check the Google Cloud pricing calculator for your region and any discounts).
 * **Applying it:** this is platform Terraform, so a change takes effect only after `scripts/apply.sh` runs; a service deploy does not change it. Set the value back to 0, or remove the key, to return to scale-to-zero.
 * A service name that is not a platform Cloud Run service is refused at plan time.
@@ -212,8 +213,9 @@ accepts internal traffic only, and IAM is still checked on every request.
   `BOOTSTRAP_HOST_NETWORK_ORG_POLICY_REFUSED` when one refuses. With `PSC_PRIVATE_RANGES` they also read
   `compute.disablePrivateServiceConnectCreationForConsumers` and warn when it has any rule. A
   policy they cannot read gives a warning; if it does refuse, the apply stops with a 400 that names it.
-* **Cost:** with `PSC_PRIVATE_RANGES`, approximately $0.20 to $8 a month (the Private Service Connect endpoint and the
-  private DNS zone); with `NAT_ALL_TRAFFIC`, approximately $1 to $35 a month plus about $0.045 per GB through Cloud NAT
+* **Cost:** with `PSC_PRIVATE_RANGES`, approximately $7 to $8 a month (the always-on Private Service Connect endpoint, about
+  $7.30, and the private DNS zones: `run.app.`, and the `p.googleapis.com` zone Google creates for the endpoint); with
+  `NAT_ALL_TRAFFIC`, approximately $1 to $35 a month plus about $0.045 per GB through Cloud NAT
   (list prices, check the pricing calculator).
 * **First apply:** the network apply enables Cloud DNS and Service Directory and uses them in the same run. If the
   Private Service Connect rule or the DNS zone fails with "API not enabled" or "not yet propagated", run the same
