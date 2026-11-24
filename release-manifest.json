@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release": "0.9.1-preview.2",
-  "requires_apply_sh": true,
+  "release": "0.9.1-preview.3",
+  "requires_apply_sh": false,
   "min_platform_release": "0.9.1-preview.2"
 }

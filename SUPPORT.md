@@ -15,7 +15,7 @@ StackVend is **public preview software**, maintained as an open-source project o
 
 ## Supported versions
 
-Only the **latest preview release** is supported: the current tip of `main` and the newest tagged release. The version of a checkout is in [`VERSION`](VERSION) (this release: `0.9.0-preview`).
+Only the **latest preview release** is supported: the current tip of `main` and the newest tagged release. The version of a checkout is in [`VERSION`](VERSION).
 
 | Version | Supported |
 | :--- | :---: |

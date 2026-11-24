@@ -19,6 +19,29 @@ Changes that are not released yet are listed under `## [Unreleased]`, directly a
 
 ## [Unreleased]
 
+## [0.9.1-preview.3] - 2026-11-24
+
+Repository hardening (CI checks and GitHub settings) and corrected documentation. It changes nothing in how StackVend runs. It is the first release that the **Update StackVend** button can install.
+
+**requires apply.sh: no**
+
+**Upgrading:** no platform Terraform change and no change to what the running code does. On `0.9.1-preview.2`, **Update StackVend** (Settings ▸ Upgrades) installs this release: it rebuilds every service and job from the signed release tag and moves them to the new version. By default an administrator then approves the build in the Google Cloud console (Cloud Build ▸ History) within 60 minutes; approve only the build whose `_REQUEST_ID` substitution matches your request. New workload runs are refused until the update ends (runs already started continue). Without the button, run `PROJECT_ID=<id> bash scripts/upgrade.sh v0.9.1-preview.3` from the checkout you installed from.
+
+On `0.9.0-preview` or `0.9.1-preview.1` the button cannot install it (`TAG_UNRESOLVED`), and this release needs `0.9.1-preview.2`'s platform Terraform. Follow the **Upgrading** instructions of the `0.9.1-preview.2` section below (start no workload, check the tag, run `upgrade.sh`) with `v0.9.1-preview.3` in place of `v0.9.1-preview.2`; there `PROJECT_ID=<id> bash scripts/upgrade.sh v0.9.1-preview.3` runs `apply.sh apply` and then `deploy-services.sh --all-jobs`. Its Security notes (first-run sign-in client, upstream sync) apply to you too.
+
+### Changed
+- **GitHub Actions bumped.** `actions/setup-python` 7.1.0 and `actions/upload-artifact` 7.0.2, still pinned by commit SHA; Dependabot version-update pull requests are off.
+- **Complexity ratchet in CI.** The lint check now also counts ruff's C901 (function too complex) with a threshold of 15. The functions above it today are listed in `.github/lint-baseline.json`; any function not on the list that goes above 15 (a new one, or one that grew) fails CI; listed functions are matched by name only; a listed function that drops to 15 or below must leave the list in the same change, and the list and the threshold can only shrink (`.github/scripts/allowlist_guard.py`). No StackVend code was changed to pass it.
+- **Public repository settings.** Settings of the official repository on GitHub (not files; a fork keeps its own settings): workflows run only GitHub's own actions and `opentofu/setup-opentofu`, each pinned to a full commit SHA; workflows on a pull request from any external contributor's fork run only after a maintainer approves them; the required checks accept results only from GitHub Actions. Dependabot alerts are on for the maintainers; Dependabot opens no pull requests.
+
+### Documentation
+- **README.** The tagline and "What it is" now say what StackVend is: AI agents across the whole delivery lifecycle, with each AI role named, and the human gates and deterministic checks around them. New: what an idle install costs (less than $10 a month with the default network design, and why), and the release cadence (Tuesdays, at most once a week; security fixes any day). "What you need" now says a Google Cloud organization, a managed-workloads folder and a billing account are required to deploy any workload (the installer lets you skip them, but then nothing can be deployed), and that the installer offers to install OpenTofu.
+- **Configuration.** The cost of the default private network (the Private Service Connect endpoint and its DNS zones) is corrected to $7 to $8 a month; `organization_id`, `billing_account_id` and `castor_managed_workloads_folder_id` each say what they are needed for.
+- **SUPPORT.md** no longer names a release; the version of a checkout is in `VERSION`.
+
+### Known limitations
+- This is the first button update for every install. After it, do not use **Roll back services**: jobs cannot be rolled back yet (`ROLLBACK_UNAVAILABLE`, the result is partial). To go back, run `PROJECT_ID=<id> bash scripts/upgrade.sh v0.9.1-preview.2` instead.
+
 ## [0.9.1-preview.2] - 2026-11-21
 
 A security update, and the fix for **Update StackVend**. Every install and every fork should take it.
